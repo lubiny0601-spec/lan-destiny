@@ -159,6 +159,11 @@ tabs.forEach(tab => {
 // Initial render
 renderFields('bazi');
 
+// Detect if running via file:// protocol
+if (window.location.protocol === 'file:') {
+    document.getElementById('local-warning-modal').classList.remove('hidden');
+}
+
 // Append form submission and report rendering logic
 const calcForm = document.getElementById('calc-form');
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -224,8 +229,9 @@ calcForm.addEventListener('submit', async (e) => {
         loadingScreen.classList.add('hidden');
         reportGrid.classList.remove('hidden');
         document.getElementById('btn-export').classList.add('hidden');
+        document.getElementById('local-warning-modal').classList.remove('hidden');
         document.getElementById('report-title-area').innerHTML = `<h2 style="color: var(--accent-pink)">网络请求失败</h2>`;
-        document.getElementById('card-basics').innerHTML = `<h3>错误信息</h3><p>${err.toString()}</p>`;
+        document.getElementById('card-basics').innerHTML = `<h3>错误信息</h3><p>${err.toString()}<br><br><span style="color: var(--accent-gold)">提示：请确认本地后端服务已通过双击运行 run.bat 启动，并且是通过 http://127.0.0.1:8000 访问网页，而不是直接双击打开 HTML 文件。</span></p>`;
         document.getElementById('card-elements').innerHTML = `<h3>能量结构</h3><p>--</p>`;
         document.getElementById('card-chart').innerHTML = `<h3>时空命盘</h3><p>--</p>`;
         document.getElementById('card-cycles').innerHTML = `<h3>大运流年</h3><p>--</p>`;
