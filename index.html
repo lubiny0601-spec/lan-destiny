@@ -57,6 +57,22 @@
             </div>
         </main>
     </div>
+    <div id="local-warning-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="warning-icon">⚠️</div>
+            <h2>检测到本地服务未运行</h2>
+            <p class="warning-desc">当前网页是以本地文件协议 (file://) 打开的，或者无法连接到本地计算引擎。</p>
+            <div class="warning-steps">
+                <h3>如何解决该问题？</h3>
+                <ol>
+                    <li>请进入你的项目文件夹 <code>d:\飞书绝活大会</code>。</li>
+                    <li>双击运行 <strong><code>run.bat</code></strong> 启动本地服务器。</li>
+                    <li>启动后，请在浏览器中访问 <strong><a href="http://127.0.0.1:8000" target="_blank">http://127.0.0.1:8000</a></strong>。</li>
+                </ol>
+            </div>
+            <button class="modal-close-btn" onclick="document.getElementById('local-warning-modal').classList.add('hidden')">忽略并继续预览界面</button>
+        </div>
+    </div>
     <script src="main.js"></script>
 </body>
 </html>
