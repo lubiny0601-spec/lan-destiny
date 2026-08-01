@@ -121,13 +121,23 @@ def calculate(req: CalcRequest):
     elif req.module == "liuyao":
         script = "liuyao.py"
         args.extend(["--yao", req.yao])
-        if req.year is not None and req.month is not None and req.day is not None:
+        
+        now = datetime.datetime.now()
+        if req.year is None:
+            y = now.year
+            m = now.month
+            d = now.day
+            h = req.hour if req.hour is not None else now.hour
+            mi = req.minute if req.minute is not None else now.minute
+            date_args = [str(y), str(m), str(d), str(h), str(mi)]
+        else:
             date_args = [str(req.year), str(req.month), str(req.day)]
             if req.hour is not None:
                 date_args.append(str(req.hour))
                 if req.minute is not None:
                     date_args.append(str(req.minute))
-            args.extend(["--date"] + date_args)
+        
+        args.extend(["--date"] + date_args)
         if req.query:
             args.extend(["--query", req.query])
 
@@ -154,13 +164,18 @@ def calculate(req: CalcRequest):
     if not os.path.exists(script_path):
         raise HTTPException(status_code=500, detail=f"Script {script} not found in skill folder")
 
-    cmd = [PYTHON_PATH, script_path] + args
+    cmd = [PYTHON_PATH, "-X", "utf8", script_path] + args
     
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True, encoding="utf-8")
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True, encoding="utf-8")
         return {"stdout": res.stdout, "stderr": res.stderr}
     except subprocess.CalledProcessError as e:
-        return {"error": e.stderr or e.stdout or str(e)}
+        error_msg = e.stderr or e.stdout or str(e)
+        raise HTTPException(status_code=400, detail=f"Process execution failed: {error_msg.strip()}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Server error executing command: {str(e)}")
 
 @app.post("/api/export")
 def export_report(req: ExportRequest):
@@ -181,10 +196,17 @@ def export_report(req: ExportRequest):
             margin: 0 auto;
             background-color: #0B0B0B;
             border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 4px solid #EE0BA9;
+            box-shadow: 0 4px 20px rgba(238, 11, 169, 0.15);
             border-radius: 12px;
             padding: 30px;
         }}
-        h1, h2, h3, h4 {{
+        h1 {{
+            color: #EE0BA9;
+            border-bottom: 1px solid rgba(238, 11, 169, 0.2);
+            padding-bottom: 10px;
+        }}
+        h2, h3, h4 {{
             color: #FCC84E;
         }}
         pre {{
