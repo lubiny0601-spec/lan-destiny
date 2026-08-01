@@ -158,3 +158,217 @@ tabs.forEach(tab => {
 
 // Initial render
 renderFields('bazi');
+
+// Append form submission and report rendering logic
+const calcForm = document.getElementById('calc-form');
+const welcomeScreen = document.getElementById('welcome-screen');
+const loadingScreen = document.getElementById('loading-screen');
+const reportGrid = document.getElementById('report-grid');
+
+calcForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Hide screens, show loading
+    welcomeScreen.classList.add('hidden');
+    reportGrid.classList.add('hidden');
+    loadingScreen.classList.remove('hidden');
+
+    const formData = new FormData(calcForm);
+    const data = {
+        module: activeModule
+    };
+    
+    formData.forEach((value, key) => {
+        if (value !== "") {
+            // Convert to number for appropriate fields to avoid server-side FastAPI parsing type mismatch
+            if ([
+                'year', 'month', 'day', 'hour', 'minute',
+                'partner_year', 'partner_month', 'partner_day', 'partner_hour', 'partner_minute',
+                'lng'
+            ].includes(key)) {
+                data[key] = Number(value);
+            } else {
+                data[key] = value;
+            }
+        }
+    });
+
+    try {
+        const response = await fetch('/api/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        loadingScreen.classList.add('hidden');
+        reportGrid.classList.remove('hidden');
+
+        if (!response.ok || result.detail || result.error) {
+            const errDetail = result.detail || result.error || '计算出错，请核对输入参数';
+            document.getElementById('report-title-area').innerHTML = `<h2 style="color: var(--accent-pink)">计算错误</h2>`;
+            document.getElementById('card-basics').innerHTML = `<h3>基本信息</h3><p>${errDetail}</p>`;
+            document.getElementById('card-elements').innerHTML = `<h3>能量结构</h3><p>--</p>`;
+            document.getElementById('card-chart').innerHTML = `<h3>时空命盘</h3><p>--</p>`;
+            document.getElementById('card-cycles').innerHTML = `<h3>大运流年</h3><p>--</p>`;
+            document.getElementById('card-interpretation').innerHTML = `<h3>观澜解读</h3><p>--</p>`;
+        } else {
+            renderReport(result.stdout);
+        }
+    } catch (err) {
+        loadingScreen.classList.add('hidden');
+        reportGrid.classList.remove('hidden');
+        document.getElementById('report-title-area').innerHTML = `<h2 style="color: var(--accent-pink)">网络请求失败</h2>`;
+        document.getElementById('card-basics').innerHTML = `<h3>错误信息</h3><p>${err.toString()}</p>`;
+        document.getElementById('card-elements').innerHTML = `<h3>能量结构</h3><p>--</p>`;
+        document.getElementById('card-chart').innerHTML = `<h3>时空命盘</h3><p>--</p>`;
+        document.getElementById('card-cycles').innerHTML = `<h3>大运流年</h3><p>--</p>`;
+        document.getElementById('card-interpretation').innerHTML = `<h3>观澜解读</h3><p>--</p>`;
+    }
+});
+
+function parseStdout(stdout) {
+    const lines = stdout.split('\n');
+    let currentSection = 'basics';
+    const sections = {
+        basics: [],
+        elements: [],
+        chart: [],
+        cycles: [],
+        interpretation: []
+    };
+
+    // Helper to add lines
+    const addLine = (sec, line) => {
+        sections[sec].push(line);
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        // Skip the CLI horizontal borders
+        if (trimmed.startsWith('════════') || trimmed.startsWith('━━━━━━━━') || (trimmed.startsWith('═') && trimmed.endsWith('═') && trimmed.length > 10)) {
+            continue;
+        }
+
+        // Module-independent section switching
+        if (trimmed.startsWith('【四柱】') || trimmed.startsWith('【三柱】') || trimmed.startsWith('【十二宫】') || trimmed.startsWith('【本卦】') || trimmed.startsWith('【变卦】') || trimmed.startsWith('【互卦】')) {
+            currentSection = 'chart';
+        } else if (trimmed.startsWith('【五行个数】') || trimmed.startsWith('【五行力量】') || trimmed.startsWith('【体用】') || trimmed.startsWith('【宫干飞化】') || trimmed.startsWith('【类象】') || trimmed.startsWith('克应：') || trimmed.startsWith('格局：')) {
+            currentSection = 'elements';
+        } else if (trimmed.startsWith('【大运】') || trimmed.startsWith('【流年】') || trimmed.startsWith('【大限】') || trimmed.startsWith('【小限】') || trimmed.startsWith('【指定日推演】') || trimmed.startsWith('动爻：')) {
+            currentSection = 'cycles';
+        } else if (trimmed.startsWith('【断语提示】') || trimmed.startsWith('【合婚双盘对照】') || trimmed.startsWith('【日主】') || trimmed.startsWith('【胎元】')) {
+            currentSection = 'interpretation';
+        }
+
+        // Specific line overrides or routing
+        if (trimmed.startsWith('动爻：') && activeModule === 'liuyao') {
+            addLine('cycles', line);
+        } else if (trimmed.startsWith('乙方四柱：')) {
+            addLine('chart', line);
+        } else if (trimmed.startsWith('乙方大运：') || trimmed.startsWith('乙方夏令时：')) {
+            addLine('cycles', line);
+        } else {
+            addLine(currentSection, line);
+        }
+    }
+
+    return {
+        basics: sections.basics.join('\n').trim(),
+        elements: sections.elements.join('\n').trim(),
+        chart: sections.chart.join('\n').trim(),
+        cycles: sections.cycles.join('\n').trim(),
+        interpretation: sections.interpretation.join('\n').trim()
+    };
+}
+
+function renderReport(stdout) {
+    const titleArea = document.getElementById('report-title-area');
+    titleArea.innerHTML = `<h1>${activeModule.toUpperCase()} <span>推演报告</span></h1>`;
+
+    const parsed = parseStdout(stdout);
+
+    const basics = document.getElementById('card-basics');
+    const elements = document.getElementById('card-elements');
+    const chart = document.getElementById('card-chart');
+    const cycles = document.getElementById('card-cycles');
+    const interpretation = document.getElementById('card-interpretation');
+
+    // Fill each card with a heading and a formatted pre block (or fallback text)
+    basics.innerHTML = `<h3>基本信息 & 参数</h3>${parsed.basics ? `<pre>${parsed.basics}</pre>` : '<p class="empty-state">暂无数据</p>'}`;
+    elements.innerHTML = `<h3>能量结构 & 格局</h3>${parsed.elements ? `<pre>${parsed.elements}</pre>` : '<p class="empty-state">无能量特质数据</p>'}`;
+    chart.innerHTML = `<h3>时空命盘排布</h3>${parsed.chart ? `<pre>${parsed.chart}</pre>` : '<p class="empty-state">命盘生成失败</p>'}`;
+    cycles.innerHTML = `<h3>大运流年轨变</h3>${parsed.cycles ? `<pre>${parsed.cycles}</pre>` : '<p class="empty-state">无流年大运轨变信息</p>'}`;
+    interpretation.innerHTML = `<h3>观澜玄微解读</h3>${parsed.interpretation ? `<pre>${parsed.interpretation}</pre>` : `<pre>观澜评语：命局排定，生克在心。时空流转，大运起伏。
+一事一占，趋势化参考，不承诺吉凶成败。</pre>`}`;
+}
+
+// Export Report functionality
+const exportBtn = document.getElementById('btn-export');
+exportBtn.addEventListener('click', async () => {
+    // Collect output from all cards
+    const basicsHTML = document.getElementById('card-basics').innerHTML;
+    const elementsHTML = document.getElementById('card-elements').innerHTML;
+    const chartHTML = document.getElementById('card-chart').innerHTML;
+    const cyclesHTML = document.getElementById('card-cycles').innerHTML;
+    const interpretationHTML = document.getElementById('card-interpretation').innerHTML;
+
+    const htmlContent = `
+        <div class="export-header">
+            <h2>${activeModule.toUpperCase()} 命理与占测推演报告</h2>
+            <p>生成日期: ${new Date().toLocaleDateString('zh-CN')}</p>
+        </div>
+        <div class="export-section">
+            ${basicsHTML}
+        </div>
+        <div class="export-section">
+            ${elementsHTML}
+        </div>
+        <div class="export-section">
+            ${chartHTML}
+        </div>
+        <div class="export-section">
+            ${cyclesHTML}
+        </div>
+        <div class="export-section">
+            ${interpretationHTML}
+        </div>
+    `;
+
+    const title = `${activeModule.toUpperCase()}_推演报告`;
+
+    try {
+        const response = await fetch('/api/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                html_content: htmlContent
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert('导出失败，服务器返回错误');
+        }
+    } catch (err) {
+        console.error('Export error:', err);
+        alert('导出请求失败: ' + err.toString());
+    }
+});
