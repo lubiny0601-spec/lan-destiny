@@ -1,4 +1,5 @@
 @echo off
+@chcp 65001 >nul
 title 观澜命理 · Lan.Destiny Dashboard Launcher
 echo ===================================================
 echo   正在启动 观澜命理 · Lan.Destiny 本地服务...
@@ -8,10 +9,15 @@ echo.
 set PYTHON_EXE=%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe
 
 if not exist "%PYTHON_EXE%" (
-    echo [错误] 找不到 Python 3.12 安装路径: %PYTHON_EXE%
-    echo 请检查 Python 是否成功安装。
-    pause
-    exit /b
+    where python >nul 2>nul
+    if %ERRORLEVEL% equ 0 (
+        set PYTHON_EXE=python
+    ) else (
+        echo [错误] 找不到 Python 3.12 安装路径，且系统中未检测到 python 命令。
+        echo 请检查 Python 是否成功安装。
+        pause
+        exit /b
+    )
 )
 
 :: Start browser after 2 seconds
