@@ -1,0 +1,285 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    height: 100vh;
+}
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+.sidebar {
+    width: 350px;
+    background-color: #0B0B0B;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 20px;
+}
+.report-area {
+    flex: 1;
+    background-color: #000000;
+    overflow-y: auto;
+    padding: 40px;
+    position: relative;
+}
+.hidden {
+    display: none !important;
+}
+
+/* Typography & Branding */
+.branding {
+    margin-bottom: 24px;
+}
+.branding h1 {
+    font-family: 'Lora', serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+.branding h1 span {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.7);
+}
+.branding .subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+}
+
+/* Navigation Tabs */
+.module-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 30px;
+}
+.tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.tab-btn:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+}
+.tab-btn.active {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* Forms & Input Controls */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+    min-height: 0; /* allows child to scroll */
+}
+#dynamic-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.form-group label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="number"] {
+    background-color: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group select:focus,
+.form-group input:focus {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.04);
+}
+.datetime-inputs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+.datetime-inputs input {
+    width: 100%;
+    text-align: center;
+}
+.datetime-inputs input[name="year"],
+.datetime-inputs input[name="partner_year"] {
+    grid-column: span 6;
+}
+.datetime-inputs input[name="month"],
+.datetime-inputs input[name="partner_month"],
+.datetime-inputs input[name="day"],
+.datetime-inputs input[name="partner_day"] {
+    grid-column: span 3;
+}
+.datetime-inputs input[name="hour"],
+.datetime-inputs input[name="partner_hour"],
+.datetime-inputs input[name="minute"],
+.datetime-inputs input[name="partner_minute"] {
+    grid-column: span 3;
+}
+.form-container h3 {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 10px;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+/* Action Buttons */
+.submit-btn {
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: transform 0.1s, opacity 0.2s;
+}
+.submit-btn:hover {
+    opacity: 0.9;
+}
+.submit-btn:active {
+    transform: scale(0.96);
+}
+
+/* Screens */
+.welcome-screen,
+.loading-screen {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 80%;
+    max-width: 400px;
+}
+.taiji-icon {
+    font-size: 56px;
+    color: rgba(255, 255, 255, 0.15);
+    animation: rotateTaiji 20s linear infinite;
+    line-height: 1;
+}
+@keyframes rotateTaiji {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.welcome-screen h2 {
+    font-family: 'Lora', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+.welcome-screen p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+}
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    border-top-color: rgba(255, 255, 255, 0.8);
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Bento Grid */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+.bento-card {
+    background-color: #0B0B0B;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 24px;
+    min-height: 180px;
+    transition: border-color 0.3s;
+}
+.bento-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+.card-full {
+    grid-column: span 2;
+}
+.card-half {
+    grid-column: span 1;
+}
+.header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: auto;
+    padding: 16px 24px;
+}
+.export-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+.export-btn:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+.export-btn:active {
+    transform: scale(0.96);
+}

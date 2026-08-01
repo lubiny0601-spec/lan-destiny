@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>观澜命理 · Lan.Destiny</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Lora:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Side: Config Panel -->
+        <aside class="sidebar">
+            <header class="branding">
+                <h1>*Lan* <span>Destiny</span></h1>
+                <p class="subtitle">观澜命理 · 命运技术分析</p>
+            </header>
+            <nav class="module-tabs">
+                <button class="tab-btn active" data-module="bazi">八字命盘</button>
+                <button class="tab-btn" data-module="ziwei">紫微斗数</button>
+                <button class="tab-btn" data-module="hehun">合婚合参</button>
+                <button class="tab-btn" data-module="meihua">梅花易数</button>
+                <button class="tab-btn" data-module="liuyao">六爻纳甲</button>
+                <button class="tab-btn" data-module="qimen">奇门遁甲</button>
+            </nav>
+            <form id="calc-form" class="form-container">
+                <!-- Dynamic form fields are inserted here by main.js -->
+                <div id="dynamic-fields"></div>
+                <button type="submit" class="submit-btn">开始推演排盘</button>
+            </form>
+        </aside>
+        
+        <!-- Right Side: Bento Grid Report -->
+        <main class="report-area">
+            <div id="welcome-screen" class="welcome-screen">
+                <div class="taiji-icon">☯</div>
+                <h2>观水有术，必观其澜</h2>
+                <p>在左侧输入生辰信息，洞察时空轨迹</p>
+            </div>
+            <div id="loading-screen" class="loading-screen hidden">
+                <div class="spinner"></div>
+                <p>正在精密排盘中...</p>
+            </div>
+            <div id="report-grid" class="bento-grid hidden">
+                <div class="bento-card card-full header-card">
+                    <div id="report-title-area"></div>
+                    <button id="btn-export" class="export-btn">导出 HTML 命书</button>
+                </div>
+                <div class="bento-card card-half" id="card-basics"></div>
+                <div class="bento-card card-half" id="card-elements"></div>
+                <div class="bento-card card-full" id="card-chart"></div>
+                <div class="bento-card card-full" id="card-cycles"></div>
+                <div class="bento-card card-full paper-letter" id="card-interpretation"></div>
+            </div>
+        </main>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
