@@ -147,7 +147,7 @@ def calculate(req: CalcRequest):
         y = req.year or now.year
         m = req.month or now.month
         d = req.day or now.day
-        h = req.hour or now.hour
+        h = req.hour if req.hour is not None else now.hour
         args.extend([str(y), str(m), str(d), str(h)])
         if req.minute is not None:
             args.append(str(req.minute))
