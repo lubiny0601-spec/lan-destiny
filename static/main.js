@@ -209,6 +209,7 @@ calcForm.addEventListener('submit', async (e) => {
 
         if (!response.ok || result.detail || result.error) {
             const errDetail = result.detail || result.error || '计算出错，请核对输入参数';
+            document.getElementById('btn-export').classList.add('hidden');
             document.getElementById('report-title-area').innerHTML = `<h2 style="color: var(--accent-pink)">计算错误</h2>`;
             document.getElementById('card-basics').innerHTML = `<h3>基本信息</h3><p>${errDetail}</p>`;
             document.getElementById('card-elements').innerHTML = `<h3>能量结构</h3><p>--</p>`;
@@ -216,11 +217,13 @@ calcForm.addEventListener('submit', async (e) => {
             document.getElementById('card-cycles').innerHTML = `<h3>大运流年</h3><p>--</p>`;
             document.getElementById('card-interpretation').innerHTML = `<h3>观澜解读</h3><p>--</p>`;
         } else {
+            document.getElementById('btn-export').classList.remove('hidden');
             renderReport(result.stdout);
         }
     } catch (err) {
         loadingScreen.classList.add('hidden');
         reportGrid.classList.remove('hidden');
+        document.getElementById('btn-export').classList.add('hidden');
         document.getElementById('report-title-area').innerHTML = `<h2 style="color: var(--accent-pink)">网络请求失败</h2>`;
         document.getElementById('card-basics').innerHTML = `<h3>错误信息</h3><p>${err.toString()}</p>`;
         document.getElementById('card-elements').innerHTML = `<h3>能量结构</h3><p>--</p>`;
@@ -256,7 +259,7 @@ function parseStdout(stdout) {
         }
 
         // Module-independent section switching
-        if (trimmed.startsWith('【四柱】') || trimmed.startsWith('【三柱】') || trimmed.startsWith('【十二宫】') || trimmed.startsWith('【本卦】') || trimmed.startsWith('【变卦】') || trimmed.startsWith('【互卦】')) {
+        if (trimmed.startsWith('【四柱】') || trimmed.startsWith('【三柱】') || trimmed.startsWith('【十二宫】') || trimmed.startsWith('【本卦】') || trimmed.startsWith('【变卦】') || trimmed.startsWith('【互卦】') || trimmed.startsWith('四柱：')) {
             currentSection = 'chart';
         } else if (trimmed.startsWith('【五行个数】') || trimmed.startsWith('【五行力量】') || trimmed.startsWith('【体用】') || trimmed.startsWith('【宫干飞化】') || trimmed.startsWith('【类象】') || trimmed.startsWith('克应：') || trimmed.startsWith('格局：')) {
             currentSection = 'elements';
