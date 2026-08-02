@@ -579,4 +579,55 @@ function generateQimenAnalysis(stdout) {
     `;
 }
 
+// ========================================================
+// View Mode Switching Logic (Task 1)
+// ========================================================
+const VIEW_MODES = {
+    CONSUMER: "consumer",
+    PROFESSIONAL: "professional"
+};
 
+const consumerView = document.getElementById('consumer-mode-view');
+const professionalView = document.getElementById('professional-mode-view');
+const btnEnterPro = document.getElementById('btn-enter-pro');
+const btnBackConsumer = document.getElementById('btn-back-consumer');
+
+function switchViewMode(mode) {
+    if (!consumerView || !professionalView) return;
+
+    if (mode === VIEW_MODES.PROFESSIONAL) {
+        consumerView.classList.add('hidden');
+        consumerView.setAttribute('aria-hidden', 'true');
+        
+        professionalView.classList.remove('hidden');
+        professionalView.setAttribute('aria-hidden', 'false');
+        
+        if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'true');
+        if (btnBackConsumer) btnBackConsumer.setAttribute('aria-expanded', 'true');
+        
+        window.scrollTo(0, 0);
+    } else {
+        professionalView.classList.add('hidden');
+        professionalView.setAttribute('aria-hidden', 'true');
+        
+        consumerView.classList.remove('hidden');
+        consumerView.setAttribute('aria-hidden', 'false');
+        
+        if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'false');
+        if (btnBackConsumer) btnBackConsumer.setAttribute('aria-expanded', 'false');
+        
+        window.scrollTo(0, 0);
+    }
+}
+
+if (btnEnterPro) {
+    btnEnterPro.addEventListener('click', () => {
+        switchViewMode(VIEW_MODES.PROFESSIONAL);
+    });
+}
+
+if (btnBackConsumer) {
+    btnBackConsumer.addEventListener('click', () => {
+        switchViewMode(VIEW_MODES.CONSUMER);
+    });
+}
