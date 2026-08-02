@@ -580,7 +580,7 @@ function generateQimenAnalysis(stdout) {
 }
 
 // ========================================================
-// View Mode Switching Logic (Task 1)
+// View Mode Switching Logic & Consumer Logic (Task 2)
 // ========================================================
 const VIEW_MODES = {
     CONSUMER: "consumer",
@@ -590,6 +590,7 @@ const VIEW_MODES = {
 const consumerView = document.getElementById('consumer-mode-view');
 const professionalView = document.getElementById('professional-mode-view');
 const btnEnterPro = document.getElementById('btn-enter-pro');
+const btnEnterProFooter = document.getElementById('btn-enter-pro-footer');
 const btnBackConsumer = document.getElementById('btn-back-consumer');
 
 function switchViewMode(mode) {
@@ -603,7 +604,11 @@ function switchViewMode(mode) {
         professionalView.setAttribute('aria-hidden', 'false');
         
         if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'true');
+        if (btnEnterProFooter) btnEnterProFooter.setAttribute('aria-expanded', 'true');
         if (btnBackConsumer) btnBackConsumer.setAttribute('aria-expanded', 'true');
+        
+        // Show help drawer button in professional mode
+        if (helpBtn) helpBtn.classList.remove('hidden');
         
         window.scrollTo(0, 0);
     } else {
@@ -614,7 +619,11 @@ function switchViewMode(mode) {
         consumerView.setAttribute('aria-hidden', 'false');
         
         if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'false');
+        if (btnEnterProFooter) btnEnterProFooter.setAttribute('aria-expanded', 'false');
         if (btnBackConsumer) btnBackConsumer.setAttribute('aria-expanded', 'false');
+        
+        // Hide help drawer button in consumer mode
+        if (helpBtn) helpBtn.classList.add('hidden');
         
         window.scrollTo(0, 0);
     }
@@ -625,9 +634,71 @@ if (btnEnterPro) {
         switchViewMode(VIEW_MODES.PROFESSIONAL);
     });
 }
+if (btnEnterProFooter) {
+    btnEnterProFooter.addEventListener('click', () => {
+        switchViewMode(VIEW_MODES.PROFESSIONAL);
+    });
+}
 
 if (btnBackConsumer) {
     btnBackConsumer.addEventListener('click', () => {
         switchViewMode(VIEW_MODES.CONSUMER);
+    });
+}
+
+// Initial mode setup (Hide help button on load since default is consumer)
+if (helpBtn && (!professionalView || professionalView.classList.contains('hidden'))) {
+    helpBtn.classList.add('hidden');
+}
+
+// --- Consumer Page Interactions ---
+
+// 1. Scenario Cards Selection
+const scenarioCards = document.querySelectorAll('.scenario-card');
+let selectedScenario = null;
+
+scenarioCards.forEach(card => {
+    card.addEventListener('click', () => {
+        // Deselect all
+        scenarioCards.forEach(c => c.classList.remove('selected'));
+        // Select current
+        card.classList.add('selected');
+        selectedScenario = card.dataset.scenario;
+    });
+});
+
+// 2. Custom Notice for Start Generation
+const startBtns = document.querySelectorAll('.start-generation-btn');
+const consumerNotice = document.getElementById('consumer-notice');
+const btnCloseNotice = document.getElementById('btn-close-notice');
+let noticeTimeout;
+
+function showNotice() {
+    if (!consumerNotice) return;
+    
+    // Clear any existing timeout
+    if (noticeTimeout) clearTimeout(noticeTimeout);
+    
+    consumerNotice.classList.remove('hidden');
+    
+    // Auto hide after 5 seconds
+    noticeTimeout = setTimeout(() => {
+        consumerNotice.classList.add('hidden');
+    }, 5000);
+}
+
+startBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showNotice();
+    });
+});
+
+if (btnCloseNotice) {
+    btnCloseNotice.addEventListener('click', () => {
+        if (consumerNotice) {
+            consumerNotice.classList.add('hidden');
+            if (noticeTimeout) clearTimeout(noticeTimeout);
+        }
     });
 }

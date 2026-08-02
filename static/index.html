@@ -13,25 +13,187 @@
 <body>
     <!-- 普通用户模式 -->
     <div id="consumer-mode-view">
-        <header class="consumer-header">
-            <div class="brand">
-                <h1>观澜 <span>Lan.Destiny</span></h1>
+        <!-- Section 1: 顶部导航 -->
+        <header class="consumer-nav">
+            <div class="nav-brand">
+                <span class="brand-zh">观澜</span>
+                <span class="brand-en">Lan.Destiny</span>
             </div>
-            <button id="btn-enter-pro" class="enter-pro-btn" aria-controls="professional-mode-view" aria-expanded="false">进入专业排盘模式</button>
+            <nav class="nav-links">
+                <a href="#report-preview">了解报告</a>
+                <a href="#generation-process">如何生成</a>
+                <a href="#usage-boundary">使用边界</a>
+                <button id="btn-enter-pro" class="enter-pro-btn" aria-controls="professional-mode-view" aria-expanded="false">专业模式</button>
+            </nav>
         </header>
+
         <main class="consumer-main">
-            <div class="hero-section">
-                <h2 class="hero-title">人生结构说明书</h2>
-                <h3 class="hero-subtitle">从东方传统文化视角，重新认识自己</h3>
-                <p class="hero-desc">理解你的性格模式、优势倾向与内在矛盾，为当下的生活提供一份温和的观察参考。</p>
-                <div class="status-notice">
-                    <p>普通用户体验正在逐步完善。你可以先进入专业排盘模式体验现有功能。</p>
+            <!-- Section 2: 首屏Hero -->
+            <section class="consumer-hero">
+                <div class="hero-eyebrow">东方传统文化 · 人生结构观察</div>
+                <h2 class="hero-title">看见自己的结构，理解当下的选择</h2>
+                <p class="hero-desc">基于出生时间所对应的东方传统文化模型，为你整理性格模式、优势倾向、内在矛盾与工作方式，生成一份值得慢慢阅读的人生结构说明书。</p>
+                <div class="hero-actions">
+                    <button class="btn-primary start-generation-btn">开始生成我的说明书</button>
+                    <a href="#report-preview" class="btn-secondary">查看报告包含什么</a>
+                </div>
+                <div class="hero-tips">
+                    <span>使用昵称即可</span>
+                    <span class="dot-separator">•</span>
+                    <span>约3分钟完成</span>
+                    <span class="dot-separator">•</span>
+                    <span>内容仅供文化体验与自我观察参考</span>
+                </div>
+            </section>
+
+            <!-- Section 3: 用户为什么会使用 -->
+            <section class="consumer-scenarios">
+                <h3 class="section-title">你可能正在经历这些时刻</h3>
+                <div class="scenario-cards">
+                    <button class="scenario-card" data-scenario="self">
+                        <h4>想更了解自己</h4>
+                        <p>很多反复出现的选择和情绪，并不完全是能力问题，也可能来自我们习惯性的思考与行动方式。</p>
+                    </button>
+                    <button class="scenario-card" data-scenario="career">
+                        <h4>工作进入调整期</h4>
+                        <p>当旧的方法开始失效，先看清自己的优势模式和消耗来源，再决定下一步往哪里走。</p>
+                    </button>
+                    <button class="scenario-card" data-scenario="lost">
+                        <h4>最近有些迷茫</h4>
+                        <p>有时我们需要的不是一个替我们做决定的答案，而是一份帮助自己重新梳理现状的观察框架。</p>
+                    </button>
+                    <button class="scenario-card" data-scenario="relationship">
+                        <h4>想理解关系中的自己</h4>
+                        <p>比判断一段关系的吉凶更重要的，是看见自己在亲密、边界和冲突中的惯常模式。</p>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section 4: 报告内容预览 -->
+            <section id="report-preview" class="consumer-preview">
+                <h3 class="section-title">你将获得一份怎样的报告</h3>
+                <p class="section-subtitle">不是堆砌专业术语，而是把复杂结构整理成普通人能够阅读和理解的内容。</p>
+                <div class="preview-grid">
+                    <div class="preview-card">
+                        <span class="preview-num">01</span>
+                        <h4>核心性格模式</h4>
+                        <p>报告计划包含基础的性格特质分析。</p>
+                    </div>
+                    <div class="preview-card">
+                        <span class="preview-num">02</span>
+                        <h4>优势与潜在能力</h4>
+                        <p>报告将围绕你的能量长板进行观察。</p>
+                    </div>
+                    <div class="preview-card">
+                        <span class="preview-num">03</span>
+                        <h4>容易反复出现的内在矛盾</h4>
+                        <p>我们希望帮助你观察容易内耗的点。</p>
+                    </div>
+                    <div class="preview-card">
+                        <span class="preview-num">04</span>
+                        <h4>压力下的行为倾向</h4>
+                        <p>报告计划包含压力应对模式的探讨。</p>
+                    </div>
+                    <div class="preview-card">
+                        <span class="preview-num">05</span>
+                        <h4>事业与工作方式</h4>
+                        <p>报告将围绕适合的职业环境提供建议。</p>
+                    </div>
+                    <div class="preview-card">
+                        <span class="preview-num">06</span>
+                        <h4>温和的行动提醒</h4>
+                        <p>我们希望帮助你观察并提供可行的调节参考。</p>
+                    </div>
+                </div>
+                <div class="preview-disclaimer">
+                    报告内容将根据当前系统能够稳定识别的结构生成。数据不足时，系统会减少输出，而不是补写结论。
+                </div>
+            </section>
+
+            <!-- Section 5: 生成流程 -->
+            <section id="generation-process" class="consumer-process">
+                <h3 class="section-title">一份说明书如何生成</h3>
+                <div class="process-steps">
+                    <div class="process-step">
+                        <div class="step-num">01</div>
+                        <h4>选择关注方向</h4>
+                        <p>告诉系统你最近更想了解自己、工作、当前状态还是关系中的行为模式。</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">02</div>
+                        <h4>填写出生资料</h4>
+                        <p>使用昵称并填写必要的出生信息。专业参数将在后台处理，不要求普通用户理解。</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">03</div>
+                        <h4>阅读结构报告</h4>
+                        <p>系统基于已有计算能力生成结构化内容，并将专业信息转化成更容易阅读的表达。</p>
+                    </div>
+                </div>
+                <div class="process-disclaimer">
+                    系统会使用明确的计算结果和规则生成内容，不应凭空补充底层数据中不存在的信息。
+                </div>
+            </section>
+
+            <!-- Section 6: 产品原则和使用边界 -->
+            <section id="usage-boundary" class="consumer-boundary">
+                <h3 class="section-title">我们如何理解这份报告</h3>
+                <div class="boundary-grid">
+                    <div class="boundary-box boundary-do">
+                        <h4>我们会做</h4>
+                        <ul>
+                            <li>使用传统文化模型进行结构化观察</li>
+                            <li>尽量说明结论所依据的计算信息</li>
+                            <li>数据不足时减少输出</li>
+                            <li>使用温和、不绝对的表达</li>
+                            <li>提供普遍安全的行动参考</li>
+                        </ul>
+                    </div>
+                    <div class="boundary-box boundary-dont">
+                        <h4>我们不会做</h4>
+                        <ul>
+                            <li>不预测疾病、死亡或灾祸</li>
+                            <li>不提供具体投资买卖建议</li>
+                            <li>不替用户决定辞职、结婚或分手</li>
+                            <li>不使用恐惧内容诱导付费</li>
+                            <li>不承诺结果必然发生</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="boundary-disclaimer">
+                    本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、心理、投资、法律或其他重大人生决策依据。
+                </div>
+            </section>
+
+            <!-- Section 7: 页尾行动区域与Footer -->
+            <section class="consumer-cta">
+                <h3 class="cta-title">准备好从另一个角度认识自己了吗？</h3>
+                <p class="cta-desc">下一步，我们会用更简单的方式收集必要资料，并生成第一版人生结构说明书。</p>
+                <button class="btn-primary start-generation-btn">开始生成我的说明书</button>
+            </section>
+        </main>
+
+        <footer class="consumer-footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="brand-zh">观澜 Lan.Destiny</span><br>
+                    <span class="brand-sub">人生结构说明书</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#usage-boundary">使用边界</a>
+                    <button id="btn-enter-pro-footer" class="btn-text" aria-controls="professional-mode-view" aria-expanded="false">专业模式</button>
                 </div>
             </div>
-        </main>
-        <footer class="consumer-footer">
-            <p>本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、投资、法律或重大人生决策依据。</p>
+            <div class="footer-bottom">
+                当前版本：V0 本地体验原型
+            </div>
         </footer>
+
+        <!-- Custom Notice Component -->
+        <div id="consumer-notice" class="consumer-notice hidden" role="status">
+            <span>资料填写功能将在下一步骤接入。</span>
+            <button type="button" id="btn-close-notice">关闭</button>
+        </div>
     </div>
 
     <!-- 专业排盘模式 -->
