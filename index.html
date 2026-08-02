@@ -73,6 +73,41 @@
             <button class="modal-close-btn" onclick="document.getElementById('local-warning-modal').classList.add('hidden')">忽略并继续预览界面</button>
         </div>
     </div>
+
+    <!-- Floating Help Button -->
+    <button id="btn-help" class="help-btn" aria-label="词汇百科">❓ 白话词典</button>
+
+    <!-- Help Drawer -->
+    <div id="help-drawer" class="help-drawer hidden">
+        <div class="drawer-header">
+            <h2>🔮 观澜命理白话词典</h2>
+            <button id="btn-close-drawer" class="close-drawer-btn">×</button>
+        </div>
+        <div class="drawer-content">
+            <div class="glossary-section">
+                <h3>🟢 八字命盘入门</h3>
+                <p><strong>四柱八字：</strong>根据出生年月日时换算出的四个干支组合，共八个字，代表出生时的能量磁场。</p>
+                <p><strong>五行（金木水火土）：</strong>代表五种能量属性。五行力量面板显示哪种能量偏多或偏少，通常“强则克泄，弱则生扶”。</p>
+                <p><strong>大运流年：</strong>大运代表每十年的生活大方向，流年代表某一年具体运势。合起来看就像运势的“天气预报”。</p>
+            </div>
+            <div class="glossary-section">
+                <h3>🟣 紫微斗数入门</h3>
+                <p><strong>十二宫位：</strong>将人生划分为命宫、夫妻宫、官禄宫等12个维度。不同星曜落入对应宫位，揭示了不同生活维度的特征。</p>
+                <p><strong>化禄/权/科/忌：</strong>是运势的核心变化开关。其中“化忌”一般代表着阻力、压力或需要多加留心的领域。</p>
+            </div>
+            <div class="glossary-section">
+                <h3>🟡 易数占卜（梅花/六爻）</h3>
+                <p><strong>本卦/互卦/变卦：</strong>本卦代表现状起因；互卦代表中间演变与隐患；变卦代表最终走向和结局。</p>
+                <p><strong>体卦与用卦：</strong>“体”代表你自己，“用”代表所求的事或人。用生体为吉，用克体为凶。</p>
+                <p><strong>世爻与应爻：</strong>世爻代表你自己或己方，应爻代表对方、所测事物或外部环境。</p>
+            </div>
+            <div class="glossary-section">
+                <h3>🔵 奇门遁甲入门</h3>
+                <p><strong>九宫八门：</strong>奇门盘为3x3宫格。其中“八门”代表人的行动与环境影响（如开门代表吉、死门代表阻碍），“九星”代表天时大势。</p>
+            </div>
+        </div>
+    </div>
+
     <script src="main.js"></script>
 </body>
 </html>
