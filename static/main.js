@@ -381,3 +381,17 @@ exportBtn.addEventListener('click', async () => {
         alert('导出请求失败: ' + err.toString());
     }
 });
+
+// Help Drawer toggle
+const helpBtn = document.getElementById('btn-help');
+const helpDrawer = document.getElementById('help-drawer');
+const closeDrawerBtn = document.getElementById('btn-close-drawer');
+
+helpBtn.addEventListener('click', () => {
+    helpDrawer.classList.toggle('hidden');
+});
+
+closeDrawerBtn.addEventListener('click', () => {
+    helpDrawer.classList.add('hidden');
+});
+
