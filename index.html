@@ -11,12 +11,37 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
+    <!-- 普通用户模式 -->
+    <div id="consumer-mode-view">
+        <header class="consumer-header">
+            <div class="brand">
+                <h1>观澜 <span>Lan.Destiny</span></h1>
+            </div>
+            <button id="btn-enter-pro" class="enter-pro-btn" aria-controls="professional-mode-view" aria-expanded="false">进入专业排盘模式</button>
+        </header>
+        <main class="consumer-main">
+            <div class="hero-section">
+                <h2 class="hero-title">人生结构说明书</h2>
+                <h3 class="hero-subtitle">从东方传统文化视角，重新认识自己</h3>
+                <p class="hero-desc">理解你的性格模式、优势倾向与内在矛盾，为当下的生活提供一份温和的观察参考。</p>
+                <div class="status-notice">
+                    <p>普通用户体验正在逐步完善。你可以先进入专业排盘模式体验现有功能。</p>
+                </div>
+            </div>
+        </main>
+        <footer class="consumer-footer">
+            <p>本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、投资、法律或重大人生决策依据。</p>
+        </footer>
+    </div>
+
+    <!-- 专业排盘模式 -->
+    <div class="app-container hidden" id="professional-mode-view" aria-hidden="true">
         <!-- Left Side: Config Panel -->
         <aside class="sidebar">
             <header class="branding">
                 <h1><i>Lan</i> <span>Destiny</span></h1>
                 <p class="subtitle">观澜命理 · 命运技术分析</p>
+                <button id="btn-back-consumer" class="back-consumer-btn" aria-controls="consumer-mode-view" aria-expanded="false">← 返回普通模式</button>
             </header>
             <nav class="module-tabs">
                 <button class="tab-btn active" id="tab-bazi" data-module="bazi">八字命盘</button>

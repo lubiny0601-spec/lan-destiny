@@ -652,3 +652,156 @@ body {
     color: var(--accent-gold);
 }
 
+/* ========================================================
+   Consumer Mode Styles (V0)
+   ======================================================== */
+#consumer-mode-view {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(252, 200, 78, 0.05), transparent 60%);
+    color: var(--text-main);
+    overflow-y: auto;
+}
+
+#consumer-mode-view.hidden {
+    display: none !important;
+}
+
+#consumer-mode-view .consumer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#consumer-mode-view .brand h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent-gold);
+    margin: 0;
+}
+
+#consumer-mode-view .brand h1 span {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+#consumer-mode-view .enter-pro-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+#consumer-mode-view .enter-pro-btn:hover,
+#consumer-mode-view .enter-pro-btn:focus {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background-color: rgba(252, 200, 78, 0.05);
+    outline: none;
+}
+
+#consumer-mode-view .consumer-main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+#consumer-mode-view .hero-section {
+    max-width: 600px;
+    text-align: center;
+}
+
+#consumer-mode-view .hero-title {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #B0B0B0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#consumer-mode-view .hero-subtitle {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--accent-gold);
+    margin-bottom: 24px;
+    font-family: 'Lora', serif;
+}
+
+#consumer-mode-view .hero-desc {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+}
+
+#consumer-mode-view .status-notice {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#consumer-mode-view .consumer-footer {
+    padding: 24px;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#consumer-mode-view .consumer-footer p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Professional Mode Additions */
+.back-consumer-btn {
+    background: transparent;
+    border: 1px solid rgba(252, 200, 78, 0.3);
+    color: var(--accent-gold);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 12px;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.back-consumer-btn:hover,
+.back-consumer-btn:focus {
+    background: rgba(252, 200, 78, 0.1);
+    outline: none;
+}
+
+/* Media Queries for Consumer Mode */
+@media (max-width: 768px) {
+    #consumer-mode-view .hero-title {
+        font-size: 32px;
+    }
+    #consumer-mode-view .consumer-header {
+        padding: 16px 20px;
+    }
+}
