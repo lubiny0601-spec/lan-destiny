@@ -707,8 +707,48 @@ function showNotice() {
 
 // Removed old startBtns listener
 
+// Consumer Form Shell State
+const consumerFormShellState = {
+    step: 1,
+    scenario: null
+};
+
 // Consumer Form Shell Logic
 let currentFormTrigger = null;
+
+function renderConsumerFormShellState() {
+    const btnNext = document.getElementById('btn-next-form-shell');
+    if (btnNext) {
+        btnNext.disabled = !consumerFormShellState.scenario;
+    }
+    
+    const step1View = document.querySelector('#consumer-form-shell .scenario-grid');
+    const headerView = document.querySelector('#consumer-form-shell .form-shell-header');
+    const completedState = document.getElementById('step-completed-state');
+    const footerNext = document.querySelector('#consumer-form-shell .next-wrapper');
+    
+    if (consumerFormShellState.step === 1) {
+        if (step1View) step1View.classList.remove('hidden');
+        if (headerView) headerView.classList.remove('hidden');
+        if (completedState) completedState.classList.add('hidden');
+        if (footerNext) footerNext.classList.remove('hidden');
+    } else if (consumerFormShellState.step === 2) { // Just completed first step visually
+        if (step1View) step1View.classList.add('hidden');
+        if (headerView) headerView.classList.add('hidden');
+        if (completedState) {
+            completedState.classList.remove('hidden');
+            const scenarioName = document.getElementById('completed-scenario-name');
+            if (scenarioName) {
+                const checkedRadio = document.querySelector('input[name="consumer_scenario"]:checked');
+                if (checkedRadio) {
+                    const label = checkedRadio.nextElementSibling.querySelector('h3').textContent;
+                    scenarioName.textContent = label;
+                }
+            }
+        }
+        if (footerNext) footerNext.classList.add('hidden');
+    }
+}
 
 function openConsumerFormShell(triggerBtn) {
     const shell = document.getElementById('consumer-form-shell');
@@ -771,22 +811,35 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Next button dummy logic
+// Form logic
+const scenarioRadios = document.querySelectorAll('input[name="consumer_scenario"]');
+scenarioRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            consumerFormShellState.scenario = e.target.value;
+            renderConsumerFormShellState();
+        }
+    });
+});
+
 const btnNextFormShell = document.getElementById('btn-next-form-shell');
 if (btnNextFormShell) {
     btnNextFormShell.addEventListener('click', () => {
-        let notice = document.getElementById('form-shell-next-notice');
-        if (!notice) {
-            notice = document.createElement('div');
-            notice.id = 'form-shell-next-notice';
-            notice.style.color = '#C7A768';
-            notice.style.marginTop = '16px';
-            notice.style.fontSize = '14px';
-            btnNextFormShell.parentNode.appendChild(notice);
+        if (consumerFormShellState.scenario) {
+            consumerFormShellState.step = 2;
+            renderConsumerFormShellState();
         }
-        notice.textContent = '下一任务将接入第一步资料选择。';
     });
 }
+
+const btnRevertStep = document.getElementById('btn-revert-step');
+if (btnRevertStep) {
+    btnRevertStep.addEventListener('click', () => {
+        consumerFormShellState.step = 1;
+        renderConsumerFormShellState();
+    });
+}
+
 
 
 if (btnCloseNotice) {
