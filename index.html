@@ -34,7 +34,7 @@
                 <h2 class="hero-title">看见自己的结构，理解当下的选择</h2>
                 <p class="hero-desc">基于出生时间所对应的东方传统文化模型，为你整理性格模式、优势倾向、内在矛盾与工作方式，生成一份值得慢慢阅读的人生结构说明书。</p>
                 <div class="hero-actions">
-                    <button class="btn-primary start-generation-btn">开始生成我的说明书</button>
+                    <button class="btn-primary start-generation-btn" data-action="open-consumer-form">开始生成我的说明书</button>
                     <a href="#report-preview" class="btn-secondary">查看报告包含什么</a>
                 </div>
                 <div class="hero-tips">
@@ -169,7 +169,7 @@
             <section class="consumer-cta">
                 <h3 class="cta-title">准备好从另一个角度认识自己了吗？</h3>
                 <p class="cta-desc">下一步，我们会用更简单的方式收集必要资料，并生成第一版人生结构说明书。</p>
-                <button class="btn-primary start-generation-btn">开始生成我的说明书</button>
+                <button class="btn-primary start-generation-btn" data-action="open-consumer-form">开始生成我的说明书</button>
             </section>
         </main>
 
@@ -193,6 +193,35 @@
         <div id="consumer-notice" class="consumer-notice hidden" role="status">
             <span>资料填写功能将在下一步骤接入。</span>
             <button type="button" id="btn-close-notice">关闭</button>
+        </div>
+
+        <!-- Consumer Form Shell -->
+        <div id="consumer-form-shell" class="hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="form-shell-title">
+            <div class="form-shell-overlay" data-action="close-consumer-form"></div>
+            <div class="form-shell-container">
+                <div class="form-shell-header">
+                    <div class="form-shell-brand">观澜 Lan.Destiny</div>
+                    <h2 id="form-shell-title">开始生成你的人生结构说明书</h2>
+                    <button id="btn-close-form-shell" class="close-btn" data-action="close-consumer-form" aria-label="关闭">&times;</button>
+                </div>
+                <div class="form-shell-body">
+                    <p>填写将在接下来的步骤中逐步完成。</p>
+                    <p>我们会依次了解：</p>
+                    <ol class="form-shell-list">
+                        <li>你目前最关注的方向</li>
+                        <li>如何称呼你</li>
+                        <li>必要的出生资料</li>
+                        <li>资料准确程度</li>
+                    </ol>
+                    <p class="form-shell-notice">当前版本通过本机服务完成计算，暂未建立用户账号和在线报告库。</p>
+                </div>
+                <div class="form-shell-footer">
+                    <button class="btn-secondary" data-action="close-consumer-form">取消</button>
+                    <div class="next-wrapper">
+                        <button id="btn-next-form-shell" class="btn-primary">下一步</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
