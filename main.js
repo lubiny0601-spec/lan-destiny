@@ -715,6 +715,7 @@ const consumerFormShellState = {
 
 // Consumer Form Shell Logic
 let currentFormTrigger = null;
+let previousBodyOverflow = '';
 
 function renderConsumerFormShellState() {
     const btnNext = document.getElementById('btn-next-form-shell');
@@ -771,6 +772,7 @@ function openConsumerFormShell(triggerBtn) {
     currentFormTrigger = triggerBtn;
     
     // Disable background scroll/interaction
+    previousBodyOverflow = document.body.style.overflow || '';
     document.body.style.overflow = 'hidden';
 }
 
@@ -781,7 +783,7 @@ function closeConsumerFormShell() {
     shell.classList.add('hidden');
     shell.setAttribute('aria-hidden', 'true');
     
-    document.body.style.overflow = '';
+    document.body.style.overflow = previousBodyOverflow;
     
     if (currentFormTrigger) {
         currentFormTrigger.focus();
