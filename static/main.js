@@ -610,6 +610,9 @@ function switchViewMode(mode) {
     if (!consumerView || !professionalView) return;
 
     if (mode === VIEW_MODES.PROFESSIONAL) {
+        if (typeof closeConsumerFormShell === 'function') {
+            closeConsumerFormShell();
+        }
         consumerView.classList.add('hidden');
         consumerView.setAttribute('aria-hidden', 'true');
         
@@ -702,12 +705,89 @@ function showNotice() {
     }, 5000);
 }
 
-startBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        showNotice();
-    });
+// Removed old startBtns listener
+
+// Consumer Form Shell Logic
+let currentFormTrigger = null;
+
+function openConsumerFormShell(triggerBtn) {
+    const shell = document.getElementById('consumer-form-shell');
+    if (!shell) return;
+    
+    // Ensure help drawer is closed (just in case)
+    if (typeof closeProfessionalHelpDrawer === 'function') {
+        closeProfessionalHelpDrawer();
+    }
+    
+    shell.classList.remove('hidden');
+    shell.setAttribute('aria-hidden', 'false');
+    
+    const title = document.getElementById('form-shell-title');
+    if (title) {
+        title.setAttribute('tabindex', '-1');
+        title.focus();
+    }
+    
+    currentFormTrigger = triggerBtn;
+    
+    // Disable background scroll/interaction
+    document.body.style.overflow = 'hidden';
+}
+
+function closeConsumerFormShell() {
+    const shell = document.getElementById('consumer-form-shell');
+    if (!shell) return;
+    
+    shell.classList.add('hidden');
+    shell.setAttribute('aria-hidden', 'true');
+    
+    document.body.style.overflow = '';
+    
+    if (currentFormTrigger) {
+        currentFormTrigger.focus();
+        currentFormTrigger = null;
+    }
+}
+
+// Global click delegate for open/close form shell
+document.addEventListener('click', (e) => {
+    const openBtn = e.target.closest('[data-action="open-consumer-form"]');
+    if (openBtn) {
+        openConsumerFormShell(openBtn);
+        return;
+    }
+    
+    const closeBtn = e.target.closest('[data-action="close-consumer-form"]');
+    if (closeBtn) {
+        closeConsumerFormShell();
+        return;
+    }
 });
+
+// Global escape key handler
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeConsumerFormShell();
+    }
+});
+
+// Next button dummy logic
+const btnNextFormShell = document.getElementById('btn-next-form-shell');
+if (btnNextFormShell) {
+    btnNextFormShell.addEventListener('click', () => {
+        let notice = document.getElementById('form-shell-next-notice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'form-shell-next-notice';
+            notice.style.color = '#C7A768';
+            notice.style.marginTop = '16px';
+            notice.style.fontSize = '14px';
+            btnNextFormShell.parentNode.appendChild(notice);
+        }
+        notice.textContent = '下一任务将接入第一步资料选择。';
+    });
+}
+
 
 if (btnCloseNotice) {
     btnCloseNotice.addEventListener('click', () => {
