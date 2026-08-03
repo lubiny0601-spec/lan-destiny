@@ -1274,7 +1274,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 8px;
     width: 100%;
-    max-width: 640px;
+    max-width: 720px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -1291,15 +1291,45 @@ body {
 #consumer-form-shell .form-shell-brand {
     font-size: 14px;
     color: #C7A768;
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     letter-spacing: 0.1em;
 }
 
+#consumer-form-shell .form-shell-step-indicator {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #9B9891;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#consumer-form-shell .form-shell-progress {
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+    margin-bottom: 32px;
+    overflow: hidden;
+}
+
+#consumer-form-shell .form-shell-progress .progress-bar {
+    height: 100%;
+    background-color: #C7A768;
+}
+
 #consumer-form-shell #form-shell-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 600;
-    margin: 0;
+    margin: 0 0 12px 0;
     color: #F0EEE9;
+}
+
+#consumer-form-shell .form-shell-desc {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #9B9891;
+    margin: 0;
 }
 
 #consumer-form-shell .close-btn {
@@ -1322,32 +1352,116 @@ body {
 #consumer-form-shell .form-shell-body {
     padding: 32px;
     overflow-y: auto;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #9B9891;
 }
 
-#consumer-form-shell .form-shell-body p {
-    margin-top: 0;
+#consumer-form-shell .scenario-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+#consumer-form-shell .scenario-card {
+    display: block;
+    cursor: pointer;
+}
+
+#consumer-form-shell .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#consumer-form-shell .scenario-card-inner {
+    background-color: #121110;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 24px;
+    height: 100%;
+    position: relative;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+#consumer-form-shell .scenario-card:hover .scenario-card-inner {
+    background-color: rgba(199, 167, 104, 0.03);
+    border-color: rgba(199, 167, 104, 0.2);
+}
+
+#consumer-form-shell input:checked + .scenario-card-inner {
+    background-color: rgba(199, 167, 104, 0.05);
+    border-color: rgba(199, 167, 104, 0.5);
+}
+
+#consumer-form-shell input:focus-visible + .scenario-card-inner {
+    outline: 2px solid #C7A768;
+    outline-offset: 2px;
+}
+
+#consumer-form-shell .scenario-card-inner h3 {
+    font-size: 16px;
+    color: #F0EEE9;
+    margin: 0 0 8px 0;
+}
+
+#consumer-form-shell .scenario-card-inner p {
+    font-size: 14px;
+    color: #9B9891;
+    margin: 0;
+    line-height: 1.6;
+}
+
+#consumer-form-shell .scenario-check {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+#consumer-form-shell input:checked + .scenario-card-inner .scenario-check {
+    border-color: #C7A768;
+    background-color: #C7A768;
+    box-shadow: inset 0 0 0 3px #121110;
+}
+
+#step-completed-state {
+    text-align: center;
+    padding: 48px 0;
+}
+
+#step-completed-state.hidden {
+    display: none;
+}
+
+#step-completed-state .completed-title {
+    font-size: 24px;
+    color: #F0EEE9;
     margin-bottom: 16px;
 }
 
-#consumer-form-shell .form-shell-list {
-    margin-bottom: 32px;
-    padding-left: 24px;
-}
-
-#consumer-form-shell .form-shell-list li {
-    margin-bottom: 8px;
-    color: #F0EEE9;
-}
-
-#consumer-form-shell .form-shell-notice {
-    font-size: 13px;
+#step-completed-state .completed-desc {
+    font-size: 16px;
     color: #9B9891;
-    border-top: 1px dashed rgba(255, 255, 255, 0.1);
-    padding-top: 16px;
-    margin-bottom: 0;
+    margin-bottom: 32px;
+}
+
+#step-completed-state .completed-desc strong {
+    color: #C7A768;
+    font-weight: 600;
+}
+
+#step-completed-state .completed-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
 }
 
 #consumer-form-shell .form-shell-footer {
@@ -1363,34 +1477,48 @@ body {
 
 #consumer-form-shell .btn-secondary {
     background: transparent;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #9B9891;
     cursor: pointer;
     font-size: 14px;
-    padding: 8px 0;
+    padding: 10px 20px;
+    border-radius: 6px;
+}
+
+#consumer-form-shell .btn-cancel {
+    border: none;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 #consumer-form-shell .btn-secondary:hover {
     color: #F0EEE9;
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
-#consumer-form-shell .next-wrapper {
-    position: relative;
+#consumer-form-shell .btn-cancel:hover {
+    border-color: transparent;
 }
 
 #consumer-form-shell .btn-primary {
     background-color: #C7A768;
     color: #121110;
     border: none;
-    padding: 12px 24px;
+    padding: 12px 32px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
+    transition: opacity 0.2s;
 }
 
-#consumer-form-shell .btn-primary:hover {
+#consumer-form-shell .btn-primary:hover:not(:disabled) {
     background-color: #e3c489;
+}
+
+#consumer-form-shell .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -1403,5 +1531,9 @@ body {
     
     #consumer-form-shell .form-shell-footer {
         border-radius: 0;
+    }
+    
+    #consumer-form-shell .scenario-grid {
+        grid-template-columns: 1fr;
     }
 }

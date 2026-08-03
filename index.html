@@ -199,26 +199,70 @@
         <div id="consumer-form-shell" class="hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="form-shell-title">
             <div class="form-shell-overlay" data-action="close-consumer-form"></div>
             <div class="form-shell-container">
-                <div class="form-shell-header">
-                    <div class="form-shell-brand">观澜 Lan.Destiny</div>
-                    <h2 id="form-shell-title">开始生成你的人生结构说明书</h2>
-                    <button id="btn-close-form-shell" class="close-btn" data-action="close-consumer-form" aria-label="关闭">&times;</button>
-                </div>
-                <div class="form-shell-body">
-                    <p>填写将在接下来的步骤中逐步完成。</p>
-                    <p>我们会依次了解：</p>
-                    <ol class="form-shell-list">
-                        <li>你目前最关注的方向</li>
-                        <li>如何称呼你</li>
-                        <li>必要的出生资料</li>
-                        <li>资料准确程度</li>
-                    </ol>
-                    <p class="form-shell-notice">当前版本通过本机服务完成计算，暂未建立用户账号和在线报告库。</p>
-                </div>
-                <div class="form-shell-footer">
-                    <button class="btn-secondary" data-action="close-consumer-form">取消</button>
-                    <div class="next-wrapper">
-                        <button id="btn-next-form-shell" class="btn-primary">下一步</button>
+                <div id="form-shell-step1">
+                    <div class="form-shell-header">
+                        <div class="form-shell-brand">观澜 Lan.Destiny</div>
+                        <div class="form-shell-step-indicator">
+                            <span class="step-label">Step 01</span>
+                            <span class="step-count">1 / 4</span>
+                        </div>
+                        <div class="form-shell-progress">
+                            <div class="progress-bar" style="width: 25%;"></div>
+                        </div>
+                        <h2 id="form-shell-title">你此刻最想了解什么？</h2>
+                        <p class="form-shell-desc">选择一个最接近你当前状态的方向。它只会影响报告的内容顺序，不会改变基础计算结果。</p>
+                        <button id="btn-close-form-shell" class="close-btn" data-action="close-consumer-form" aria-label="关闭">&times;</button>
+                    </div>
+                    <div class="form-shell-body">
+                        <div class="scenario-grid">
+                            <label class="scenario-card">
+                                <input type="radio" name="consumer_scenario" value="self" class="visually-hidden">
+                                <div class="scenario-card-inner">
+                                    <h3>更了解自己</h3>
+                                    <p>看看自己的性格倾向、优势模式和容易消耗精力的地方。</p>
+                                    <div class="scenario-check"></div>
+                                </div>
+                            </label>
+                            <label class="scenario-card">
+                                <input type="radio" name="consumer_scenario" value="career" class="visually-hidden">
+                                <div class="scenario-card-inner">
+                                    <h3>事业与工作方式</h3>
+                                    <p>了解自己的工作节奏、协作方式和面对变化时的倾向。</p>
+                                    <div class="scenario-check"></div>
+                                </div>
+                            </label>
+                            <label class="scenario-card">
+                                <input type="radio" name="consumer_scenario" value="relationship" class="visually-hidden">
+                                <div class="scenario-card-inner">
+                                    <h3>关系中的自己</h3>
+                                    <p>观察自己在亲密关系与人际互动中的表达和需求。</p>
+                                    <div class="scenario-check"></div>
+                                </div>
+                            </label>
+                            <label class="scenario-card">
+                                <input type="radio" name="consumer_scenario" value="confusion" class="visually-hidden">
+                                <div class="scenario-card-inner">
+                                    <h3>最近有些迷茫</h3>
+                                    <p>从自身结构出发，整理当前值得优先关注的方向。</p>
+                                    <div class="scenario-check"></div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div id="step-completed-state" class="hidden">
+                            <h3 class="completed-title">第一步已完成</h3>
+                            <p class="completed-desc">你选择的方向是：<strong id="completed-scenario-name"></strong></p>
+                            <div class="completed-actions">
+                                <button id="btn-revert-step" class="btn-secondary">返回修改</button>
+                                <button class="btn-secondary" data-action="close-consumer-form">关闭</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-shell-footer">
+                        <button class="btn-secondary btn-cancel" data-action="close-consumer-form">取消</button>
+                        <div class="next-wrapper">
+                            <button id="btn-next-form-shell" class="btn-primary" disabled>下一步</button>
+                        </div>
                     </div>
                 </div>
             </div>
