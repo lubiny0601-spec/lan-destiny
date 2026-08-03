@@ -593,6 +593,19 @@ const btnEnterPro = document.getElementById('btn-enter-pro');
 const btnEnterProFooter = document.getElementById('btn-enter-pro-footer');
 const btnBackConsumer = document.getElementById('btn-back-consumer');
 
+function closeProfessionalHelpDrawer() {
+    const helpDrawer = document.getElementById('help-drawer');
+    const helpBtn = document.getElementById('btn-help');
+    
+    if (helpDrawer && !helpDrawer.classList.contains('hidden')) {
+        helpDrawer.classList.add('hidden');
+        helpDrawer.setAttribute('aria-hidden', 'true');
+        if (helpBtn) {
+            helpBtn.setAttribute('aria-expanded', 'false');
+        }
+    }
+}
+
 function switchViewMode(mode) {
     if (!consumerView || !professionalView) return;
 
@@ -609,6 +622,7 @@ function switchViewMode(mode) {
         
         // Show help drawer button in professional mode
         if (helpBtn) helpBtn.classList.remove('hidden');
+        closeProfessionalHelpDrawer();
         
         window.scrollTo(0, 0);
     } else {
@@ -624,6 +638,7 @@ function switchViewMode(mode) {
         
         // Hide help drawer button in consumer mode
         if (helpBtn) helpBtn.classList.add('hidden');
+        closeProfessionalHelpDrawer();
         
         window.scrollTo(0, 0);
     }
