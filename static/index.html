@@ -231,7 +231,7 @@
                     <div class="form-shell-header">
                         <div class="form-shell-brand">观澜 Lan.Destiny</div>
                         <div class="form-shell-step-indicator">
-                            <span class="step-count">01 / 04</span>
+                            <span class="step-count">01 / 02</span>
                         </div>
                     </div>
                     <div class="form-shell-body">
@@ -290,10 +290,110 @@
                     <div class="form-shell-footer">
                         <button class="btn-secondary btn-cancel" data-action="close-consumer-form">取消</button>
                         <div class="next-wrapper">
-                            <button id="btn-next-form-shell" class="btn-primary" disabled>继续</button>
+                            <button id="btn-next-form-shell" class="btn-primary" disabled>下一步</button>
                         </div>
                     </div>
                     <button id="btn-close-form-shell" class="close-btn" data-action="close-consumer-form" aria-label="关闭">&times;</button>
+                </div>
+
+                <div id="form-shell-step2" class="hidden">
+                    <div class="form-shell-header">
+                        <div class="form-shell-brand">观澜 Lan.Destiny</div>
+                        <div class="form-shell-step-indicator">
+                            <span class="step-count">02 / 02</span>
+                        </div>
+                    </div>
+                    <div class="form-shell-body">
+                        <div class="form-body-inner">
+                            <div class="form-left-col">
+                                <h2 id="form-shell-title-step2">填写你的生辰档案</h2>
+                                <p class="form-shell-desc">基础生辰用于转换东方时间模型。您的隐私资料仅用于本次本地计算，不会存储或上传。</p>
+                            </div>
+                            <div class="form-right-col">
+                                <form id="consumer-step2-form" onsubmit="return false;">
+                                    <div class="form-row two-cols">
+                                        <div class="form-group">
+                                            <label for="consumer-nickname">如何称呼你</label>
+                                            <input type="text" id="consumer-nickname" class="form-input" placeholder="例如：阿澜" maxlength="20">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>性别</label>
+                                            <div class="segmented-control" id="gender-segmented">
+                                                <label class="segmented-option">
+                                                    <input type="radio" name="consumer_gender" value="male" checked>
+                                                    <span>男</span>
+                                                </label>
+                                                <label class="segmented-option">
+                                                    <input type="radio" name="consumer_gender" value="female">
+                                                    <span>女</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>出生历法</label>
+                                        <div class="segmented-control" id="calendar-segmented">
+                                            <label class="segmented-option">
+                                                <input type="radio" name="consumer_calendar" value="solar" checked>
+                                                <span>公历（阳历）</span>
+                                            </label>
+                                            <label class="segmented-option">
+                                                <input type="radio" name="consumer_calendar" value="lunar">
+                                                <span>农历（阴历）</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>出生日期</label>
+                                        <div class="form-row three-cols">
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-year" class="form-select"></select>
+                                            </div>
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-month" class="form-select"></select>
+                                            </div>
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-day" class="form-select"></select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row two-cols">
+                                        <div class="form-group">
+                                            <label for="consumer-birth-hour">出生时辰</label>
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-hour" class="form-select"></select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="consumer-time-precision">时间准确度</label>
+                                            <div class="select-wrapper">
+                                                <select id="consumer-time-precision" class="form-select">
+                                                    <option value="exact">知道精准时分</option>
+                                                    <option value="hour" selected>知道大概时辰</option>
+                                                    <option value="unknown">不清楚出生时间</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <div id="step2-completed-state" class="hidden">
+                                    <h3 class="completed-title">生辰信息已校验</h3>
+                                    <p class="completed-desc">参数已存入当前会话。准备为您生成个人说明书。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-shell-footer">
+                        <button id="btn-back-step1" class="btn-secondary">上一步</button>
+                        <div class="next-wrapper">
+                            <button id="btn-submit-consumer-form" class="btn-primary">生成我的结构说明书</button>
+                        </div>
+                    </div>
+                    <button class="close-btn" data-action="close-consumer-form" aria-label="关闭">&times;</button>
                 </div>
             </div>
         </div>

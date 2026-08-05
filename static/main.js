@@ -710,8 +710,83 @@ function showNotice() {
 // Consumer Form Shell State
 const consumerFormShellState = {
     step: 1,
-    scenario: null
+    scenario: null,
+    nickname: '',
+    gender: 'male',
+    calendarType: 'solar',
+    birthYear: 1995,
+    birthMonth: 5,
+    birthDay: 15,
+    birthHour: 12,
+    timePrecision: 'hour'
 };
+
+// Initialize Date Select options
+let dateSelectsPopulated = false;
+function populateBirthDateSelects() {
+    if (dateSelectsPopulated) return;
+    
+    const yearSelect = document.getElementById('consumer-birth-year');
+    const monthSelect = document.getElementById('consumer-birth-month');
+    const daySelect = document.getElementById('consumer-birth-day');
+    const hourSelect = document.getElementById('consumer-birth-hour');
+    
+    if (!yearSelect || !monthSelect || !daySelect || !hourSelect) return;
+    
+    yearSelect.innerHTML = '';
+    for (let y = 2026; y >= 1940; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `${y}年`;
+        if (y === 1995) opt.selected = true;
+        yearSelect.appendChild(opt);
+    }
+    
+    monthSelect.innerHTML = '';
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = `${m}月`;
+        if (m === 5) opt.selected = true;
+        monthSelect.appendChild(opt);
+    }
+    
+    daySelect.innerHTML = '';
+    for (let d = 1; d <= 31; d++) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = `${d}日`;
+        if (d === 15) opt.selected = true;
+        daySelect.appendChild(opt);
+    }
+    
+    hourSelect.innerHTML = '';
+    const shichenList = [
+        { val: 0, label: '00:00 (子时 23-01点)' },
+        { val: 1, label: '01:00 (丑时 01-03点)' },
+        { val: 3, label: '03:00 (寅时 03-05点)' },
+        { val: 5, label: '05:00 (卯时 05-07点)' },
+        { val: 7, label: '07:00 (辰时 07-09点)' },
+        { val: 9, label: '09:00 (巳时 09-11点)' },
+        { val: 11, label: '12:00 (午时 11-13点)' },
+        { val: 13, label: '14:00 (未时 13-15点)' },
+        { val: 15, label: '16:00 (申时 15-17点)' },
+        { val: 17, label: '18:00 (酉时 17-19点)' },
+        { val: 19, label: '20:00 (戌时 19-21点)' },
+        { val: 21, label: '22:00 (亥时 21-23点)' },
+        { val: -1, label: '不清楚具体时辰' }
+    ];
+    
+    shichenList.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.val;
+        opt.textContent = item.label;
+        if (item.val === 11) opt.selected = true;
+        hourSelect.appendChild(opt);
+    });
+    
+    dateSelectsPopulated = true;
+}
 
 // Consumer Form Shell Logic
 let currentFormTrigger = null;
@@ -723,31 +798,18 @@ function renderConsumerFormShellState() {
         btnNext.disabled = !consumerFormShellState.scenario;
     }
     
-    const step1View = document.querySelector('#consumer-form-shell .scenario-grid');
-    const headerView = document.querySelector('#consumer-form-shell .form-shell-header');
-    const completedState = document.getElementById('step-completed-state');
-    const footerNext = document.querySelector('#consumer-form-shell .next-wrapper');
+    const step1View = document.getElementById('form-shell-step1');
+    const step2View = document.getElementById('form-shell-step2');
     
     if (consumerFormShellState.step === 1) {
         if (step1View) step1View.classList.remove('hidden');
-        if (headerView) headerView.classList.remove('hidden');
-        if (completedState) completedState.classList.add('hidden');
-        if (footerNext) footerNext.classList.remove('hidden');
-    } else if (consumerFormShellState.step === 2) { // Just completed first step visually
+        if (step2View) step2View.classList.add('hidden');
+    } else if (consumerFormShellState.step === 2) {
         if (step1View) step1View.classList.add('hidden');
-        if (headerView) headerView.classList.add('hidden');
-        if (completedState) {
-            completedState.classList.remove('hidden');
-            const scenarioName = document.getElementById('completed-scenario-name');
-            if (scenarioName) {
-                const checkedRadio = document.querySelector('input[name="consumer_scenario"]:checked');
-                if (checkedRadio) {
-                    const label = checkedRadio.nextElementSibling.querySelector('h3').textContent;
-                    scenarioName.textContent = label;
-                }
-            }
+        if (step2View) {
+            step2View.classList.remove('hidden');
+            populateBirthDateSelects();
         }
-        if (footerNext) footerNext.classList.add('hidden');
     }
 }
 
@@ -755,7 +817,7 @@ function openConsumerFormShell(triggerBtn) {
     const shell = document.getElementById('consumer-form-shell');
     if (!shell) return;
     
-    // Ensure help drawer is closed (just in case)
+    // Ensure help drawer is closed
     if (typeof closeProfessionalHelpDrawer === 'function') {
         closeProfessionalHelpDrawer();
     }
@@ -842,7 +904,60 @@ if (btnRevertStep) {
     });
 }
 
+const btnBackStep1 = document.getElementById('btn-back-step1');
+if (btnBackStep1) {
+    btnBackStep1.addEventListener('click', () => {
+        consumerFormShellState.step = 1;
+        renderConsumerFormShellState();
+    });
+}
 
+const btnSubmitConsumerForm = document.getElementById('btn-submit-consumer-form');
+if (btnSubmitConsumerForm) {
+    btnSubmitConsumerForm.addEventListener('click', () => {
+        const nicknameInput = document.getElementById('consumer-nickname');
+        const genderRadio = document.querySelector('input[name="consumer_gender"]:checked');
+        const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
+        const yearSelect = document.getElementById('consumer-birth-year');
+        const monthSelect = document.getElementById('consumer-birth-month');
+        const daySelect = document.getElementById('consumer-birth-day');
+        const hourSelect = document.getElementById('consumer-birth-hour');
+        const precisionSelect = document.getElementById('consumer-time-precision');
+        
+        consumerFormShellState.nickname = nicknameInput ? nicknameInput.value.trim() || '阿澜' : '阿澜';
+        consumerFormShellState.gender = genderRadio ? genderRadio.value : 'male';
+        consumerFormShellState.calendarType = calendarRadio ? calendarRadio.value : 'solar';
+        consumerFormShellState.birthYear = yearSelect ? parseInt(yearSelect.value, 10) : 1995;
+        consumerFormShellState.birthMonth = monthSelect ? parseInt(monthSelect.value, 10) : 5;
+        consumerFormShellState.birthDay = daySelect ? parseInt(daySelect.value, 10) : 15;
+        consumerFormShellState.birthHour = hourSelect ? parseInt(hourSelect.value, 10) : 12;
+        consumerFormShellState.timePrecision = precisionSelect ? precisionSelect.value : 'hour';
+        
+        const formStep2 = document.getElementById('consumer-step2-form');
+        const step2Completed = document.getElementById('step2-completed-state');
+        if (formStep2) formStep2.classList.add('hidden');
+        if (step2Completed) {
+            step2Completed.classList.remove('hidden');
+            const desc = step2Completed.querySelector('.completed-desc');
+            if (desc) {
+                desc.textContent = `生辰参数已校验（${consumerFormShellState.nickname} / ${consumerFormShellState.gender === 'male' ? '男' : '女'} / ${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月${consumerFormShellState.birthDay}日）。准备为您生成个人说明书。`;
+            }
+        }
+        
+        btnSubmitConsumerForm.disabled = true;
+        btnSubmitConsumerForm.textContent = '基础排盘已完成';
+        
+        setTimeout(() => {
+            closeConsumerFormShell();
+            showConsumerNotice(`已收集【${consumerFormShellState.nickname}】生辰信息，可准备生成说明书报告。`);
+            // Reset Step 2 form for next open
+            if (formStep2) formStep2.classList.remove('hidden');
+            if (step2Completed) step2Completed.classList.add('hidden');
+            btnSubmitConsumerForm.disabled = false;
+            btnSubmitConsumerForm.textContent = '生成我的结构说明书';
+        }, 1500);
+    });
+}
 
 if (btnCloseNotice) {
     btnCloseNotice.addEventListener('click', () => {
