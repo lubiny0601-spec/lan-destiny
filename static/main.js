@@ -1348,14 +1348,26 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const personalityHTML = `
         ${framingMap[activeScenario] || framingMap.self}
         <div class="highlight-box">
-            <p><strong>天干核心特质：</strong> ${traitInfo.trait}</p>
+            <p><strong>天干核心原型：</strong> ${traitInfo.title}</p>
+            <p style="margin-top: 6px; font-size: 0.9rem;">${traitInfo.trait}</p>
         </div>
-        <p>👉 <strong>核心优势：</strong> ${traitInfo.advantage}</p>
-        <p>👉 <strong>惯性风险：</strong> ${traitInfo.risk}</p>
-        <p>👉 <strong>格局调和：</strong> ${strengthInfo.desc}</p>
+        <div class="trait-split-box">
+            <div class="advantage-col">
+                <div class="col-header">✦ 天生核心长板</div>
+                <div class="col-content">${traitInfo.advantage}</div>
+            </div>
+            <div class="risk-col">
+                <div class="col-header">⚠ 无意识内耗点</div>
+                <div class="col-content">${traitInfo.risk}</div>
+            </div>
+        </div>
+        <p>👉 <strong>格局调和建议：</strong> ${strengthInfo.desc}</p>
     `;
 
-    // 2. Energy Section
+    // 2. Energy Section with Visual Energy Bars
+    const totalScore = Object.values(parsedResult.elementScores).reduce((a, b) => a + b, 0) || 10;
+    const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
+    
     const strongestAdviceMap = {
         '木': '你的木属性能量充盈，创意生发力强；但需防范思虑漫无边际，宜将想法及时具象化落地。',
         '火': '你的火属性能量旺盛，爆发力与感染力极高；但需防范冲动急躁，注意保护心血管与睡眠质量。',
@@ -1372,28 +1384,43 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     };
 
     const energyHTML = `
-        <p>在你的东方时间五行能量分布中：</p>
-        <div class="wuxing-grid">
-            ${Object.keys(parsedResult.elementScores).map(elem => `
-                <div class="wuxing-item">
-                    <div class="wuxing-name">${elem}</div>
-                    <div class="wuxing-score">${parsedResult.elementScores[elem].toFixed(1)}</div>
-                </div>
-            `).join('')}
+        <p>在你的东方时间五行能量分布中，各维度占比与强弱可视化呈现如下：</p>
+        <div class="energy-bar-list">
+            ${Object.keys(parsedResult.elementScores).map(elem => {
+                const score = parsedResult.elementScores[elem];
+                const pct = Math.min(100, Math.max(8, Math.round((score / totalScore) * 100)));
+                return `
+                    <div class="energy-bar-item">
+                        <div class="energy-bar-label"><span>${elem}</span><span>${score.toFixed(1)}</span></div>
+                        <div class="energy-bar-track">
+                            <div class="energy-bar-fill ${elemClasses[elem] || 'fill-mu'}" style="width: ${pct}%;"></div>
+                        </div>
+                        <div class="energy-bar-val">${pct}%</div>
+                    </div>
+                `;
+            }).join('')}
         </div>
         <p>相对最主导的能量为 <strong>${parsedResult.strongestElement}</strong>（${strongestAdviceMap[parsedResult.strongestElement] || ''}），相对需滋养的能量为 <strong>${parsedResult.weakestElement}</strong>。</p>
         <div class="highlight-box">
-            <p><strong>五行滋养建议：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
+            <p><strong>五行滋养指南：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
         </div>
     `;
 
-    // 3. Career Section
+    // 3. Career Section with Dos & Donts Tactical Redlines
     const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
     const careerHTML = `
         <p>根据你的天干 <strong>${dm.stem}${dm.element} (${dm.yinYang}${dm.element})</strong> 与 <strong>${parsedResult.strength}</strong> 格局：</p>
-        <p>👉 <strong>战术定位：</strong> ${careerElemAdvice}</p>
-        <p>👉 <strong>工作节奏：</strong> ${strengthInfo.workStyle}</p>
-        <p>在团队协作中，避免在精力低谷时硬撑承担非核心的无谓摩擦，将 80% 的注意力锁死在最能发挥长板的壁垒上。</p>
+        <div class="dos-donts-container">
+            <div class="dos-box">
+                <strong>✔ 最推荐的战术定位</strong>
+                ${careerElemAdvice}
+            </div>
+            <div class="donts-box">
+                <strong>✖ 最应避开的内耗红线</strong>
+                避免在精力低谷时硬撑承担非核心的无谓摩擦，避免无边界的琐碎消耗，将 80% 的注意力锁死在核心长板壁垒上。
+            </div>
+        </div>
+        <p>👉 <strong>最佳工作节奏：</strong> ${strengthInfo.workStyle}</p>
     `;
 
     // 4. Relationship Section
@@ -1402,34 +1429,112 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         <p>在人际与深度亲密关系中：</p>
         <p>👉 <strong>表达模式：</strong> ${relationYinYangText}</p>
         <p>👉 <strong>安全感与边界：</strong> ${strengthInfo.relationStyle}</p>
-        <p>当感受到情绪透支或边界被侵犯时，第一时间申请独立的心理冷却空间，避免陷入无休止的内耗辩驳。</p>
+        <div class="highlight-box">
+            <p><strong>沟通防爆指南：</strong> 当感受到情绪透支或边界被侵犯时，第一时间申请独立的心理冷却空间，避免陷入无休止的内耗辩驳。</p>
+        </div>
     `;
 
-    // 5. Action Section
+    // 5. Action Section with Priority Action Cards (P1 / P2 / P3)
     const scenarioAdviceMap = {
         self: `
-            <p><strong>基于当下【了解自己】的重点行动建议：</strong></p>
-            <p>1. <strong>建立“精力黑洞”拦截清单：</strong> 记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗。</p>
-            <p>2. <strong>警惕“优势过度使用”的副作用：</strong> 当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键。</p>
-            <p>3. <strong>设立不作决定的纯粹休养窗口：</strong> 在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载。</p>
+            <div class="priority-action-list">
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p1">P1 核心突破</span>
+                    <div class="action-card-body">
+                        <h4>建立“精力黑洞”拦截清单</h4>
+                        <p>记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗，主动减少非必要的精神支出。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p2">P2 惯性防范</span>
+                    <div class="action-card-body">
+                        <h4>警惕“优势过度使用”的副作用</h4>
+                        <p>当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键，给大脑建立理智的决策缓冲。”</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p3">P3 能量补给</span>
+                    <div class="action-card-body">
+                        <h4>设立不作决定的纯粹休养窗口</h4>
+                        <p>在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载，恢复直觉灵敏度。</p>
+                    </div>
+                </div>
+            </div>
         `,
         career: `
-            <p><strong>基于当下【事业方向】的重点行动建议：</strong></p>
-            <p>1. <strong>重新定义你的核心战术长板：</strong> 放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
-            <p>2. <strong>划清团队协作的权责隔离带：</strong> 明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦。</p>
-            <p>3. <strong>采用“小步微实验”代替长期停顿：</strong> 面对变局或职业转型时，一次只验证一个具体假设，用真实反馈打破决策焦虑。</p>
+            <div class="priority-action-list">
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p1">P1 核心突破</span>
+                    <div class="action-card-body">
+                        <h4>重新定义你的核心战术长板</h4>
+                        <p>放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p2">P2 协同防范</span>
+                    <div class="action-card-body">
+                        <h4>划清团队协作的权责隔离带</h4>
+                        <p>明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦与内耗拉扯。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p3">P3 决策验证</span>
+                    <div class="action-card-body">
+                        <h4>采用“小步微实验”代替长期停顿</h4>
+                        <p>面对变局或职业转型时，一次只验证一个具体假设，用真实反馈代替长期的停顿焦虑。</p>
+                    </div>
+                </div>
+            </div>
         `,
         relationship: `
-            <p><strong>基于当下【关系模式】的重点行动建议：</strong></p>
-            <p>1. <strong>替换“期待对方猜到”的隐性期待：</strong> 尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明。</p>
-            <p>2. <strong>设立不可逾越的心理冷却边界：</strong> 当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。</p>
-            <p>3. <strong>区分事实与情绪化联想：</strong> 在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图。</p>
+            <div class="priority-action-list">
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p1">P1 核心突破</span>
+                    <div class="action-card-body">
+                        <h4>替换“期待对方猜到”的隐性期待</h4>
+                        <p>尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明，降低沟通门槛。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p2">P2 边界防护</span>
+                    <div class="action-card-body">
+                        <h4>设立不可逾越的心理冷却边界</h4>
+                        <p>当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间，防止伤害彼此关系。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p3">P3 理性沟通</span>
+                    <div class="action-card-body">
+                        <h4>区分事实与情绪化联想</h4>
+                        <p>在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图或过度防御。</p>
+                    </div>
+                </div>
+            </div>
         `,
         confusion: `
-            <p><strong>基于当下【走出迷茫】的重点行动建议：</strong></p>
-            <p>1. <strong>强制做“选择题减法”：</strong> 列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区。</p>
-            <p>2. <strong>建立“绝对可控”的每日微小秩序：</strong> 把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上。</p>
-            <p>3. <strong>启动两周极简验证计划：</strong> 放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找回掌控感。</p>
+            <div class="priority-action-list">
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p1">P1 核心突破</span>
+                    <div class="action-card-body">
+                        <h4>强制做“选择题减法”</h4>
+                        <p>列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区，减轻心理过载。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p2">P2 秩序重构</span>
+                    <div class="action-card-body">
+                        <h4>建立“绝对可控”的每日微小秩序</h4>
+                        <p>把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上，找回掌控感。</p>
+                    </div>
+                </div>
+                <div class="priority-action-card">
+                    <span class="priority-pill priority-p3">P3 极简验证</span>
+                    <div class="action-card-body">
+                        <h4>启动两周极简验证计划</h4>
+                        <p>放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找到生活与事业的节奏。</p>
+                    </div>
+                </div>
+            </div>
         `
     };
 
