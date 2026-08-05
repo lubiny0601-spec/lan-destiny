@@ -798,6 +798,29 @@ function populateBirthDateSelects() {
 let currentFormTrigger = null;
 let previousBodyOverflow = '';
 
+const scenarioStep2Map = {
+    self: {
+        label: '了解自己',
+        title: '先认识一下你',
+        desc: '填写必要的出生资料，我们会优先整理你的性格倾向、优势模式和精力消耗点。'
+    },
+    career: {
+        label: '事业方向',
+        title: '从你的工作方式开始',
+        desc: '填写必要的出生资料，我们会优先整理你的工作节奏、协作方式与面对变化时的倾向。'
+    },
+    relationship: {
+        label: '关系模式',
+        title: '看看你在关系中的表达方式',
+        desc: '填写必要的出生资料，我们会优先整理你的表达方式、边界感与互动需求。'
+    },
+    confusion: {
+        label: '走出迷茫',
+        title: '先梳理此刻值得关注的方向',
+        desc: '填写必要的出生资料，我们会从性格、工作和关系三个方面，帮助你整理当前的优先方向。'
+    }
+};
+
 function renderConsumerFormShellState() {
     const btnNext = document.getElementById('btn-next-form-shell');
     if (btnNext) {
@@ -810,11 +833,29 @@ function renderConsumerFormShellState() {
     if (consumerFormShellState.step === 1) {
         if (step1View) step1View.classList.remove('hidden');
         if (step2View) step2View.classList.add('hidden');
+        
+        // Ensure selected radio is checked
+        if (consumerFormShellState.scenario) {
+            const selectedRadio = document.querySelector(`input[name="consumer_scenario"][value="${consumerFormShellState.scenario}"]`);
+            if (selectedRadio) selectedRadio.checked = true;
+        }
     } else if (consumerFormShellState.step === 2) {
         if (step1View) step1View.classList.add('hidden');
         if (step2View) {
             step2View.classList.remove('hidden');
             populateBirthDateSelects();
+            
+            // Update Step 02 Scenario specific header & bar
+            const activeScenario = consumerFormShellState.scenario || 'self';
+            const config = scenarioStep2Map[activeScenario] || scenarioStep2Map.self;
+            
+            const labelEl = document.getElementById('selected-scenario-label');
+            const titleEl = document.getElementById('form-shell-title-step2');
+            const descEl = document.getElementById('form-shell-desc-step2');
+            
+            if (labelEl) labelEl.textContent = config.label;
+            if (titleEl) titleEl.textContent = config.title;
+            if (descEl) descEl.textContent = config.desc;
         }
     }
 }
@@ -913,6 +954,14 @@ if (btnRevertStep) {
 const btnBackStep1 = document.getElementById('btn-back-step1');
 if (btnBackStep1) {
     btnBackStep1.addEventListener('click', () => {
+        consumerFormShellState.step = 1;
+        renderConsumerFormShellState();
+    });
+}
+
+const btnChangeScenario = document.getElementById('btn-change-scenario');
+if (btnChangeScenario) {
+    btnChangeScenario.addEventListener('click', () => {
         consumerFormShellState.step = 1;
         renderConsumerFormShellState();
     });
@@ -1064,8 +1113,9 @@ function renderConsumerReport(baziResult, formState) {
     let strongest = sorted[0];
     let weakest = sorted[sorted.length - 1];
     
-    // Update Banner Meta
+    // Update Banner Meta & Subtitle
     const userNameEl = document.getElementById('report-user-name');
+    const userSubtitleEl = document.getElementById('report-user-subtitle');
     const genderEl = document.getElementById('report-meta-gender');
     const birthEl = document.getElementById('report-meta-birth');
     const calendarEl = document.getElementById('report-meta-calendar');
@@ -1082,15 +1132,58 @@ function renderConsumerReport(baziResult, formState) {
         relationship: '关系模式',
         confusion: '走出迷茫'
     };
-    if (scenarioEl) scenarioEl.textContent = `关注方向：${scenarioNames[formState.scenario] || '了解自己'}`;
+    const activeScenario = formState.scenario || 'self';
+    if (scenarioEl) scenarioEl.textContent = `本次关注：${scenarioNames[activeScenario] || '了解自己'}`;
 
-    // Section 01: Personality
+    const scenarioSubtitles = {
+        self: '关于性格、优势与精力模式的个人观察',
+        career: '关于工作节奏、协作方式与行动倾向的个人观察',
+        relationship: '关于表达方式、边界与关系需求的个人观察',
+        confusion: '关于当前状态与优先方向的综合观察'
+    };
+    if (userSubtitleEl) userSubtitleEl.textContent = scenarioSubtitles[activeScenario] || scenarioSubtitles.self;
+
+    // Section DOM Reordering based on scenario
+    const container = document.querySelector('#consumer-report-view .report-container');
+    const cardNodes = {
+        personality: document.getElementById('card-section-personality'),
+        energy: document.getElementById('card-section-energy'),
+        career: document.getElementById('card-section-career'),
+        relationship: document.getElementById('card-section-relationship'),
+        action: document.getElementById('card-section-action'),
+        evidence: document.getElementById('card-section-evidence')
+    };
+    const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
+
+    const sectionOrders = {
+        self: ['personality', 'energy', 'career', 'relationship', 'action', 'evidence'],
+        career: ['career', 'energy', 'personality', 'action', 'relationship', 'evidence'],
+        relationship: ['relationship', 'personality', 'energy', 'action', 'career', 'evidence'],
+        confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
+    };
+
+    if (container && bottomActions) {
+        const targetOrder = sectionOrders[activeScenario] || sectionOrders.self;
+        targetOrder.forEach(key => {
+            if (cardNodes[key]) {
+                container.insertBefore(cardNodes[key], bottomActions);
+            }
+        });
+    }
+
+    // Section 01: Personality / Core Observation Framing
     const personalityEl = document.getElementById('report-section-personality');
     if (personalityEl) {
+        const framingMap = {
+            self: `<p>优先从【核心性格与精力惯性】切入：通过东方时间模型推演，你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。</p>`,
+            career: `<p>结合【工作与行动倾向】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。性格特质直接决定了你的工作节奏与应变偏好。</p>`,
+            relationship: `<p>结合【关系表达与心理边界】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。内在的充盈与空缺深刻影响着你在亲密关系中的互动习惯。</p>`,
+            confusion: `<p>结合【当下优先整理方向】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。理清内在结构有助于减少无效内耗，找回掌控感。</p>`
+        };
         personalityEl.innerHTML = `
-            <p>通过东方时间模型推演，你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。</p>
+            ${framingMap[activeScenario] || framingMap.self}
             <div class="highlight-box">
-                <p><strong>核心特质：</strong> ${getDayMasterDesc(dayMaster, balance)}</p>
+                <p><strong>核心特质描述：</strong> ${getDayMasterDesc(dayMaster, balance)}</p>
             </div>
             <p>在日常思考模式中，你倾向于建立清晰的秩序与安全感，对周围环境的变化有着敏锐的感察能力。面对抉择时，你更习惯先在内心建立完整的评估逻辑，再迈出稳妥的步调。</p>
         `;
@@ -1136,32 +1229,36 @@ function renderConsumerReport(baziResult, formState) {
         `;
     }
     
-    // Section 05: Action Advice (Scenario-based)
+    // Section 05: Action Advice (Scenario-based, 3 distinct points per scenario)
     const adviceEl = document.getElementById('report-section-advice');
     if (adviceEl) {
         const scenarioAdviceMap = {
             self: `
-                <p><strong>基于当下【了解自己】的关注重点：</strong></p>
-                <p>1. <strong>接纳自己的情绪周期：</strong> 不必时刻要求自己处于完美的高能状态，能量偏弱时给大脑留出纯粹的休养窗口。</p>
-                <p>2. <strong>建立微小的能量仪式：</strong> 日常多通过接触自然（如步行、绿植）或物理运动来释放积累的内耗。</p>
+                <p><strong>基于当下【了解自己】的重点行动建议：</strong></p>
+                <p>1. <strong>记录精力高低变化：</strong> 观察自己在一天与一周内的精力高峰与低谷周期，在低能期给大脑留出不作重大决定的休养窗口。</p>
+                <p>2. <strong>区分优势与过度使用优势：</strong> 强项在于理性时防范过度反刍与分析瘫痪；强项在于直觉时防范冲动散漫。</p>
+                <p>3. <strong>识别重复出现的思考与行为模式：</strong> 对近期反复困扰自己的情绪反应先进行客观记录，不急于批评或否认自己。</p>
             `,
             career: `
-                <p><strong>基于当下【事业方向】的关注重点：</strong></p>
-                <p>1. <strong>聚焦优势长板：</strong> 将主要精力放在自己最有把握和成就感的专业核心领域，减少非必要的人际内耗。</p>
-                <p>2. <strong>节奏求稳求精：</strong> 遇到变局时，保持定力，先看清资源与风险后再做重大长远决策。</p>
+                <p><strong>基于当下【事业方向】的重点行动建议：</strong></p>
+                <p>1. <strong>明确当下的核心工作判断标准：</strong> 梳理目前工作中真正带给你成就感与确定收益的要素，优先保障核心长板。</p>
+                <p>2. <strong>识别最适合自己的团队协作定位：</strong> 主动沟通权责边界，在擅长的主导或支撑岗位上发力，减少无谓的人际摩擦。</p>
+                <p>3. <strong>一次只聚焦验证一个具体的职业假设：</strong> 遇到转型或调整选择时，采用小步快跑的方式先做轻量尝试，用行动反馈代替长期的停顿焦虑。</p>
             `,
             relationship: `
-                <p><strong>基于当下【关系模式】的关注重点：</strong></p>
-                <p>1. <strong>清晰表达需求：</strong> 试着把“希望对方猜到”转化为“明确告知对方自己的感受与偏好”。</p>
-                <p>2. <strong>保有独立精神领地：</strong> 在亲密关系中依然留出一块专属于自己的兴趣空间，关系反而更加通透。</p>
+                <p><strong>基于当下【关系模式】的重点行动建议：</strong></p>
+                <p>1. <strong>识别表达和真实需求的差距：</strong> 试着把“希望对方猜到”转化为直接、平和地告知对方自己的感受与偏好。</p>
+                <p>2. <strong>在情绪冲突发生前明确自身心理边界：</strong> 当感受到能量透支或边界被侵犯时，及时申请独处的冷却空间。</p>
+                <p>3. <strong>使用具体事实进行沟通：</strong> 沟通中尽量基于具体发生的行为事实交流，避免凭情绪猜测对方意图或过度防御。</p>
             `,
             confusion: `
-                <p><strong>基于当下【走出迷茫】的关注重点：</strong></p>
-                <p>1. <strong>降低信息过载：</strong> 迷茫往往源于选项过多与比较焦虑，试着先只做一件具体、可控的小事。</p>
-                <p>2. <strong>关注当下节奏：</strong> 允许自己有一个“整理期”，厘清真正的核心需求，一步步恢复自信与秩序。</p>
+                <p><strong>基于当下【走出迷茫】的重点行动建议：</strong></p>
+                <p>1. <strong>列出当前最想理清的三个具体问题：</strong> 迷茫往往源于选项过多与比较焦虑，按影响程度排序，一次只处理一件。</p>
+                <p>2. <strong>区分当下“完全可控”与“不可控”事项：</strong> 将 80% 的注意力收回至自己今天就能动手完成的可控小事上。</p>
+                <p>3. <strong>先选择一个可在两周内验证的小行动：</strong> 制定一个微型实验计划，通过小幅度的行动成果逐步找回节奏与秩序。</p>
             `
         };
-        adviceEl.innerHTML = scenarioAdviceMap[formState.scenario] || scenarioAdviceMap.self;
+        adviceEl.innerHTML = scenarioAdviceMap[activeScenario] || scenarioAdviceMap.self;
     }
     
     // Section 06: Boundary

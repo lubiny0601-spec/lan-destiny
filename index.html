@@ -80,21 +80,25 @@
                             <div class="card-icon icon-water"></div>
                             <h4>了解自己</h4>
                             <p>看见优势、惯性与精力消耗点。</p>
+                            <div class="scenario-expectation">报告优先呈现：性格 · 优势 · 精力</div>
                         </button>
                         <button class="scenario-card" data-scenario="career">
                             <div class="card-icon icon-stairs"></div>
                             <h4>事业方向</h4>
                             <p>理解工作节奏、协作方式与变化倾向。</p>
+                            <div class="scenario-expectation">报告优先呈现：工作 · 协作 · 变化</div>
                         </button>
                         <button class="scenario-card" data-scenario="relationship">
                             <div class="card-icon icon-circles"></div>
                             <h4>关系模式</h4>
                             <p>观察表达方式、边界与内在需求。</p>
+                            <div class="scenario-expectation">报告优先呈现：表达 · 边界 · 需求</div>
                         </button>
                         <button class="scenario-card" data-scenario="confusion">
                             <div class="card-icon icon-stars"></div>
                             <h4>走出迷茫</h4>
                             <p>整理此刻更值得优先关注的方向。</p>
+                            <div class="scenario-expectation">报告优先呈现：现状 · 选择 · 行动</div>
                         </button>
                     </div>
                 </div>
@@ -219,11 +223,12 @@
                 <div class="banner-container">
                     <div class="banner-badge">PERSONAL STRUCTURE REPORT</div>
                     <h1 class="report-user-title"><span id="report-user-name">阿澜</span> 的个人结构说明书</h1>
+                    <p class="report-user-subtitle" id="report-user-subtitle">关于性格、优势与精力模式的个人观察</p>
                     <div class="report-meta-pills">
                         <span class="meta-pill" id="report-meta-gender">性别：男</span>
                         <span class="meta-pill" id="report-meta-birth">生辰：1995年05月15日</span>
                         <span class="meta-pill" id="report-meta-calendar">历法：公历</span>
-                        <span class="meta-pill pill-accent" id="report-meta-scenario">关注方向：了解自己</span>
+                        <span class="meta-pill pill-accent" id="report-meta-scenario">本次关注：了解自己</span>
                     </div>
                 </div>
             </section>
@@ -232,7 +237,7 @@
             <section class="report-body">
                 <div class="report-container">
                     <!-- 01 核心性格与内在结构 -->
-                    <div class="report-card">
+                    <div class="report-card" id="card-section-personality">
                         <div class="card-header">
                             <span class="section-num">01</span>
                             <h3>核心性格与内在结构</h3>
@@ -241,7 +246,7 @@
                     </div>
 
                     <!-- 02 优势与精力模式 -->
-                    <div class="report-card">
+                    <div class="report-card" id="card-section-energy">
                         <div class="card-header">
                             <span class="section-num">02</span>
                             <h3>优势与精力模式</h3>
@@ -250,7 +255,7 @@
                     </div>
 
                     <!-- 03 工作与协作方式 -->
-                    <div class="report-card">
+                    <div class="report-card" id="card-section-career">
                         <div class="card-header">
                             <span class="section-num">03</span>
                             <h3>工作与协作方式</h3>
@@ -259,7 +264,7 @@
                     </div>
 
                     <!-- 04 关系中的表达模式 -->
-                    <div class="report-card">
+                    <div class="report-card" id="card-section-relationship">
                         <div class="card-header">
                             <span class="section-num">04</span>
                             <h3>关系中的表达模式</h3>
@@ -268,7 +273,7 @@
                     </div>
 
                     <!-- 05 当下温和行动提醒 -->
-                    <div class="report-card card-accent-bg">
+                    <div class="report-card card-accent-bg" id="card-section-action">
                         <div class="card-header">
                             <span class="section-num">05</span>
                             <h3>当下温和行动提醒</h3>
@@ -277,7 +282,7 @@
                     </div>
 
                     <!-- 06 计算依据与说明书边界 -->
-                    <div class="report-card card-muted-bg">
+                    <div class="report-card card-muted-bg" id="card-section-evidence">
                         <div class="card-header">
                             <span class="section-num">06</span>
                             <h3>计算依据与说明书边界</h3>
@@ -399,8 +404,12 @@
                     <div class="form-shell-body">
                         <div class="form-body-inner">
                             <div class="form-left-col">
-                                <h2 id="form-shell-title-step2">填写你的生辰档案</h2>
-                                <p class="form-shell-desc">基础生辰用于转换东方时间模型。您的隐私资料仅用于本次本地计算，不会存储或上传。</p>
+                                <div id="selected-scenario-bar" class="selected-scenario-bar">
+                                    <span>已选择：<strong id="selected-scenario-label">了解自己</strong></span>
+                                    <button type="button" id="btn-change-scenario" class="btn-link">更换方向</button>
+                                </div>
+                                <h2 id="form-shell-title-step2">先认识一下你</h2>
+                                <p id="form-shell-desc-step2" class="form-shell-desc">填写必要的出生资料，我们会优先整理你的性格倾向、优势模式和精力消耗点。</p>
                             </div>
                             <div class="form-right-col">
                                 <form id="consumer-step2-form" onsubmit="return false;">
