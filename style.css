@@ -1333,11 +1333,140 @@ body {
     margin: auto;
 }
 
-#consumer-form-shell #form-shell-step1 {
+#consumer-form-shell #form-shell-step1,
+#consumer-form-shell #form-shell-step2 {
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
+}
+
+/* Step 2 Form Styles */
+#consumer-form-shell .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+#consumer-form-shell .form-row.two-cols > .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+#consumer-form-shell .form-row.three-cols {
+    margin-bottom: 0;
+}
+
+#consumer-form-shell .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+#consumer-form-shell .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--consumer-text-sub);
+    margin-bottom: 8px;
+}
+
+#consumer-form-shell .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--consumer-bg);
+    border: 1px solid var(--consumer-border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--consumer-text-main);
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+#consumer-form-shell .form-input:focus,
+#consumer-form-shell .form-select:focus {
+    outline: none;
+    border-color: var(--consumer-primary);
+    box-shadow: 0 0 0 3px var(--consumer-primary-soft);
+}
+
+#consumer-form-shell .segmented-control {
+    display: flex;
+    background: var(--consumer-bg);
+    border: 1px solid var(--consumer-border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 4px;
+}
+
+#consumer-form-shell .segmented-option {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+    cursor: pointer;
+    display: block;
+    position: relative;
+}
+
+#consumer-form-shell .segmented-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#consumer-form-shell .segmented-option span {
+    display: block;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--consumer-text-sub);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+#consumer-form-shell .segmented-option input:checked + span {
+    background: var(--consumer-surface);
+    color: var(--consumer-primary);
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+#consumer-form-shell .select-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+#consumer-form-shell .select-wrapper::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--consumer-text-muted);
+    pointer-events: none;
+    font-size: 12px;
+}
+
+#consumer-form-shell .form-select {
+    width: 100%;
+    padding: 12px 32px 12px 16px;
+    background: var(--consumer-bg);
+    border: 1px solid var(--consumer-border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--consumer-text-main);
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+#consumer-form-shell #form-shell-title-step2 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--consumer-text-main);
 }
 
 #consumer-form-shell .form-shell-header {
