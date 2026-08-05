@@ -914,7 +914,7 @@ if (btnBackStep1) {
 
 const btnSubmitConsumerForm = document.getElementById('btn-submit-consumer-form');
 if (btnSubmitConsumerForm) {
-    btnSubmitConsumerForm.addEventListener('click', () => {
+    btnSubmitConsumerForm.addEventListener('click', async () => {
         const nicknameInput = document.getElementById('consumer-nickname');
         const genderRadio = document.querySelector('input[name="consumer_gender"]:checked');
         const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
@@ -930,32 +930,90 @@ if (btnSubmitConsumerForm) {
         consumerFormShellState.birthYear = yearSelect ? parseInt(yearSelect.value, 10) : 1995;
         consumerFormShellState.birthMonth = monthSelect ? parseInt(monthSelect.value, 10) : 5;
         consumerFormShellState.birthDay = daySelect ? parseInt(daySelect.value, 10) : 15;
-        consumerFormShellState.birthHour = hourSelect ? parseInt(hourSelect.value, 10) : 12;
-        consumerFormShellState.timePrecision = precisionSelect ? precisionSelect.value : 'hour';
         
-        const formStep2 = document.getElementById('consumer-step2-form');
-        const step2Completed = document.getElementById('step2-completed-state');
-        if (formStep2) formStep2.classList.add('hidden');
-        if (step2Completed) {
-            step2Completed.classList.remove('hidden');
-            const desc = step2Completed.querySelector('.completed-desc');
-            if (desc) {
-                desc.textContent = `生辰参数已校验（${consumerFormShellState.nickname} / ${consumerFormShellState.gender === 'male' ? '男' : '女'} / ${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月${consumerFormShellState.birthDay}日）。准备为您生成个人说明书。`;
-            }
+        let rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 12;
+        if (rawHour === -1) {
+            consumerFormShellState.birthHour = 12;
+            consumerFormShellState.timePrecision = 'unknown';
+        } else {
+            consumerFormShellState.birthHour = rawHour;
+            consumerFormShellState.timePrecision = precisionSelect ? precisionSelect.value : 'hour';
         }
-        
+
+        const calcPayload = {
+            module: 'bazi',
+            gender: consumerFormShellState.gender,
+            calendar: consumerFormShellState.calendarType,
+            year: consumerFormShellState.birthYear,
+            month: consumerFormShellState.birthMonth,
+            day: consumerFormShellState.birthDay,
+            hour: consumerFormShellState.birthHour,
+            minute: 0
+        };
+
         btnSubmitConsumerForm.disabled = true;
-        btnSubmitConsumerForm.textContent = '基础排盘已完成';
-        
-        setTimeout(() => {
-            closeConsumerFormShell();
-            showConsumerNotice(`已收集【${consumerFormShellState.nickname}】生辰信息，可准备生成说明书报告。`);
-            // Reset Step 2 form for next open
-            if (formStep2) formStep2.classList.remove('hidden');
-            if (step2Completed) step2Completed.classList.add('hidden');
+        btnSubmitConsumerForm.textContent = '正在精密推演生辰结构...';
+
+        try {
+            const response = await fetch('/api/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(calcPayload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || result.detail || result.error) {
+                const errDetail = result.detail || result.error || '八字推演失败，请核对输入参数。';
+                btnSubmitConsumerForm.disabled = false;
+                btnSubmitConsumerForm.textContent = '重试生成说明书';
+                alert(`计算遇到问题: ${errDetail}`);
+                return;
+            }
+
+            consumerFormShellState.baziResult = {
+                stdout: result.stdout,
+                calculatedAt: new Date().toISOString(),
+                payload: calcPayload
+            };
+            console.log('[ConsumerForm] Bazi calculation successful:', consumerFormShellState.baziResult);
+
+            const formStep2 = document.getElementById('consumer-step2-form');
+            const step2Completed = document.getElementById('step2-completed-state');
+            if (formStep2) formStep2.classList.add('hidden');
+            if (step2Completed) {
+                step2Completed.classList.remove('hidden');
+                const desc = step2Completed.querySelector('.completed-desc');
+                if (desc) {
+                    desc.textContent = `生辰推演成功！已稳定生成【${consumerFormShellState.nickname}】的底层八字盘面数据（${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月${consumerFormShellState.birthDay}日）。`;
+                }
+            }
+
+            btnSubmitConsumerForm.disabled = true;
+            btnSubmitConsumerForm.textContent = '基础排盘推演完成';
+
+            setTimeout(() => {
+                closeConsumerFormShell();
+                showConsumerNotice(`已完成【${consumerFormShellState.nickname}】生辰结构推演，计算结果已暂存。`);
+                if (formStep2) formStep2.classList.remove('hidden');
+                if (step2Completed) step2Completed.classList.add('hidden');
+                btnSubmitConsumerForm.disabled = false;
+                btnSubmitConsumerForm.textContent = '生成我的结构说明书';
+            }, 1500);
+
+        } catch (err) {
+            console.error('[ConsumerForm] API fetch error:', err);
             btnSubmitConsumerForm.disabled = false;
             btnSubmitConsumerForm.textContent = '生成我的结构说明书';
-        }, 1500);
+            const warningModal = document.getElementById('local-warning-modal');
+            if (warningModal) {
+                warningModal.classList.remove('hidden');
+            } else {
+                alert('网络请求失败：无法连接到本地计算引擎。请确认已通过 run.bat 启动服务。');
+            }
+        }
     });
 }
 
