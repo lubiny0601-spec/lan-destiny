@@ -801,23 +801,23 @@ let previousBodyOverflow = '';
 const scenarioStep2Map = {
     self: {
         label: '了解自己',
-        title: '先认识一下你',
-        desc: '填写必要的出生资料，我们会优先整理你的性格倾向、优势模式和精力消耗点。'
+        title: '拆解你的内在精力模式',
+        desc: '填写必要的出生资料，我们将重点剖析你的天生优势、情绪消耗源，以及在哪些事情上你最容易无意识地过度内耗。'
     },
     career: {
         label: '事业方向',
-        title: '从你的工作方式开始',
-        desc: '填写必要的出生资料，我们会优先整理你的工作节奏、协作方式与面对变化时的倾向。'
+        title: '梳理你的职场定位与战略节奏',
+        desc: '填写必要的出生资料，我们将重点剖析你的工作爆发力、团队协作位、最适合的决策节奏以及面对环境变局时的应变偏好。'
     },
     relationship: {
         label: '关系模式',
-        title: '看看你在关系中的表达方式',
-        desc: '填写必要的出生资料，我们会优先整理你的表达方式、边界感与互动需求。'
+        title: '洞察你在关系中的安全感与边界',
+        desc: '填写必要的出生资料，我们将重点剖析你在亲密与人际关系中的真实需求、表达屏障，以及感到被侵犯时的自我防御机制。'
     },
     confusion: {
         label: '走出迷茫',
-        title: '先梳理此刻值得关注的方向',
-        desc: '填写必要的出生资料，我们会从性格、工作和关系三个方面，帮助你整理当前的优先方向。'
+        title: '破除迷茫，建立你的优先确定性',
+        desc: '填写必要的出生资料，我们将从多重纷乱选项中，帮你厘清当下最值得先稳定的核心支柱，按优先级重建行动秩序。'
     }
 };
 
@@ -1136,10 +1136,10 @@ function renderConsumerReport(baziResult, formState) {
     if (scenarioEl) scenarioEl.textContent = `本次关注：${scenarioNames[activeScenario] || '了解自己'}`;
 
     const scenarioSubtitles = {
-        self: '关于性格、优势与精力模式的个人观察',
-        career: '关于工作节奏、协作方式与行动倾向的个人观察',
-        relationship: '关于表达方式、边界与关系需求的个人观察',
-        confusion: '关于当前状态与优先方向的综合观察'
+        self: '关于内在能量、行为惯性与精力黑洞的深度拆解',
+        career: '关于职场定位、协作惯性与战略节奏的深度拆解',
+        relationship: '关于人际表达、心理边界与亲密需求的深度拆解',
+        confusion: '关于降低内耗、破除焦虑与重建秩序的综合建议'
     };
     if (userSubtitleEl) userSubtitleEl.textContent = scenarioSubtitles[activeScenario] || scenarioSubtitles.self;
 
@@ -1175,10 +1175,10 @@ function renderConsumerReport(baziResult, formState) {
     const personalityEl = document.getElementById('report-section-personality');
     if (personalityEl) {
         const framingMap = {
-            self: `<p>优先从【核心性格与精力惯性】切入：通过东方时间模型推演，你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。</p>`,
-            career: `<p>结合【工作与行动倾向】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。性格特质直接决定了你的工作节奏与应变偏好。</p>`,
-            relationship: `<p>结合【关系表达与心理边界】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。内在的充盈与空缺深刻影响着你在亲密关系中的互动习惯。</p>`,
-            confusion: `<p>结合【当下优先整理方向】切入：你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。理清内在结构有助于减少无效内耗，找回掌控感。</p>`
+            self: `<p>【了解自己 · 特质剖析】本次报告重点聚焦于你的“内在精力结构”。在日常生活中，你最容易因为过度思考或追求完美而无意识消耗精神力。你的日主天干为 <strong>${dayMaster}</strong> (${balance})：</p>`,
+            career: `<p>【事业方向 · 战术定位】本次报告优先切入你的“职场能量与协作模式”。在工作与事业开拓中，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 决定了你是适合独立开疆拓土、还是适合在成熟体系中担当核心智囊：</p>`,
+            relationship: `<p>【关系模式 · 情感边界】本次报告优先切入你的“关系互动与安全感机制”。在深度人际或亲密关系中，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 深刻影响着你如何索取与传递爱意：</p>`,
+            confusion: `<p>【走出迷茫 · 秩序重建】本次报告优先切入你的“当下迷茫解构与秩序破局”。当面对人生整理期时，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 提示我们：迷茫往往不是因为没有选择，而是因为试图同时解决太多问题：</p>`
         };
         personalityEl.innerHTML = `
             ${framingMap[activeScenario] || framingMap.self}
@@ -1235,27 +1235,27 @@ function renderConsumerReport(baziResult, formState) {
         const scenarioAdviceMap = {
             self: `
                 <p><strong>基于当下【了解自己】的重点行动建议：</strong></p>
-                <p>1. <strong>记录精力高低变化：</strong> 观察自己在一天与一周内的精力高峰与低谷周期，在低能期给大脑留出不作重大决定的休养窗口。</p>
-                <p>2. <strong>区分优势与过度使用优势：</strong> 强项在于理性时防范过度反刍与分析瘫痪；强项在于直觉时防范冲动散漫。</p>
-                <p>3. <strong>识别重复出现的思考与行为模式：</strong> 对近期反复困扰自己的情绪反应先进行客观记录，不急于批评或否认自己。</p>
+                <p>1. <strong>建立“精力黑洞”拦截清单：</strong> 记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗。</p>
+                <p>2. <strong>警惕“优势过度使用”的副作用：</strong> 当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键。</p>
+                <p>3. <strong>设立不作决定的纯粹休养窗口：</strong> 在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载。</p>
             `,
             career: `
                 <p><strong>基于当下【事业方向】的重点行动建议：</strong></p>
-                <p>1. <strong>明确当下的核心工作判断标准：</strong> 梳理目前工作中真正带给你成就感与确定收益的要素，优先保障核心长板。</p>
-                <p>2. <strong>识别最适合自己的团队协作定位：</strong> 主动沟通权责边界，在擅长的主导或支撑岗位上发力，减少无谓的人际摩擦。</p>
-                <p>3. <strong>一次只聚焦验证一个具体的职业假设：</strong> 遇到转型或调整选择时，采用小步快跑的方式先做轻量尝试，用行动反馈代替长期的停顿焦虑。</p>
+                <p>1. <strong>重新定义你的核心战术长板：</strong> 放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
+                <p>2. <strong>划清团队协作的权责隔离带：</strong> 明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦。</p>
+                <p>3. <strong>采用“小步微实验”代替长期停顿：</strong> 面对变局或职业转型时，一次只验证一个具体假设，用真实反馈打破决策焦虑。</p>
             `,
             relationship: `
                 <p><strong>基于当下【关系模式】的重点行动建议：</strong></p>
-                <p>1. <strong>识别表达和真实需求的差距：</strong> 试着把“希望对方猜到”转化为直接、平和地告知对方自己的感受与偏好。</p>
-                <p>2. <strong>在情绪冲突发生前明确自身心理边界：</strong> 当感受到能量透支或边界被侵犯时，及时申请独处的冷却空间。</p>
-                <p>3. <strong>使用具体事实进行沟通：</strong> 沟通中尽量基于具体发生的行为事实交流，避免凭情绪猜测对方意图或过度防御。</p>
+                <p>1. <strong>替换“期待对方猜到”的隐性期待：</strong> 尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明。</p>
+                <p>2. <strong>设立不可逾越的心理冷却边界：</strong> 当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。</p>
+                <p>3. <strong>区分事实与情绪化联想：</strong> 在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图。</p>
             `,
             confusion: `
                 <p><strong>基于当下【走出迷茫】的重点行动建议：</strong></p>
-                <p>1. <strong>列出当前最想理清的三个具体问题：</strong> 迷茫往往源于选项过多与比较焦虑，按影响程度排序，一次只处理一件。</p>
-                <p>2. <strong>区分当下“完全可控”与“不可控”事项：</strong> 将 80% 的注意力收回至自己今天就能动手完成的可控小事上。</p>
-                <p>3. <strong>先选择一个可在两周内验证的小行动：</strong> 制定一个微型实验计划，通过小幅度的行动成果逐步找回节奏与秩序。</p>
+                <p>1. <strong>强制做“选择题减法”：</strong> 列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区。</p>
+                <p>2. <strong>建立“绝对可控”的每日微小秩序：</strong> 把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上。</p>
+                <p>3. <strong>启动两周极简验证计划：</strong> 放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找回掌控感。</p>
             `
         };
         adviceEl.innerHTML = scenarioAdviceMap[activeScenario] || scenarioAdviceMap.self;
