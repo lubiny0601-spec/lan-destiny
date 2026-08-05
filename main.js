@@ -1083,57 +1083,252 @@ if (btnCloseNotice) {
     });
 }
 
-// Consumer V0 Report Generator & View Management
-function renderConsumerReport(baziResult, formState) {
-    const reportView = document.getElementById('consumer-report-view');
-    const mainView = document.querySelector('.consumer-main');
-    const footer = document.querySelector('.consumer-footer');
-    
-    if (!reportView) return;
-    
-    const stdout = baziResult ? baziResult.stdout || '' : '';
-    
+// ------------------------------------------------------------------
+// Consumer Personalization Rules & 3-Layer Report Engine (Task 4.2)
+// ------------------------------------------------------------------
+
+const DAY_MASTER_TRAITS = {
+    '甲': {
+        name: '甲木 (阳木)',
+        title: '参天之木 · 直率冲劲',
+        trait: '如参天大树，性格直爽包容，富有主见与进取心，讲求信义，但有时略显固执，不愿轻易妥协折弯。',
+        advantage: '具备极强开创力与领头羊意识，面对目标目标明确，行动干净利落。',
+        risk: '容易因为刚直不阿而在人际或沟通中显得硬朗过度，缺乏回旋余地。'
+    },
+    '乙': {
+        name: '乙木 (阴木)',
+        title: '柔草藤蔓 · 随应韧性',
+        trait: '如藤蔓柔草，适应能力极强，外柔内刚，善于借力打力、随遇而安，富有人情味与洞察力。',
+        advantage: '具备极高的环境生存韧性与协调手腕，擅长在复杂人际中化解矛盾。',
+        risk: '面对重大抉择时偶尔容易优柔寡断，过度受周围情绪与环境影响。'
+    },
+    '丙': {
+        name: '丙火 (阳火)',
+        title: '太阳炽热 · 坦荡光明',
+        trait: '如太阳炽热，热情光明，坦荡直率，行动力极强，乐于奉献与照亮他人，感染力十足。',
+        advantage: '具备天生的领袖气场与号召力，办事果敢，充满正能量。',
+        risk: '情绪来得快去得也快，容易三分钟热度，或因急躁而忽略细节执行。'
+    },
+    '丁': {
+        name: '丁火 (阴火)',
+        title: '烛光灯火 · 洞察内敛',
+        trait: '如烛光灯火，心思细腻内敛，专注度高，洞察力极强，富温情与礼数，内心执着而有明灯。',
+        advantage: '擅长深耕细作与察觉他人未表达的需求，具备极高的高维感知力。',
+        risk: '容易思虑过度、敏感内耗，在低能期倾向于将情绪埋藏于心。'
+    },
+    '戊': {
+        name: '戊土 (阳土)',
+        title: '城墙高山 · 沉稳厚重',
+        trait: '如城墙高山，沉稳厚重，包容守信，讲求实在，做人做事有始有终，极具安全感。',
+        advantage: '承载力极强，能扛重任，在团队中是定海神针般的稳定基石。',
+        risk: '反应速度相对偏稳，容易显得固执守旧，对突发变革接受度较低。'
+    },
+    '己': {
+        name: '己土 (阴土)',
+        title: '田园沃土 · 温和筹谋',
+        trait: '如田园沃土，温和包容，多才多艺，善于配合与筹谋，能吸收整合各方资源。',
+        advantage: '具备极高的包容度与细节整合能力，擅长默默滋养团队与项目。',
+        risk: '偶尔缺乏果断斩乱麻的狠劲，容易因顾全大局而委屈自身需求。'
+    },
+    '庚': {
+        name: '庚金 (阳金)',
+        title: '刀剑矿石 · 刚毅决断',
+        trait: '如刀剑矿石，刚毅果断，讲究义气与规则，决断力极强，重视效率与结果。',
+        advantage: '斩钉截铁，执行力强，在危机时刻具备极佳的破局与裁决魄力。',
+        risk: '性格直白硬朗，有时说话易伤人而不自知，缺乏缓冲温情。'
+    },
+    '辛': {
+        name: '辛金 (阴金)',
+        title: '珠玉金饰 · 精致敏锐',
+        trait: '如珠玉金饰，精致温润，注重品质与自尊，感受敏锐，带独特的审美品味与批判眼光。',
+        advantage: '追求完美与极致细节，在专业领域具备极高的鉴赏力与雕琢精神。',
+        risk: '自尊心强，对批评较敏锐，容易在细节瑕疵上死磕而产生精神内耗。'
+    },
+    '壬': {
+        name: '壬水 (阳水)',
+        title: '江河大海 · 奔放智谋',
+        trait: '如江河大海，奔放聪明，格局宏大，随应万变，富战略眼光与宏观统筹力。',
+        advantage: '思维活跃不设限，具备极强的资源流动意识与大局观。',
+        risk: '纪律束缚感差，容易心浮气躁，有时缺乏持久落地的细致耐性。'
+    },
+    '癸': {
+        name: '癸水 (阴水)',
+        title: '雨露甘霖 · 润物智谋',
+        trait: '如雨露甘霖，润物无声，智谋深远，内秀柔和，思维缜密，富深层直觉力。',
+        advantage: '擅长以柔克刚、静水流深，在暗处默默布局与达成目标。',
+        risk: '想法过于隐秘内敛，容易陷入悲观多虑或沉溺于内心情感漩涡。'
+    }
+};
+
+const STRENGTH_MODULATION = {
+    '身强': {
+        desc: '全局能量主控力强，独立意识突出，习惯掌控主导权，擅长单点攻坚与主导大局；宜防范自负孤行。',
+        workStyle: '倾向自主决策、主导业务方向，适合在富有自主权的舞台上担任核心指挥官。',
+        relationStyle: '在关系中习惯占据主导庇护地位，表达直接，需学会主动倾听对方情绪。'
+    },
+    '偏强': {
+        desc: '全局能量充沛有余，自信心足，行动主动性强；在攻守转换间具备良好的独立破局力。',
+        workStyle: '具备极强的执行推动力与目标感，擅长领头攻坚或独立承担重大板块。',
+        relationStyle: '互动中积极坦诚，愿意为他人遮风挡雨，需适度给对方留出表达空间。'
+    },
+    '身弱': {
+        desc: '全局能量敏感细腻，感受力强，善于统筹协同与借势打力；宜防范精力过度分散与多虑内耗。',
+        workStyle: '擅长借助平台与团队力量协同推进，在智囊、风控或协调岗位上长板明显。',
+        relationStyle: '关系中极其看重信任感与情绪安全感，敏感体贴，需建立清晰的自我边界。'
+    },
+    '偏弱': {
+        desc: '全局能量柔和敏锐，对环境变化感察深刻，擅长避其锋芒与精细化运作；宜注重能量滋养。',
+        workStyle: '擅长在既定框架内精雕细琢，适合扮演智囊协助、品质把控或顾问专家角色。',
+        relationStyle: '重情重义且注重深层精神共鸣，偶尔表达含蓄，需要对方给予明确正向反馈。'
+    },
+    '均势': {
+        desc: '全局能量中和均衡，阴阳调和，应变度极高；能根据外部环境灵活切换攻守与进退策略。',
+        workStyle: '适应力极广，既能独立攻坚亦能团队协作，在复杂变化中能保持情绪定力。',
+        relationStyle: '关系中讲求互惠平等与相互尊重，沟通平和理性，具备极佳的人际缓冲力。'
+    }
+};
+
+const ELEMENT_CAREER_RULES = {
+    '木': '擅长生发与规划，在创意策划、教育培植、品牌文化或新业务开拓领域最能施展长板。',
+    '火': '擅长表达与传播，在视觉艺术、品牌公关、大众传播或内容创作领域最能发挥爆发力。',
+    '土': '擅长承载与整合，在资产管理、运营架构、平台支撑或资源统筹领域最显安定基石作用。',
+    '金': '擅长规则与裁决，在技术研发、风控合规、精密制造或标准化建立领域最显精细威力。',
+    '水': '擅长智谋与流动，在战略顾问、市场洞察、跨境流转或灵活投资领域最能随应施展。'
+};
+
+const ELEMENT_RELATION_RULES = {
+    '阳': '在关系沟通中倾向于**开门见山、直接保护**，习惯用明确的行动或承诺传递关怀，但偶尔需要收敛强势气场。',
+    '阴': '在关系沟通中倾向于**润物无声、细腻陪伴**，习惯在细节处照顾对方感受，但偶尔需要更直接地表达自身需求。'
+};
+
+// 1. Layer 1 Parsing Function
+function parseConsumerBaziResult(baziResult) {
+    const rawResult = {
+        parseStatus: 'failed',
+        dayMaster: { stem: null, element: null, yinYang: null },
+        strength: '均势',
+        isStrong: false,
+        elementScores: { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 },
+        strongestElement: '木',
+        weakestElement: '水',
+        fourPillars: { year: '', month: '', day: '', hour: '' },
+        rawStdout: '',
+        warnings: []
+    };
+
+    if (!baziResult || typeof baziResult !== 'object') {
+        rawResult.warnings.push('八字结果对象为空');
+        return rawResult;
+    }
+
+    const stdout = baziResult.stdout || (typeof baziResult === 'string' ? baziResult : '');
+    rawResult.rawStdout = stdout;
+    if (!stdout || typeof stdout !== 'string') {
+        rawResult.warnings.push('stdout 文本为空');
+        return rawResult;
+    }
+
     // Parse Day Master
-    const dayMasterMatch = stdout.match(/(日主|日干)：?\s*([甲乙丙丁戊己庚辛壬癸][木火土金水]?)/);
-    const dayMaster = dayMasterMatch ? dayMasterMatch[2] : "丙火";
-    
-    // Parse Balance
-    const balanceMatch = stdout.match(/量化参考：\s*([^\n\r]+)/) || stdout.match(/(偏强|偏弱|身强|身弱)/);
-    const balance = balanceMatch ? balanceMatch[1].trim() : "偏弱";
-    
+    const dmMatch = stdout.match(/【日主】([甲乙丙丁戊己庚辛壬癸])([木火土金水])?/) || stdout.match(/(?:日主|日干)：?\s*([甲乙丙丁戊己庚辛壬癸])([木火土金水])?/);
+    if (dmMatch) {
+        const stem = dmMatch[1];
+        const stemElementMap = {
+            '甲': { elem: '木', yy: '阳' },
+            '乙': { elem: '木', yy: '阴' },
+            '丙': { elem: '火', yy: '阳' },
+            '丁': { elem: '火', yy: '阴' },
+            '戊': { elem: '土', yy: '阳' },
+            '己': { elem: '土', yy: '阴' },
+            '庚': { elem: '金', yy: '阳' },
+            '辛': { elem: '金', yy: '阴' },
+            '壬': { elem: '水', yy: '阳' },
+            '癸': { elem: '水', yy: '阴' }
+        };
+        const info = stemElementMap[stem] || { elem: dmMatch[2] || '火', yy: '阳' };
+        rawResult.dayMaster = {
+            stem: stem,
+            element: info.elem,
+            yinYang: info.yy
+        };
+    } else {
+        rawResult.warnings.push('未能确定日主天干');
+    }
+
+    // Parse Strength
+    const strengthMatch = stdout.match(/(身强|偏强|身弱|偏弱|均势)/) || stdout.match(/同党占比.*→\s*量化参考：?([^\n\r（]+)/);
+    if (strengthMatch) {
+        const sStr = strengthMatch[1].trim();
+        if (['身强', '偏强', '身弱', '偏弱', '均势'].includes(sStr)) {
+            rawResult.strength = sStr;
+        } else if (sStr.includes('强')) {
+            rawResult.strength = '偏强';
+        } else if (sStr.includes('弱')) {
+            rawResult.strength = '偏弱';
+        } else {
+            rawResult.strength = '均势';
+        }
+        rawResult.isStrong = rawResult.strength.includes('强');
+    }
+
     // Parse Elements
-    const wuxingRegex = /(木|火|土|金|水):([\d\.]+)/g;
-    let scores = { "木": 1.5, "火": 2.0, "土": 3.0, "金": 1.0, "水": 2.5 };
+    const wuxingRegex = /(?:  |\t|^)(木|火|土|金|水):([\d\.]+)/gm;
+    let scoresFound = false;
     let match;
     while ((match = wuxingRegex.exec(stdout)) !== null) {
-        scores[match[1]] = parseFloat(match[2]);
+        scoresFound = true;
+        rawResult.elementScores[match[1]] = parseFloat(match[2]);
     }
-    
-    let sorted = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
-    let strongest = sorted[0];
-    let weakest = sorted[sorted.length - 1];
-    
-    // Update Banner Meta & Subtitle
-    const userNameEl = document.getElementById('report-user-name');
-    const userSubtitleEl = document.getElementById('report-user-subtitle');
-    const genderEl = document.getElementById('report-meta-gender');
-    const birthEl = document.getElementById('report-meta-birth');
-    const calendarEl = document.getElementById('report-meta-calendar');
-    const scenarioEl = document.getElementById('report-meta-scenario');
-    
-    if (userNameEl) userNameEl.textContent = formState.nickname || '阿澜';
-    if (genderEl) genderEl.textContent = `性别：${formState.gender === 'female' ? '女' : '男'}`;
-    if (birthEl) birthEl.textContent = `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定'}`;
-    if (calendarEl) calendarEl.textContent = `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`;
-    
+    if (scoresFound) {
+        const sorted = Object.keys(rawResult.elementScores).sort((a, b) => rawResult.elementScores[b] - rawResult.elementScores[a]);
+        rawResult.strongestElement = sorted[0];
+        rawResult.weakestElement = sorted[sorted.length - 1];
+    } else {
+        rawResult.warnings.push('未能解析五行得分');
+    }
+
+    // Parse Four Pillars
+    const tgMatch = stdout.match(/天干\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?/);
+    const dzMatch = stdout.match(/地支\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?/);
+
+    if (tgMatch && dzMatch) {
+        rawResult.fourPillars.year = tgMatch[1] + dzMatch[1];
+        rawResult.fourPillars.month = tgMatch[2] + dzMatch[2];
+        rawResult.fourPillars.day = tgMatch[3] + dzMatch[3];
+        rawResult.fourPillars.hour = tgMatch[4] + dzMatch[4];
+    }
+
+    if (rawResult.dayMaster.stem && scoresFound) {
+        rawResult.parseStatus = 'success';
+    } else if (rawResult.dayMaster.stem || scoresFound) {
+        rawResult.parseStatus = 'partial';
+    } else {
+        rawResult.parseStatus = 'failed';
+    }
+
+    return rawResult;
+}
+
+// 2. Layer 2 Model Building Function
+function buildPersonalizedReportModel(parsedResult, formState) {
+    if (!parsedResult || parsedResult.parseStatus === 'failed') {
+        return {
+            isDegraded: true,
+            degradationMessage: '基础计算已完成，但当前版本未能稳定整理为个人结构说明书。你可以进入专业模式查看原始排盘结果。'
+        };
+    }
+
+    const dm = parsedResult.dayMaster;
+    const stem = dm.stem || '丙';
+    const traitInfo = DAY_MASTER_TRAITS[stem] || DAY_MASTER_TRAITS['丙'];
+    const strengthInfo = STRENGTH_MODULATION[parsedResult.strength] || STRENGTH_MODULATION['均势'];
+    const activeScenario = formState.scenario || 'self';
+
     const scenarioNames = {
         self: '了解自己',
         career: '事业方向',
         relationship: '关系模式',
         confusion: '走出迷茫'
     };
-    const activeScenario = formState.scenario || 'self';
-    if (scenarioEl) scenarioEl.textContent = `本次关注：${scenarioNames[activeScenario] || '了解自己'}`;
 
     const scenarioSubtitles = {
         self: '关于内在能量、行为惯性与精力黑洞的深度拆解',
@@ -1141,136 +1336,221 @@ function renderConsumerReport(baziResult, formState) {
         relationship: '关于人际表达、心理边界与亲密需求的深度拆解',
         confusion: '关于降低内耗、破除焦虑与重建秩序的综合建议'
     };
-    if (userSubtitleEl) userSubtitleEl.textContent = scenarioSubtitles[activeScenario] || scenarioSubtitles.self;
 
-    // Section DOM Reordering based on scenario
-    const container = document.querySelector('#consumer-report-view .report-container');
-    const cardNodes = {
-        personality: document.getElementById('card-section-personality'),
-        energy: document.getElementById('card-section-energy'),
-        career: document.getElementById('card-section-career'),
-        relationship: document.getElementById('card-section-relationship'),
-        action: document.getElementById('card-section-action'),
-        evidence: document.getElementById('card-section-evidence')
-    };
-    const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
-
-    const sectionOrders = {
-        self: ['personality', 'energy', 'career', 'relationship', 'action', 'evidence'],
-        career: ['career', 'energy', 'personality', 'action', 'relationship', 'evidence'],
-        relationship: ['relationship', 'personality', 'energy', 'action', 'career', 'evidence'],
-        confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
+    // 1. Personality Section
+    const framingMap = {
+        self: `<p>【了解自己 · 精力模式拆解】本次报告重点聚焦于你的“内在精力结构”。在日常生活中，你最容易因为过度思考或追求完美而无意识消耗精神力。你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>）：</p>`,
+        career: `<p>【事业方向 · 战术定位拆解】本次报告优先切入你的“职场能量与战术位”。你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>），直接决定了你的工作爆发力与协作习惯：</p>`,
+        relationship: `<p>【关系模式 · 情感边界拆解】本次报告优先切入你的“关系互动与安全感机制”。在深度人际或亲密关系中，你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>），深刻影响着你如何索取与传递关怀：</p>`,
+        confusion: `<p>【走出迷茫 · 秩序重建拆解】本次报告优先切入你的“当下迷茫解构与秩序破局”。面对人生整理期，你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>）提示我们：迷茫往往是因为试图同时解决太多不属于当前核心的问题：</p>`
     };
 
-    if (container && bottomActions) {
-        const targetOrder = sectionOrders[activeScenario] || sectionOrders.self;
-        targetOrder.forEach(key => {
-            if (cardNodes[key]) {
-                container.insertBefore(cardNodes[key], bottomActions);
-            }
-        });
-    }
+    const personalityHTML = `
+        ${framingMap[activeScenario] || framingMap.self}
+        <div class="highlight-box">
+            <p><strong>天干核心特质：</strong> ${traitInfo.trait}</p>
+        </div>
+        <p>👉 <strong>核心优势：</strong> ${traitInfo.advantage}</p>
+        <p>👉 <strong>惯性风险：</strong> ${traitInfo.risk}</p>
+        <p>👉 <strong>格局调和：</strong> ${strengthInfo.desc}</p>
+    `;
 
-    // Section 01: Personality / Core Observation Framing
-    const personalityEl = document.getElementById('report-section-personality');
-    if (personalityEl) {
-        const framingMap = {
-            self: `<p>【了解自己 · 特质剖析】本次报告重点聚焦于你的“内在精力结构”。在日常生活中，你最容易因为过度思考或追求完美而无意识消耗精神力。你的日主天干为 <strong>${dayMaster}</strong> (${balance})：</p>`,
-            career: `<p>【事业方向 · 战术定位】本次报告优先切入你的“职场能量与协作模式”。在工作与事业开拓中，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 决定了你是适合独立开疆拓土、还是适合在成熟体系中担当核心智囊：</p>`,
-            relationship: `<p>【关系模式 · 情感边界】本次报告优先切入你的“关系互动与安全感机制”。在深度人际或亲密关系中，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 深刻影响着你如何索取与传递爱意：</p>`,
-            confusion: `<p>【走出迷茫 · 秩序重建】本次报告优先切入你的“当下迷茫解构与秩序破局”。当面对人生整理期时，你的日主天干 <strong>${dayMaster}</strong> (${balance}) 提示我们：迷茫往往不是因为没有选择，而是因为试图同时解决太多问题：</p>`
+    // 2. Energy Section
+    const strongestAdviceMap = {
+        '木': '你的木属性能量充盈，创意生发力强；但需防范思虑漫无边际，宜将想法及时具象化落地。',
+        '火': '你的火属性能量旺盛，爆发力与感染力极高；但需防范冲动急躁，注意保护心血管与睡眠质量。',
+        '土': '你的土属性能量厚重，包容与承载力极佳；但需防范过于固执守旧，适度保持思维的流动灵活性。',
+        '金': '你的金属性能量刚锐，规则感与裁决力极强；但需防范过分严苛与批判锋芒，保留缓冲温情。',
+        '水': '你的水属性能量深沉，智谋与应变力突出；但需防范过度悲观多虑，多接触日光与户外活动。'
+    };
+    const weakestAdviceMap = {
+        '木': '多接触大自然绿植，增加体能拉伸，多吃青绿色蔬菜，补足生机与向上进取心。',
+        '火': '多接触阳光与明亮环境，适当饮用温热茶水，保持积极的社交接触以补充热情。',
+        '土': '建立规律的生活作息，赤脚接触大地或泥土沙滩，注重脾胃调理以扎实根基。',
+        '金': '保持居住与工作环境整洁干爽，佩戴金属饰品，行事培养果断利落的界限感。',
+        '水': '保证充足的睡眠休养，多饮用纯净水，通过静心或冥想沉淀杂念，滋养心神。'
+    };
+
+    const energyHTML = `
+        <p>在你的东方时间五行能量分布中：</p>
+        <div class="wuxing-grid">
+            ${Object.keys(parsedResult.elementScores).map(elem => `
+                <div class="wuxing-item">
+                    <div class="wuxing-name">${elem}</div>
+                    <div class="wuxing-score">${parsedResult.elementScores[elem].toFixed(1)}</div>
+                </div>
+            `).join('')}
+        </div>
+        <p>相对最主导的能量为 <strong>${parsedResult.strongestElement}</strong>（${strongestAdviceMap[parsedResult.strongestElement] || ''}），相对需滋养的能量为 <strong>${parsedResult.weakestElement}</strong>。</p>
+        <div class="highlight-box">
+            <p><strong>五行滋养建议：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
+        </div>
+    `;
+
+    // 3. Career Section
+    const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
+    const careerHTML = `
+        <p>根据你的天干 <strong>${dm.stem}${dm.element} (${dm.yinYang}${dm.element})</strong> 与 <strong>${parsedResult.strength}</strong> 格局：</p>
+        <p>👉 <strong>战术定位：</strong> ${careerElemAdvice}</p>
+        <p>👉 <strong>工作节奏：</strong> ${strengthInfo.workStyle}</p>
+        <p>在团队协作中，避免在精力低谷时硬撑承担非核心的无谓摩擦，将 80% 的注意力锁死在最能发挥长板的壁垒上。</p>
+    `;
+
+    // 4. Relationship Section
+    const relationYinYangText = ELEMENT_RELATION_RULES[dm.yinYang] || ELEMENT_RELATION_RULES['阳'];
+    const relationshipHTML = `
+        <p>在人际与深度亲密关系中：</p>
+        <p>👉 <strong>表达模式：</strong> ${relationYinYangText}</p>
+        <p>👉 <strong>安全感与边界：</strong> ${strengthInfo.relationStyle}</p>
+        <p>当感受到情绪透支或边界被侵犯时，第一时间申请独立的心理冷却空间，避免陷入无休止的内耗辩驳。</p>
+    `;
+
+    // 5. Action Section
+    const scenarioAdviceMap = {
+        self: `
+            <p><strong>基于当下【了解自己】的重点行动建议：</strong></p>
+            <p>1. <strong>建立“精力黑洞”拦截清单：</strong> 记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗。</p>
+            <p>2. <strong>警惕“优势过度使用”的副作用：</strong> 当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键。</p>
+            <p>3. <strong>设立不作决定的纯粹休养窗口：</strong> 在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载。</p>
+        `,
+        career: `
+            <p><strong>基于当下【事业方向】的重点行动建议：</strong></p>
+            <p>1. <strong>重新定义你的核心战术长板：</strong> 放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
+            <p>2. <strong>划清团队协作的权责隔离带：</strong> 明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦。</p>
+            <p>3. <strong>采用“小步微实验”代替长期停顿：</strong> 面对变局或职业转型时，一次只验证一个具体假设，用真实反馈打破决策焦虑。</p>
+        `,
+        relationship: `
+            <p><strong>基于当下【关系模式】的重点行动建议：</strong></p>
+            <p>1. <strong>替换“期待对方猜到”的隐性期待：</strong> 尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明。</p>
+            <p>2. <strong>设立不可逾越的心理冷却边界：</strong> 当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。</p>
+            <p>3. <strong>区分事实与情绪化联想：</strong> 在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图。</p>
+        `,
+        confusion: `
+            <p><strong>基于当下【走出迷茫】的重点行动建议：</strong></p>
+            <p>1. <strong>强制做“选择题减法”：</strong> 列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区。</p>
+            <p>2. <strong>建立“绝对可控”的每日微小秩序：</strong> 把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上。</p>
+            <p>3. <strong>启动两周极简验证计划：</strong> 放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找回掌控感。</p>
+        `
+    };
+
+    // 6. Evidence Section
+    const stdoutSnippet = (parsedResult.rawStdout || '').substring(0, 240);
+    const pillarsStr = parsedResult.fourPillars.year ? `年柱:${parsedResult.fourPillars.year} 月柱:${parsedResult.fourPillars.month} 日柱:${parsedResult.fourPillars.day} 时柱:${parsedResult.fourPillars.hour}` : '基础四柱已成功转换';
+    const evidenceHTML = `
+        <p><strong>推演干支四柱：</strong> ${pillarsStr}</p>
+        <p><strong>底层数据片段：</strong></p>
+        <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdoutSnippet}...</pre>
+        <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
+            ✦ <strong>说明书使用边界：</strong> 本说明书仅基于传统时间模型对性格习惯与行动倾向提供结构化观察，不预测疾病、寿命或决定人生选择。结果仅供自我启迪与探索参考。
+        </p>
+    `;
+
+    return {
+        isDegraded: false,
+        scenario: activeScenario,
+        userHeader: {
+            nickname: formState.nickname || '阿澜',
+            genderText: `性别：${formState.gender === 'female' ? '女' : '男'}`,
+            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定'}`,
+            calendarText: `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`,
+            scenarioLabel: `本次关注：${scenarioNames[activeScenario] || '了解自己'}`,
+            scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
+        },
+        personalityHTML,
+        energyHTML,
+        careerHTML,
+        relationshipHTML,
+        actionHTML: scenarioAdviceMap[activeScenario] || scenarioAdviceMap.self,
+        evidenceHTML
+    };
+}
+
+// 3. Layer 3 DOM Rendering Function
+function renderConsumerReport(baziResult, formState) {
+    const reportView = document.getElementById('consumer-report-view');
+    const mainView = document.querySelector('.consumer-main');
+    const footer = document.querySelector('.consumer-footer');
+    
+    if (!reportView) return;
+    
+    // Parse Bazi Result & Build Report Model
+    const parsedResult = parseConsumerBaziResult(baziResult);
+    const reportModel = buildPersonalizedReportModel(parsedResult, formState);
+
+    const userNameEl = document.getElementById('report-user-name');
+    const userSubtitleEl = document.getElementById('report-user-subtitle');
+    const genderEl = document.getElementById('report-meta-gender');
+    const birthEl = document.getElementById('report-meta-birth');
+    const calendarEl = document.getElementById('report-meta-calendar');
+    const scenarioEl = document.getElementById('report-meta-scenario');
+
+    if (reportModel.isDegraded) {
+        if (userNameEl) userNameEl.textContent = formState.nickname || '受测人';
+        if (userSubtitleEl) userSubtitleEl.textContent = '基础推演完成 · 报告格式降级提醒';
+        
+        const personalityEl = document.getElementById('report-section-personality');
+        if (personalityEl) {
+            personalityEl.innerHTML = `
+                <div class="degraded-notice-box" style="padding: 20px; background: var(--consumer-surface); border: 1px solid var(--consumer-border); border-radius: 8px; color: var(--consumer-text-main);">
+                    <p><strong>提示：</strong> ${reportModel.degradationMessage}</p>
+                </div>
+            `;
+        }
+    } else {
+        // Normal Personalization Rendering
+        if (userNameEl) userNameEl.textContent = reportModel.userHeader.nickname;
+        if (userSubtitleEl) userSubtitleEl.textContent = reportModel.userHeader.scenarioSubtitle;
+        if (genderEl) genderEl.textContent = reportModel.userHeader.genderText;
+        if (birthEl) birthEl.textContent = reportModel.userHeader.birthText;
+        if (calendarEl) calendarEl.textContent = reportModel.userHeader.calendarText;
+        if (scenarioEl) scenarioEl.textContent = reportModel.userHeader.scenarioLabel;
+
+        // Section DOM Reordering based on scenario
+        const container = document.querySelector('#consumer-report-view .report-container');
+        const cardNodes = {
+            personality: document.getElementById('card-section-personality'),
+            energy: document.getElementById('card-section-energy'),
+            career: document.getElementById('card-section-career'),
+            relationship: document.getElementById('card-section-relationship'),
+            action: document.getElementById('card-section-action'),
+            evidence: document.getElementById('card-section-evidence')
         };
-        personalityEl.innerHTML = `
-            ${framingMap[activeScenario] || framingMap.self}
-            <div class="highlight-box">
-                <p><strong>核心特质描述：</strong> ${getDayMasterDesc(dayMaster, balance)}</p>
-            </div>
-            <p>在日常思考模式中，你倾向于建立清晰的秩序与安全感，对周围环境的变化有着敏锐的感察能力。面对抉择时，你更习惯先在内心建立完整的评估逻辑，再迈出稳妥的步调。</p>
-        `;
-    }
-    
-    // Section 02: Energy
-    const energyEl = document.getElementById('report-section-energy');
-    if (energyEl) {
-        energyEl.innerHTML = `
-            <p>在你的五行能量分布中：</p>
-            <div class="wuxing-grid">
-                ${Object.keys(scores).map(elem => `
-                    <div class="wuxing-item">
-                        <div class="wuxing-name">${elem}</div>
-                        <div class="wuxing-score">${scores[elem].toFixed(1)}</div>
-                    </div>
-                `).join('')}
-            </div>
-            <p>相对最充盈的能量为 <strong>${strongest}</strong>，相对偏弱或需滋养的能量为 <strong>${weakest}</strong>。</p>
-            <div class="highlight-box">
-                <p><strong>能量调理建议：</strong> ${getWuxingAdvice(weakest, strongest)}</p>
-            </div>
-        `;
-    }
-    
-    // Section 03: Career
-    const careerEl = document.getElementById('report-section-career');
-    if (careerEl) {
-        careerEl.innerHTML = `
-            <p>根据你的日主 <strong>${dayMaster}</strong> 与 <strong>${balance}</strong> 的能量特征，在职场与工作中：</p>
-            <p>👉 ${getCareerAdvice(dayMaster, balance, weakest)}</p>
-            <p>在团队协作中，你更擅长扮演提供秩序、把控细节或独立攻坚的角色。避免在精力透支时硬撑承担过多的外部沟通，适度划分工作边界能让你的长板发挥得更加稳定。</p>
-        `;
-    }
-    
-    // Section 04: Relationship
-    const relationshipEl = document.getElementById('report-section-relationship');
-    if (relationshipEl) {
-        relationshipEl.innerHTML = `
-            <p>在人际与亲密关系中：</p>
-            <p>👉 <strong>表达模式：</strong> 你重情重义且注重真实的信任感，不喜过于浮夸的应酬。在深度关系中，你习惯用实际行动和陪伴来传递关怀。</p>
-            <p>👉 <strong>边界与需求：</strong> 你的内在需要足够的独立空间与情绪尊重。当感到边界被侵犯时，可能会选择暂时退缩或冷处理。学会温和、直接地表达需求，是让关系更顺畅的钥匙。</p>
-        `;
-    }
-    
-    // Section 05: Action Advice (Scenario-based, 3 distinct points per scenario)
-    const adviceEl = document.getElementById('report-section-advice');
-    if (adviceEl) {
-        const scenarioAdviceMap = {
-            self: `
-                <p><strong>基于当下【了解自己】的重点行动建议：</strong></p>
-                <p>1. <strong>建立“精力黑洞”拦截清单：</strong> 记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗。</p>
-                <p>2. <strong>警惕“优势过度使用”的副作用：</strong> 当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键。</p>
-                <p>3. <strong>设立不作决定的纯粹休养窗口：</strong> 在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载。</p>
-            `,
-            career: `
-                <p><strong>基于当下【事业方向】的重点行动建议：</strong></p>
-                <p>1. <strong>重新定义你的核心战术长板：</strong> 放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
-                <p>2. <strong>划清团队协作的权责隔离带：</strong> 明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦。</p>
-                <p>3. <strong>采用“小步微实验”代替长期停顿：</strong> 面对变局或职业转型时，一次只验证一个具体假设，用真实反馈打破决策焦虑。</p>
-            `,
-            relationship: `
-                <p><strong>基于当下【关系模式】的重点行动建议：</strong></p>
-                <p>1. <strong>替换“期待对方猜到”的隐性期待：</strong> 尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明。</p>
-                <p>2. <strong>设立不可逾越的心理冷却边界：</strong> 当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。</p>
-                <p>3. <strong>区分事实与情绪化联想：</strong> 在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图。</p>
-            `,
-            confusion: `
-                <p><strong>基于当下【走出迷茫】的重点行动建议：</strong></p>
-                <p>1. <strong>强制做“选择题减法”：</strong> 列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区。</p>
-                <p>2. <strong>建立“绝对可控”的每日微小秩序：</strong> 把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上。</p>
-                <p>3. <strong>启动两周极简验证计划：</strong> 放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找回掌控感。</p>
-            `
+        const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
+
+        const sectionOrders = {
+            self: ['personality', 'energy', 'career', 'relationship', 'action', 'evidence'],
+            career: ['career', 'energy', 'personality', 'action', 'relationship', 'evidence'],
+            relationship: ['relationship', 'personality', 'energy', 'action', 'career', 'evidence'],
+            confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
         };
-        adviceEl.innerHTML = scenarioAdviceMap[activeScenario] || scenarioAdviceMap.self;
-    }
-    
-    // Section 06: Boundary
-    const boundaryEl = document.getElementById('report-section-boundary');
-    if (boundaryEl) {
-        boundaryEl.innerHTML = `
-            <p><strong>推演数据依据：</strong></p>
-            <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdout.substring(0, 240)}...</pre>
-            <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
-                ✦ <strong>说明书使用边界：</strong> 本说明书仅基于传统时间模型对性格习惯与行动倾向提供结构化观察，不预测疾病、寿命或决定人生选择。结果仅供自我启迪与探索参考。
-            </p>
-        `;
+
+        if (container && bottomActions) {
+            const targetOrder = sectionOrders[reportModel.scenario] || sectionOrders.self;
+            targetOrder.forEach(key => {
+                if (cardNodes[key]) {
+                    container.insertBefore(cardNodes[key], bottomActions);
+                }
+            });
+        }
+
+        // Fill Content
+        const personalityEl = document.getElementById('report-section-personality');
+        if (personalityEl) personalityEl.innerHTML = reportModel.personalityHTML;
+
+        const energyEl = document.getElementById('report-section-energy');
+        if (energyEl) energyEl.innerHTML = reportModel.energyHTML;
+
+        const careerEl = document.getElementById('report-section-career');
+        if (careerEl) careerEl.innerHTML = reportModel.careerHTML;
+
+        const relationshipEl = document.getElementById('report-section-relationship');
+        if (relationshipEl) relationshipEl.innerHTML = reportModel.relationshipHTML;
+
+        const adviceEl = document.getElementById('report-section-advice');
+        if (adviceEl) adviceEl.innerHTML = reportModel.actionHTML;
+
+        const boundaryEl = document.getElementById('report-section-boundary');
+        if (boundaryEl) boundaryEl.innerHTML = reportModel.evidenceHTML;
     }
 
     // Toggle Views
