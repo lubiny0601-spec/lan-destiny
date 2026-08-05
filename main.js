@@ -619,6 +619,9 @@ function switchViewMode(mode) {
         professionalView.classList.remove('hidden');
         professionalView.setAttribute('aria-hidden', 'false');
         
+        document.body.style.overflow = 'hidden';
+        document.body.style.height = '100vh';
+        
         if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'true');
         if (btnEnterProFooter) btnEnterProFooter.setAttribute('aria-expanded', 'true');
         if (btnBackConsumer) btnBackConsumer.setAttribute('aria-expanded', 'true');
@@ -634,6 +637,9 @@ function switchViewMode(mode) {
         
         consumerView.classList.remove('hidden');
         consumerView.setAttribute('aria-hidden', 'false');
+        
+        document.body.style.overflow = '';
+        document.body.style.height = '';
         
         if (btnEnterPro) btnEnterPro.setAttribute('aria-expanded', 'false');
         if (btnEnterProFooter) btnEnterProFooter.setAttribute('aria-expanded', 'false');
