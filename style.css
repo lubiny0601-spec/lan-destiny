@@ -2053,6 +2053,186 @@ body {
     font-weight: 700;
 }
 
+/* --- Visual Energy Bars (Visual Energy Meter) --- */
+.energy-bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0 24px 0;
+    background: var(--consumer-surface);
+    border: 1px solid var(--consumer-border);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.energy-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.energy-bar-label {
+    width: 60px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--consumer-text-main);
+    display: flex;
+    justify-content: space-between;
+}
+
+.energy-bar-track {
+    flex: 1;
+    height: 12px;
+    background: var(--consumer-border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.energy-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.energy-bar-val {
+    width: 45px;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--consumer-text-sub);
+}
+
+/* 5 Elements Theme Colors */
+.fill-mu { background: linear-gradient(90deg, #315C4C, #45826C); }
+.fill-huo { background: linear-gradient(90deg, #C85A32, #E0744B); }
+.fill-tu { background: linear-gradient(90deg, #B58A52, #D4A96F); }
+.fill-jin { background: linear-gradient(90deg, #607870, #829E94); }
+.fill-shui { background: linear-gradient(90deg, #2B4C5E, #416F88); }
+
+/* --- Dual-Column Advantage vs Risk Box --- */
+.trait-split-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.advantage-col, .risk-col {
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+
+.advantage-col {
+    background-color: var(--consumer-primary-soft);
+    border: 1px solid rgba(49, 92, 76, 0.15);
+}
+
+.risk-col {
+    background-color: #FFF5F2;
+    border: 1px solid rgba(200, 90, 50, 0.15);
+}
+
+.col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.advantage-col .col-header { color: var(--consumer-primary); }
+.risk-col .col-header { color: #C85A32; }
+
+.col-content {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--consumer-text-main);
+    margin: 0;
+}
+
+/* --- Dos / Donts Tactical Redlines --- */
+.dos-donts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.dos-box, .donts-box {
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 0.93rem;
+    line-height: 1.6;
+}
+
+.dos-box {
+    background-color: #F2F7F4;
+    border-left: 4px solid var(--consumer-primary);
+    color: var(--consumer-primary-dark);
+}
+
+.donts-box {
+    background-color: #FFF5F2;
+    border-left: 4px solid #C85A32;
+    color: #8C3014;
+}
+
+.dos-box strong, .donts-box strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+/* --- Priority Action Cards (P1 / P2 / P3) --- */
+.priority-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.priority-action-card {
+    background: var(--consumer-surface);
+    border: 1px solid var(--consumer-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.priority-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.priority-p1 { background: #C85A32; color: #FFF; }
+.priority-p2 { background: var(--consumer-accent); color: #FFF; }
+.priority-p3 { background: var(--consumer-primary); color: #FFF; }
+
+.action-card-body h4 {
+    margin: 0 0 6px 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--consumer-text-main);
+}
+
+.action-card-body p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--consumer-text-sub);
+    line-height: 1.6;
+}
+
 .report-bottom-actions {
     display: flex;
     justify-content: center;
@@ -2069,5 +2249,7 @@ body {
     .report-body { padding: 16px; }
     .report-card { padding: 24px 20px; }
     .report-card .wuxing-grid { grid-template-columns: repeat(3, 1fr); }
+    .trait-split-box, .dos-donts-container { grid-template-columns: 1fr; }
+    .priority-action-card { flex-direction: column; gap: 8px; }
     .report-bottom-actions { flex-direction: column; }
 }
