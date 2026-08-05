@@ -996,12 +996,14 @@ if (btnSubmitConsumerForm) {
 
             setTimeout(() => {
                 closeConsumerFormShell();
-                showConsumerNotice(`已完成【${consumerFormShellState.nickname}】生辰结构推演，计算结果已暂存。`);
                 if (formStep2) formStep2.classList.remove('hidden');
                 if (step2Completed) step2Completed.classList.add('hidden');
                 btnSubmitConsumerForm.disabled = false;
                 btnSubmitConsumerForm.textContent = '生成我的结构说明书';
-            }, 1500);
+                
+                // Render and show Consumer V0 Report Page
+                renderConsumerReport(consumerFormShellState.baziResult, consumerFormShellState);
+            }, 1200);
 
         } catch (err) {
             console.error('[ConsumerForm] API fetch error:', err);
@@ -1025,3 +1027,175 @@ if (btnCloseNotice) {
         }
     });
 }
+
+// Consumer V0 Report Generator & View Management
+function renderConsumerReport(baziResult, formState) {
+    const reportView = document.getElementById('consumer-report-view');
+    const mainView = document.querySelector('.consumer-main');
+    const footer = document.querySelector('.consumer-footer');
+    
+    if (!reportView) return;
+    
+    const stdout = baziResult ? baziResult.stdout || '' : '';
+    
+    // Parse Day Master
+    const dayMasterMatch = stdout.match(/(日主|日干)：?\s*([甲乙丙丁戊己庚辛壬癸][木火土金水]?)/);
+    const dayMaster = dayMasterMatch ? dayMasterMatch[2] : "丙火";
+    
+    // Parse Balance
+    const balanceMatch = stdout.match(/量化参考：\s*([^\n\r]+)/) || stdout.match(/(偏强|偏弱|身强|身弱)/);
+    const balance = balanceMatch ? balanceMatch[1].trim() : "偏弱";
+    
+    // Parse Elements
+    const wuxingRegex = /(木|火|土|金|水):([\d\.]+)/g;
+    let scores = { "木": 1.5, "火": 2.0, "土": 3.0, "金": 1.0, "水": 2.5 };
+    let match;
+    while ((match = wuxingRegex.exec(stdout)) !== null) {
+        scores[match[1]] = parseFloat(match[2]);
+    }
+    
+    let sorted = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+    let strongest = sorted[0];
+    let weakest = sorted[sorted.length - 1];
+    
+    // Update Banner Meta
+    const userNameEl = document.getElementById('report-user-name');
+    const genderEl = document.getElementById('report-meta-gender');
+    const birthEl = document.getElementById('report-meta-birth');
+    const calendarEl = document.getElementById('report-meta-calendar');
+    const scenarioEl = document.getElementById('report-meta-scenario');
+    
+    if (userNameEl) userNameEl.textContent = formState.nickname || '阿澜';
+    if (genderEl) genderEl.textContent = `性别：${formState.gender === 'female' ? '女' : '男'}`;
+    if (birthEl) birthEl.textContent = `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定'}`;
+    if (calendarEl) calendarEl.textContent = `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`;
+    
+    const scenarioNames = {
+        self: '了解自己',
+        career: '事业方向',
+        relationship: '关系模式',
+        confusion: '走出迷茫'
+    };
+    if (scenarioEl) scenarioEl.textContent = `关注方向：${scenarioNames[formState.scenario] || '了解自己'}`;
+
+    // Section 01: Personality
+    const personalityEl = document.getElementById('report-section-personality');
+    if (personalityEl) {
+        personalityEl.innerHTML = `
+            <p>通过东方时间模型推演，你的日主天干为 <strong>${dayMaster}</strong>，全局能量格局呈现 <strong>${balance}</strong> 状态。</p>
+            <div class="highlight-box">
+                <p><strong>核心特质：</strong> ${getDayMasterDesc(dayMaster, balance)}</p>
+            </div>
+            <p>在日常思考模式中，你倾向于建立清晰的秩序与安全感，对周围环境的变化有着敏锐的感察能力。面对抉择时，你更习惯先在内心建立完整的评估逻辑，再迈出稳妥的步调。</p>
+        `;
+    }
+    
+    // Section 02: Energy
+    const energyEl = document.getElementById('report-section-energy');
+    if (energyEl) {
+        energyEl.innerHTML = `
+            <p>在你的五行能量分布中：</p>
+            <div class="wuxing-grid">
+                ${Object.keys(scores).map(elem => `
+                    <div class="wuxing-item">
+                        <div class="wuxing-name">${elem}</div>
+                        <div class="wuxing-score">${scores[elem].toFixed(1)}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <p>相对最充盈的能量为 <strong>${strongest}</strong>，相对偏弱或需滋养的能量为 <strong>${weakest}</strong>。</p>
+            <div class="highlight-box">
+                <p><strong>能量调理建议：</strong> ${getWuxingAdvice(weakest, strongest)}</p>
+            </div>
+        `;
+    }
+    
+    // Section 03: Career
+    const careerEl = document.getElementById('report-section-career');
+    if (careerEl) {
+        careerEl.innerHTML = `
+            <p>根据你的日主 <strong>${dayMaster}</strong> 与 <strong>${balance}</strong> 的能量特征，在职场与工作中：</p>
+            <p>👉 ${getCareerAdvice(dayMaster, balance, weakest)}</p>
+            <p>在团队协作中，你更擅长扮演提供秩序、把控细节或独立攻坚的角色。避免在精力透支时硬撑承担过多的外部沟通，适度划分工作边界能让你的长板发挥得更加稳定。</p>
+        `;
+    }
+    
+    // Section 04: Relationship
+    const relationshipEl = document.getElementById('report-section-relationship');
+    if (relationshipEl) {
+        relationshipEl.innerHTML = `
+            <p>在人际与亲密关系中：</p>
+            <p>👉 <strong>表达模式：</strong> 你重情重义且注重真实的信任感，不喜过于浮夸的应酬。在深度关系中，你习惯用实际行动和陪伴来传递关怀。</p>
+            <p>👉 <strong>边界与需求：</strong> 你的内在需要足够的独立空间与情绪尊重。当感到边界被侵犯时，可能会选择暂时退缩或冷处理。学会温和、直接地表达需求，是让关系更顺畅的钥匙。</p>
+        `;
+    }
+    
+    // Section 05: Action Advice (Scenario-based)
+    const adviceEl = document.getElementById('report-section-advice');
+    if (adviceEl) {
+        const scenarioAdviceMap = {
+            self: `
+                <p><strong>基于当下【了解自己】的关注重点：</strong></p>
+                <p>1. <strong>接纳自己的情绪周期：</strong> 不必时刻要求自己处于完美的高能状态，能量偏弱时给大脑留出纯粹的休养窗口。</p>
+                <p>2. <strong>建立微小的能量仪式：</strong> 日常多通过接触自然（如步行、绿植）或物理运动来释放积累的内耗。</p>
+            `,
+            career: `
+                <p><strong>基于当下【事业方向】的关注重点：</strong></p>
+                <p>1. <strong>聚焦优势长板：</strong> 将主要精力放在自己最有把握和成就感的专业核心领域，减少非必要的人际内耗。</p>
+                <p>2. <strong>节奏求稳求精：</strong> 遇到变局时，保持定力，先看清资源与风险后再做重大长远决策。</p>
+            `,
+            relationship: `
+                <p><strong>基于当下【关系模式】的关注重点：</strong></p>
+                <p>1. <strong>清晰表达需求：</strong> 试着把“希望对方猜到”转化为“明确告知对方自己的感受与偏好”。</p>
+                <p>2. <strong>保有独立精神领地：</strong> 在亲密关系中依然留出一块专属于自己的兴趣空间，关系反而更加通透。</p>
+            `,
+            confusion: `
+                <p><strong>基于当下【走出迷茫】的关注重点：</strong></p>
+                <p>1. <strong>降低信息过载：</strong> 迷茫往往源于选项过多与比较焦虑，试着先只做一件具体、可控的小事。</p>
+                <p>2. <strong>关注当下节奏：</strong> 允许自己有一个“整理期”，厘清真正的核心需求，一步步恢复自信与秩序。</p>
+            `
+        };
+        adviceEl.innerHTML = scenarioAdviceMap[formState.scenario] || scenarioAdviceMap.self;
+    }
+    
+    // Section 06: Boundary
+    const boundaryEl = document.getElementById('report-section-boundary');
+    if (boundaryEl) {
+        boundaryEl.innerHTML = `
+            <p><strong>推演数据依据：</strong></p>
+            <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdout.substring(0, 240)}...</pre>
+            <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
+                ✦ <strong>说明书使用边界：</strong> 本说明书仅基于传统时间模型对性格习惯与行动倾向提供结构化观察，不预测疾病、寿命或决定人生选择。结果仅供自我启迪与探索参考。
+            </p>
+        `;
+    }
+
+    // Toggle Views
+    if (mainView) mainView.classList.add('hidden');
+    if (footer) footer.classList.add('hidden');
+    reportView.classList.remove('hidden');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeConsumerReportView() {
+    const reportView = document.getElementById('consumer-report-view');
+    const mainView = document.querySelector('.consumer-main');
+    const footer = document.querySelector('.consumer-footer');
+    
+    if (reportView) reportView.classList.add('hidden');
+    if (mainView) mainView.classList.remove('hidden');
+    if (footer) footer.classList.remove('hidden');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Global listeners for report view buttons
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'btn-report-edit' || e.target.id === 'btn-report-bottom-edit') {
+        closeConsumerReportView();
+        openConsumerFormShell();
+    } else if (e.target.id === 'btn-report-close' || e.target.id === 'btn-report-bottom-home') {
+        closeConsumerReportView();
+    }
+});
