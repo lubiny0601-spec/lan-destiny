@@ -21,8 +21,9 @@ body {
     color: var(--text-main);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh;
 }
 
 .app-container {
