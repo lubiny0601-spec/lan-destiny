@@ -1923,25 +1923,182 @@ body {
 
 .report-meta-pills {
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .meta-pill {
     background: var(--consumer-surface);
     border: 1px solid var(--consumer-border);
-    padding: 6px 16px;
-    border-radius: 100px;
+    padding: 6px 14px;
+    border-radius: 20px;
     font-size: 0.85rem;
     color: var(--consumer-text-sub);
 }
 
 .meta-pill.pill-accent {
     background: var(--consumer-primary-soft);
-    color: var(--consumer-primary-dark);
-    border-color: var(--consumer-primary);
+    border-color: rgba(49, 92, 76, 0.2);
+    color: var(--consumer-primary);
     font-weight: 600;
+}
+
+/* ========================================================
+   Level 1: 30-Second Summary Card
+   ======================================================== */
+.summary-30s-card {
+    margin-top: 32px;
+    background: #FFFFFF;
+    border: 1px solid var(--consumer-border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    text-align: left;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-30s-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--consumer-primary), var(--consumer-accent));
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.summary-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--consumer-primary);
+    background: var(--consumer-primary-soft);
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+.summary-keywords {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.summary-keyword-tag {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--consumer-accent);
+    background: #FAF7F2;
+    border: 1px solid rgba(181, 138, 82, 0.2);
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+
+.summary-observation {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--consumer-text-main);
+    margin-bottom: 20px;
+    font-weight: 500;
+    border-left: 3px solid var(--consumer-primary);
+    padding-left: 14px;
+}
+
+.summary-trio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.trio-item {
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.trio-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.trio-item p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.trio-advantage {
+    background: #F4F8F6;
+    border: 1px solid rgba(49, 92, 76, 0.15);
+    color: var(--consumer-primary-dark);
+}
+.trio-advantage .trio-label { color: var(--consumer-primary); }
+
+.trio-burnout {
+    background: #FFF7F5;
+    border: 1px solid rgba(200, 90, 50, 0.15);
+    color: #8C3014;
+}
+.trio-burnout .trio-label { color: #C85A32; }
+
+.trio-action {
+    background: #FAF8F2;
+    border: 1px solid rgba(181, 138, 82, 0.2);
+    color: #6E532B;
+}
+.trio-action .trio-label { color: var(--consumer-accent); }
+
+/* ========================================================
+   Level 3: Folded Evidence Accordion
+   ======================================================== */
+.evidence-accordion {
+    width: 100%;
+}
+
+.evidence-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.evidence-summary::-webkit-details-marker {
+    display: none;
+}
+
+.evidence-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.evidence-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--consumer-text-main);
+}
+
+.evidence-toggle-hint {
+    font-size: 0.85rem;
+    color: var(--consumer-accent);
+    font-weight: 500;
+}
+
+.evidence-accordion[open] .evidence-toggle-hint {
+    color: var(--consumer-text-muted);
 }
 
 .report-body {

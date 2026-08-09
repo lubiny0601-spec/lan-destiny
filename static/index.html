@@ -230,17 +230,40 @@
                         <span class="meta-pill" id="report-meta-calendar">历法：公历</span>
                         <span class="meta-pill pill-accent" id="report-meta-scenario">本次关注：了解自己</span>
                     </div>
+
+                    <!-- 30秒看懂自己 (Level 1 Summary) -->
+                    <div class="summary-30s-card" id="card-section-summary30s">
+                        <div class="summary-header">
+                            <span class="summary-badge">⚡ 30秒看懂自己</span>
+                            <div class="summary-keywords" id="summary-keywords"></div>
+                        </div>
+                        <div class="summary-observation" id="summary-observation"></div>
+                        <div class="summary-trio-grid">
+                            <div class="trio-item trio-advantage">
+                                <span class="trio-label">✦ 主要优势</span>
+                                <p id="summary-advantage"></p>
+                            </div>
+                            <div class="trio-item trio-burnout">
+                                <span class="trio-label">⚠ 主要精力消耗点</span>
+                                <p id="summary-burnout"></p>
+                            </div>
+                            <div class="trio-item trio-action">
+                                <span class="trio-label">🎯 当前建议减法</span>
+                                <p id="summary-action"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- Report Body Container -->
+            <!-- Report Body Container (Level 2 & Level 3) -->
             <section class="report-body">
                 <div class="report-container">
-                    <!-- 01 核心性格与内在结构 -->
+                    <!-- 01 你的核心画像 -->
                     <div class="report-card" id="card-section-personality">
                         <div class="card-header">
                             <span class="section-num">01</span>
-                            <h3>核心性格与内在结构</h3>
+                            <h3>你的核心画像</h3>
                         </div>
                         <div class="card-content" id="report-section-personality"></div>
                     </div>
@@ -254,40 +277,45 @@
                         <div class="card-content" id="report-section-energy"></div>
                     </div>
 
-                    <!-- 03 工作与协作方式 -->
+                    <!-- 03 事业与工作方式 -->
                     <div class="report-card" id="card-section-career">
                         <div class="card-header">
                             <span class="section-num">03</span>
-                            <h3>工作与协作方式</h3>
+                            <h3>事业与工作方式</h3>
                         </div>
                         <div class="card-content" id="report-section-career"></div>
                     </div>
 
-                    <!-- 04 关系中的表达模式 -->
+                    <!-- 04 关系中的自己 -->
                     <div class="report-card" id="card-section-relationship">
                         <div class="card-header">
                             <span class="section-num">04</span>
-                            <h3>关系中的表达模式</h3>
+                            <h3>关系中的自己</h3>
                         </div>
                         <div class="card-content" id="report-section-relationship"></div>
                     </div>
 
-                    <!-- 05 当下温和行动提醒 -->
+                    <!-- 05 未来14天行动实验 -->
                     <div class="report-card card-accent-bg" id="card-section-action">
                         <div class="card-header">
                             <span class="section-num">05</span>
-                            <h3>当下温和行动提醒</h3>
+                            <h3>未来 14 天行动实验</h3>
                         </div>
                         <div class="card-content" id="report-section-advice"></div>
                     </div>
 
-                    <!-- 06 计算依据与说明书边界 -->
+                    <!-- 06 为什么会得出这些观察 (Level 3 Evidence - Folded by default) -->
                     <div class="report-card card-muted-bg" id="card-section-evidence">
-                        <div class="card-header">
-                            <span class="section-num">06</span>
-                            <h3>计算依据与说明书边界</h3>
-                        </div>
-                        <div class="card-content" id="report-section-boundary"></div>
+                        <details class="evidence-accordion">
+                            <summary class="evidence-summary">
+                                <div class="evidence-summary-left">
+                                    <span class="section-num">✦</span>
+                                    <span class="evidence-title">为什么会得出这些观察（底层数据依据与使用边界）</span>
+                                </div>
+                                <span class="evidence-toggle-hint">点击展开/折叠依据 ▾</span>
+                            </summary>
+                            <div class="card-content" id="report-section-boundary" style="margin-top: 20px;"></div>
+                        </details>
                     </div>
 
                     <!-- Report Bottom Actions -->
