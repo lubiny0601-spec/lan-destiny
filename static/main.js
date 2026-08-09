@@ -1083,105 +1083,146 @@ if (btnCloseNotice) {
     });
 }
 
+
 // ------------------------------------------------------------------
-// Consumer Personalization Rules & 3-Layer Report Engine (Task 4.2)
+// Consumer Personalization Rules & 3-Layer Report Engine (Task 4.3A Data Model)
 // ------------------------------------------------------------------
 
 const DAY_MASTER_TRAITS = {
     '甲': {
         name: '甲木 (阳木)',
-        title: '参天之木 · 直率冲劲',
+        title: '参天开路型 · 极强目标感',
         trait: '如参天大树，性格直爽包容，富有主见与进取心，讲求信义，但有时略显固执，不愿轻易妥协折弯。',
-        advantage: '具备极强开创力与领头羊意识，面对目标目标明确，行动干净利落。',
-        risk: '容易因为刚直不阿而在人际或沟通中显得硬朗过度，缺乏回旋余地。'
+        advantage: '具备极强开创力与领头羊意识，面对明确目标时启动迅速，行动干净利落。',
+        risk: '容易因为刚直不阿而在人际或沟通中显得硬朗过度，缺乏回旋余地。',
+        realLifeScenario: '在团队或项目中，当大家还在犹豫时，你常常是第一个提出方案并开始行动的人；但若项目后期需要繁琐细致的修正，你可能会感到厌烦。',
+        selfVerifyQuestion: '上一次让你感到力不从心的项目，是因为开始时冲得太快，还是因为中途没有及时求助？',
+        keywords: ['主动开路', '刚直坚定', '容易硬撑']
     },
     '乙': {
         name: '乙木 (阴木)',
-        title: '柔草藤蔓 · 随应韧性',
+        title: '柔藤随应型 · 极强生存韧性',
         trait: '如藤蔓柔草，适应能力极强，外柔内刚，善于借力打力、随遇而安，富有人情味与洞察力。',
         advantage: '具备极高的环境生存韧性与协调手腕，擅长在复杂人际中化解矛盾。',
-        risk: '面对重大抉择时偶尔容易优柔寡断，过度受周围情绪与环境影响。'
+        risk: '面对重大抉择时偶尔容易优柔寡断，过度受周围情绪与环境影响。',
+        realLifeScenario: '在复杂的多方沟通中，你擅长听出各方的真实诉求并找到折中方案；但当需要做单点斩乱麻的坚决割舍时，内耗极大。',
+        selfVerifyQuestion: '你最近感到的纠结，是因为真的没有解决方案，还是因为试图照顾所有人的情绪而委屈了自己？',
+        keywords: ['灵活随应', '外柔内刚', '容易优柔']
     },
     '丙': {
         name: '丙火 (阳火)',
-        title: '太阳炽热 · 坦荡光明',
+        title: '太阳感染型 · 极高爆发力',
         trait: '如太阳炽热，热情光明，坦荡直率，行动力极强，乐于奉献与照亮他人，感染力十足。',
-        advantage: '具备天生的领袖气场与号召力，办事果敢，充满正能量。',
-        risk: '情绪来得快去得也快，容易三分钟热度，或因急躁而忽略细节执行。'
+        advantage: '具备天生的领袖气场与号召力，办事果敢，能迅速激活团队氛围。',
+        risk: '情绪来得快去得也快，容易三分钟热度，或因急躁而忽略细节执行。',
+        realLifeScenario: '在项目启动或对外演示时你充满激情与气场；但如果需要连续数周进行枯燥的数据核对，你会感到能量被迅速抽干。',
+        selfVerifyQuestion: '你最近感到疲惫，是因为工作量真的太大，还是因为近期缺乏能让你感到兴奋的新刺激与新反馈？',
+        keywords: ['热情感染', '爆发力强', '厌恶拖沓']
     },
     '丁': {
         name: '丁火 (阴火)',
-        title: '烛光灯火 · 洞察内敛',
+        title: '灯火洞察型 · 深度专注力',
         trait: '如烛光灯火，心思细腻内敛，专注度高，洞察力极强，富温情与礼数，内心执着而有明灯。',
         advantage: '擅长深耕细作与察觉他人未表达的需求，具备极高的高维感知力。',
-        risk: '容易思虑过度、敏感内耗，在低能期倾向于将情绪埋藏于心。'
+        risk: '容易思虑过度、敏感内耗，在低能期倾向于将情绪埋藏于心。',
+        realLifeScenario: '在独立钻研或一对一沟通中，你的专注力与敏锐度极高；但面对大声嚷嚷或毫无秩序的混乱场合，你会习惯性关上心门。',
+        selfVerifyQuestion: '你最近闷闷不乐，是因为对方真的做错了什么，还是因为你习惯性把情绪压在心里等待对方主动察觉？',
+        keywords: ['细腻专注', '洞察敏锐', '敏感内耗']
     },
     '戊': {
         name: '戊土 (阳土)',
-        title: '城墙高山 · 沉稳厚重',
+        title: '高山基石型 · 极强承载力',
         trait: '如城墙高山，沉稳厚重，包容守信，讲求实在，做人做事有始有终，极具安全感。',
         advantage: '承载力极强，能扛重任，在团队中是定海神针般的稳定基石。',
-        risk: '反应速度相对偏稳，容易显得固执守旧，对突发变革接受度较低。'
+        risk: '反应速度相对偏稳，容易显得固执守旧，对突发变革接受度较低。',
+        realLifeScenario: '当团队遭遇危机时，你往往是大家最信任的靠山；但在需要快速转向或尝试未知的极简实验时，你往往需要更长的评估期。',
+        selfVerifyQuestion: '你坚持不肯改变目前的方案，是因为目前的方案确实最优，还是因为内心抗拒未知的秩序重构？',
+        keywords: ['沉稳靠山', '坚固守信', '抗拒剧变']
     },
     '己': {
         name: '己土 (阴土)',
-        title: '田园沃土 · 温和筹谋',
+        title: '沃土筹谋型 · 极强吸收整合力',
         trait: '如田园沃土，温和包容，多才多艺，善于配合与筹谋，能吸收整合各方资源。',
         advantage: '具备极高的包容度与细节整合能力，擅长默默滋养团队与项目。',
-        risk: '偶尔缺乏果断斩乱麻的狠劲，容易因顾全大局而委屈自身需求。'
+        risk: '偶尔缺乏果断斩乱麻的狠劲，容易因顾全大局而委屈自身需求。',
+        realLifeScenario: '在幕后筹谋与资源协调中，你能把各方照顾得面面俱到；但当需要为自己争取正当利益时，往往难以开口。',
+        selfVerifyQuestion: '上一次你感到被占便宜，是因为对方太强势，还是因为你从一开始就没有表达自己的底线？',
+        keywords: ['温和滋养', '善于筹谋', '难以开口']
     },
     '庚': {
         name: '庚金 (阳金)',
-        title: '刀剑矿石 · 刚毅决断',
+        title: '刀剑裁决型 · 极强刚毅决断力',
         trait: '如刀剑矿石，刚毅果断，讲究义气与规则，决断力极强，重视效率与结果。',
         advantage: '斩钉截铁，执行力强，在危机时刻具备极佳的破局与裁决魄力。',
-        risk: '性格直白硬朗，有时说话易伤人而不自知，缺乏缓冲温情。'
+        risk: '性格直白硬朗，有时说话易伤人而不自知，缺乏缓冲温情。',
+        realLifeScenario: '面对混乱低效的流程，你能毫不留情地砍掉无用环节；但在处理敏感的人际情绪时，直截了当的说话方式容易被误认为冷酷。',
+        selfVerifyQuestion: '你刚才对同事/伴侣的评价，是为了解决问题，还是仅仅在宣泄对低效的容忍极限？',
+        keywords: ['刚毅裁决', '讲求规则', '说话直硬']
     },
     '辛': {
         name: '辛金 (阴金)',
-        title: '珠玉金饰 · 精致敏锐',
+        title: '珠玉精雕型 · 极高审美品味',
         trait: '如珠玉金饰，精致温润，注重品质与自尊，感受敏锐，带独特的审美品味与批判眼光。',
         advantage: '追求完美与极致细节，在专业领域具备极高的鉴赏力与雕琢精神。',
-        risk: '自尊心强，对批评较敏锐，容易在细节瑕疵上死磕而产生精神内耗。'
+        risk: '自尊心强，对批评较敏锐，容易在细节瑕疵上死磕而产生精神内耗。',
+        realLifeScenario: '你的产出往往精致优雅、品质极高；但当别人提出修改意见时，你内心容易产生被否定或被挑剔的强烈防御感。',
+        selfVerifyQuestion: '你迟迟不肯交付这份作品，是因为它真的达不到合格标准，还是因为你在和无意义的完美主义死磕？',
+        keywords: ['精致品味', '自尊心强', '细节死磕']
     },
     '壬': {
         name: '壬水 (阳水)',
-        title: '江河大海 · 奔放智谋',
+        title: '江河大局型 · 极强资源流动力',
         trait: '如江河大海，奔放聪明，格局宏大，随应万变，富战略眼光与宏观统筹力。',
         advantage: '思维活跃不设限，具备极强的资源流动意识与大局观。',
-        risk: '纪律束缚感差，容易心浮气躁，有时缺乏持久落地的细致耐性。'
+        risk: '纪律束缚感差，容易心浮气躁，有时缺乏持久落地的细致耐性。',
+        realLifeScenario: '在画大图景与看清趋势时你眼光独到；但如果让你每天按部就班地打卡并做微观记录，你会感到精神被强烈困住。',
+        selfVerifyQuestion: '你现在感到迷茫，是因为宏观方向不清，还是因为缺失了把大目标拆解为具体日计划的执行力？',
+        keywords: ['宏观大局', '资源流动', '讨厌束缚']
     },
     '癸': {
         name: '癸水 (阴水)',
-        title: '雨露甘霖 · 润物智谋',
+        title: '雨露智谋型 · 静水流深直觉力',
         trait: '如雨露甘霖，润物无声，智谋深远，内秀柔和，思维缜密，富深层直觉力。',
         advantage: '擅长以柔克刚、静水流深，在暗处默默布局与达成目标。',
-        risk: '想法过于隐秘内敛，容易陷入悲观多虑或沉溺于内心情感漩涡。'
+        risk: '想法过于隐秘内敛，容易陷入悲观多虑或沉溺于内心情感漩涡。',
+        realLifeScenario: '你往往能凭第六感精准捕捉事情的发展走势；但当直觉无法被逻辑证明时，你倾向于把担忧压在心底默默消化。',
+        selfVerifyQuestion: '你最近的焦虑，是因为现实中真的发生了糟糕的事，还是你在脑海中排练了太多未发生的坏结果？',
+        keywords: ['静水流深', '直觉敏锐', '隐秘多虑']
     }
 };
 
 const STRENGTH_MODULATION = {
     '身强': {
+        plainTitle: '自主驱动型',
+        plainExplain: '更容易依靠自身判断与独立行动推进事情，主导欲较强，适合独当一面。',
         desc: '全局能量主控力强，独立意识突出，习惯掌控主导权，擅长单点攻坚与主导大局；宜防范自负孤行。',
         workStyle: '倾向自主决策、主导业务方向，适合在富有自主权的舞台上担任核心指挥官。',
         relationStyle: '在关系中习惯占据主导庇护地位，表达直接，需学会主动倾听对方情绪。'
     },
     '偏强': {
+        plainTitle: '充沛破局型',
+        plainExplain: '能量较为充沛，自信心足，行动主动性强，在攻守转换间具备良好的独立破局力。',
         desc: '全局能量充沛有余，自信心足，行动主动性强；在攻守转换间具备良好的独立破局力。',
         workStyle: '具备极强的执行推动力与目标感，擅长领头攻坚或独立承担重大板块。',
         relationStyle: '互动中积极坦诚，愿意为他人遮风挡雨，需适度给对方留出表达空间。'
     },
     '身弱': {
+        plainTitle: '环境协同型',
+        plainExplain: '更容易感知环境变化，善于借助资源、团队与合作伙伴的力量共同推进。',
         desc: '全局能量敏感细腻，感受力强，善于统筹协同与借势打力；宜防范精力过度分散与多虑内耗。',
         workStyle: '擅长借助平台与团队力量协同推进，在智囊、风控或协调岗位上长板明显。',
         relationStyle: '关系中极其看重信任感与情绪安全感，敏感体贴，需建立清晰的自我边界。'
     },
     '偏弱': {
+        plainTitle: '敏锐精细型',
+        plainExplain: '感受力敏锐，对环境变化感察深刻，擅长在既定框架内精雕细琢与避其锋芒。',
         desc: '全局能量柔和敏锐，对环境变化感察深刻，擅长避其锋芒与精细化运作；宜注重能量滋养。',
         workStyle: '擅长在既定框架内精雕细琢，适合扮演智囊协助、品质把控或顾问专家角色。',
         relationStyle: '重情重义且注重深层精神共鸣，偶尔表达含蓄，需要对方给予明确正向反馈。'
     },
     '均势': {
+        plainTitle: '灵活调和型',
+        plainExplain: '攻守兼备，阴阳调和，能根据外部环境灵活切换独立攻坚与团队协同模式。',
         desc: '全局能量中和均衡，阴阳调和，应变度极高；能根据外部环境灵活切换攻守与进退策略。',
         workStyle: '适应力极广，既能独立攻坚亦能团队协作，在复杂变化中能保持情绪定力。',
         relationStyle: '关系中讲求互惠平等与相互尊重，沟通平和理性，具备极佳的人际缓冲力。'
@@ -1308,7 +1349,7 @@ function parseConsumerBaziResult(baziResult) {
     return rawResult;
 }
 
-// 2. Layer 2 Model Building Function
+// 2. Layer 2 Model Building Function (Task 4.3A Data Architecture)
 function buildPersonalizedReportModel(parsedResult, formState) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
@@ -1337,6 +1378,49 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         confusion: '关于降低内耗、破除焦虑与重建秩序的综合建议'
     };
 
+    // --- Task 4.3A Plain Term Mapping ---
+    const plainTerms = {
+        dayMasterPlain: `核心驱动力: ${traitInfo.title}`,
+        dayMasterExplain: `你更自然、更习惯采用的行动方式与性格底色（传统模型中称为日主“${stem}${dm.element}”）`,
+        strengthPlain: `力量模式: ${strengthInfo.plainTitle}`,
+        strengthExplain: strengthInfo.plainExplain,
+        strongestPlain: `主导行为倾向: ${parsedResult.strongestElement}`,
+        weakestPlain: `精细补给倾向: ${parsedResult.weakestElement}`
+    };
+
+    // --- Task 4.3A 30-Second Summary ---
+    const summary30s = {
+        keywords: traitInfo.keywords || ['主动推动', '重视反馈', '容易过载'],
+        coreObservation: `你在目标清晰、正向反馈及时的环境中更能发挥高绩效。真正需要留意的，通常不是能力不足，而是容易因过分追求完美或不愿示弱而独自承担过多事。`,
+        topAdvantage: traitInfo.advantage,
+        topBurnout: traitInfo.risk,
+        topAction: '未来两周尝试做一次“选择题减法”，主动暂停一个非核心消耗事项。',
+        scenarioLabel: `本次关注: ${scenarioNames[activeScenario] || '了解自己'}`,
+        scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
+    };
+
+    // --- Task 4.3A 14-Day Action Experiments (带做什么、为什么、如何判断 3 要素) ---
+    const actionExperiments14Days = [
+        {
+            priorityPill: 'P1 核心突破',
+            action: '建立“精力黑洞”拦截清单：在接受新任务前，先写下目标、交付标准与权责边界。',
+            why: `由于你的驱动模式为【${traitInfo.title}】，提前划清边界可有效拦截由于缺乏准备而带来的后期反复修正内耗。`,
+            verifyMetric: '观察未来两周内任务返工或沟通拉扯的频次是否明显下降。'
+        },
+        {
+            priorityPill: 'P2 惯性防范',
+            action: '警惕“优势过度使用”的副作用：当习惯性冲动或理性过度分析时，强制暂停 3 秒再做回应。',
+            why: `【${strengthInfo.plainTitle}】的惯性容易让你在压力下习惯性硬扛或过度防御，建立 3 秒缓冲可保护情绪定力。`,
+            verifyMetric: '观察在遇到分歧时，自己是否能够平和、清晰地表达真实诉求而非陷入辩驳。'
+        },
+        {
+            priorityPill: 'P3 能量补给',
+            action: '设立不作决定的纯粹休养窗口：每周固定 2 小时关闭外部消息，不做任何重大抉择。',
+            why: `补充相对偏弱的【${parsedResult.weakestElement}】元素倾向，通过静心休养恢复精神敏锐度与直觉爆发力。`,
+            verifyMetric: '观察休养窗口结束后，次日工作的专注度与情绪安顿感是否提升。'
+        }
+    ];
+
     // 1. Personality Section
     const framingMap = {
         self: `<p>【了解自己 · 精力模式拆解】本次报告重点聚焦于你的“内在精力结构”。在日常生活中，你最容易因为过度思考或追求完美而无意识消耗精神力。你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>）：</p>`,
@@ -1362,6 +1446,8 @@ function buildPersonalizedReportModel(parsedResult, formState) {
             </div>
         </div>
         <p>👉 <strong>格局调和建议：</strong> ${strengthInfo.desc}</p>
+        <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-top: 8px;">💡 <strong>现实场景验证：</strong> ${traitInfo.realLifeScenario || ''}</p>
+        <p style="font-size: 0.88rem; color: var(--consumer-primary-dark);">❓ <strong>自我验证提问：</strong> ${traitInfo.selfVerifyQuestion || ''}</p>
     `;
 
     // 2. Energy Section with Visual Energy Bars
@@ -1435,108 +1521,20 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     `;
 
     // 5. Action Section with Priority Action Cards (P1 / P2 / P3)
-    const scenarioAdviceMap = {
-        self: `
-            <div class="priority-action-list">
+    const actionHTML = `
+        <div class="priority-action-list">
+            ${actionExperiments14Days.map(item => `
                 <div class="priority-action-card">
-                    <span class="priority-pill priority-p1">P1 核心突破</span>
+                    <span class="priority-pill ${item.priorityPill.includes('P1') ? 'priority-p1' : item.priorityPill.includes('P2') ? 'priority-p2' : 'priority-p3'}">${item.priorityPill}</span>
                     <div class="action-card-body">
-                        <h4>建立“精力黑洞”拦截清单</h4>
-                        <p>记录每天让你感到最疲惫的三种情境，识别哪些是无意义的防御性内耗，主动减少非必要的精神支出。</p>
+                        <h4>${item.action}</h4>
+                        <p style="margin-bottom: 4px;">💡 <strong>适合原因：</strong> ${item.why}</p>
+                        <p style="font-size: 0.85rem; color: var(--consumer-primary-dark);">🎯 <strong>判断方式：</strong> ${item.verifyMetric}</p>
                     </div>
                 </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p2">P2 惯性防范</span>
-                    <div class="action-card-body">
-                        <h4>警惕“优势过度使用”的副作用</h4>
-                        <p>当理性变成分析瘫痪、或直觉变成冲动散漫时，及时踩下暂停键，给大脑建立理智的决策缓冲。”</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p3">P3 能量补给</span>
-                    <div class="action-card-body">
-                        <h4>设立不作决定的纯粹休养窗口</h4>
-                        <p>在每周固定时段关闭外部信息输入，让大脑从高度警备状态中彻底卸载，恢复直觉灵敏度。</p>
-                    </div>
-                </div>
-            </div>
-        `,
-        career: `
-            <div class="priority-action-list">
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p1">P1 核心突破</span>
-                    <div class="action-card-body">
-                        <h4>重新定义你的核心战术长板</h4>
-                        <p>放弃补齐无关紧要的短板，将 80% 的精力锁死在你最有把握、最不可替代的专业壁垒上。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p2">P2 协同防范</span>
-                    <div class="action-card-body">
-                        <h4>划清团队协作的权责隔离带</h4>
-                        <p>明确告知上下游你的工作习惯与交付边界，减少因沟通模糊带来的无谓摩擦与内耗拉扯。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p3">P3 决策验证</span>
-                    <div class="action-card-body">
-                        <h4>采用“小步微实验”代替长期停顿</h4>
-                        <p>面对变局或职业转型时，一次只验证一个具体假设，用真实反馈代替长期的停顿焦虑。</p>
-                    </div>
-                </div>
-            </div>
-        `,
-        relationship: `
-            <div class="priority-action-list">
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p1">P1 核心突破</span>
-                    <div class="action-card-body">
-                        <h4>替换“期待对方猜到”的隐性期待</h4>
-                        <p>尝试将模糊的情绪化表达，翻译为平和、具体的真实需求说明，降低沟通门槛。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p2">P2 边界防护</span>
-                    <div class="action-card-body">
-                        <h4>设立不可逾越的心理冷却边界</h4>
-                        <p>当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间，防止伤害彼此关系。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p3">P3 理性沟通</span>
-                    <div class="action-card-body">
-                        <h4>区分事实与情绪化联想</h4>
-                        <p>在沟通中坚持“基于发生的具体事实交流”，防范凭直觉过度解读对方意图或过度防御。</p>
-                    </div>
-                </div>
-            </div>
-        `,
-        confusion: `
-            <div class="priority-action-list">
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p1">P1 核心突破</span>
-                    <div class="action-card-body">
-                        <h4>强制做“选择题减法”</h4>
-                        <p>列出此刻卡住你的所有难题，只保留一个最紧急事项，其余暂时移出大脑关注区，减轻心理过载。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p2">P2 秩序重构</span>
-                    <div class="action-card-body">
-                        <h4>建立“绝对可控”的每日微小秩序</h4>
-                        <p>把 80% 的注意力从无法掌控的未来，收回至今天就能 100% 完成的小事上，找回掌控感。</p>
-                    </div>
-                </div>
-                <div class="priority-action-card">
-                    <span class="priority-pill priority-p3">P3 极简验证</span>
-                    <div class="action-card-body">
-                        <h4>启动两周极简验证计划</h4>
-                        <p>放弃寻找“完美方案”，先执行一个可控的小行动，在移动中重新找到生活与事业的节奏。</p>
-                    </div>
-                </div>
-            </div>
-        `
-    };
+            `).join('')}
+        </div>
+    `;
 
     // 6. Evidence Section
     const stdoutSnippet = (parsedResult.rawStdout || '').substring(0, 240);
@@ -1553,6 +1551,9 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     return {
         isDegraded: false,
         scenario: activeScenario,
+        summary30s,
+        plainTerms,
+        actionExperiments14Days,
         userHeader: {
             nickname: formState.nickname || '阿澜',
             genderText: `性别：${formState.gender === 'female' ? '女' : '男'}`,
@@ -1565,7 +1566,7 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         energyHTML,
         careerHTML,
         relationshipHTML,
-        actionHTML: scenarioAdviceMap[activeScenario] || scenarioAdviceMap.self,
+        actionHTML,
         evidenceHTML
     };
 }
