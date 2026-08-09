@@ -1611,6 +1611,30 @@ function renderConsumerReport(baziResult, formState) {
         if (calendarEl) calendarEl.textContent = reportModel.userHeader.calendarText;
         if (scenarioEl) scenarioEl.textContent = reportModel.userHeader.scenarioLabel;
 
+        // Render Level 1: 30-Second Summary Card
+        const summaryKeywordsEl = document.getElementById('summary-keywords');
+        if (summaryKeywordsEl && reportModel.summary30s) {
+            summaryKeywordsEl.innerHTML = (reportModel.summary30s.keywords || [])
+                .map(kw => `<span class="summary-keyword-tag">${kw}</span>`)
+                .join('');
+        }
+        const summaryObsEl = document.getElementById('summary-observation');
+        if (summaryObsEl && reportModel.summary30s) {
+            summaryObsEl.textContent = reportModel.summary30s.coreObservation;
+        }
+        const summaryAdvEl = document.getElementById('summary-advantage');
+        if (summaryAdvEl && reportModel.summary30s) {
+            summaryAdvEl.textContent = reportModel.summary30s.topAdvantage;
+        }
+        const summaryBurnoutEl = document.getElementById('summary-burnout');
+        if (summaryBurnoutEl && reportModel.summary30s) {
+            summaryBurnoutEl.textContent = reportModel.summary30s.topBurnout;
+        }
+        const summaryActionEl = document.getElementById('summary-action');
+        if (summaryActionEl && reportModel.summary30s) {
+            summaryActionEl.textContent = reportModel.summary30s.topAction;
+        }
+
         // Section DOM Reordering based on scenario
         const container = document.querySelector('#consumer-report-view .report-container');
         const cardNodes = {
@@ -1639,7 +1663,7 @@ function renderConsumerReport(baziResult, formState) {
             });
         }
 
-        // Fill Content
+        // Fill Level 2 Content
         const personalityEl = document.getElementById('report-section-personality');
         if (personalityEl) personalityEl.innerHTML = reportModel.personalityHTML;
 
@@ -1655,8 +1679,19 @@ function renderConsumerReport(baziResult, formState) {
         const adviceEl = document.getElementById('report-section-advice');
         if (adviceEl) adviceEl.innerHTML = reportModel.actionHTML;
 
+        // Fill Level 3 Folded Evidence
         const boundaryEl = document.getElementById('report-section-boundary');
-        if (boundaryEl) boundaryEl.innerHTML = reportModel.evidenceHTML;
+        if (boundaryEl) {
+            boundaryEl.innerHTML = `
+                ${reportModel.evidenceHTML}
+                <div class="evidence-pro-entry" style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--consumer-border);">
+                    <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-bottom: 8px;">
+                        需要对照完整的生辰干支排盘、大运流年或十神格局细节？
+                    </p>
+                    <button id="btn-enter-pro-from-evidence" class="btn-secondary-sm">进入专业排盘工作台反查 →</button>
+                </div>
+            `;
+        }
     }
 
     // Toggle Views
@@ -1686,5 +1721,14 @@ document.addEventListener('click', (e) => {
         openConsumerFormShell();
     } else if (e.target.id === 'btn-report-close' || e.target.id === 'btn-report-bottom-home') {
         closeConsumerReportView();
+    } else if (e.target.id === 'btn-enter-pro-from-evidence') {
+        closeConsumerReportView();
+        const proView = document.getElementById('professional-mode-view');
+        const consumerView = document.getElementById('consumer-mode-view');
+        if (proView && consumerView) {
+            consumerView.classList.add('hidden');
+            proView.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 });
