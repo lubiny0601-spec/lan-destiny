@@ -2032,12 +2032,6 @@ document.addEventListener('click', (e) => {
         closeConsumerReportView();
     } else if (e.target.id === 'btn-enter-pro-from-evidence') {
         closeConsumerReportView();
-        const proView = document.getElementById('professional-mode-view');
-        const consumerView = document.getElementById('consumer-mode-view');
-        if (proView && consumerView) {
-            consumerView.classList.add('hidden');
-            proView.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        switchViewMode(VIEW_MODES.PROFESSIONAL);
     }
 });
