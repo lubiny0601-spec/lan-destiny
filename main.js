@@ -1349,7 +1349,124 @@ function parseConsumerBaziResult(baziResult) {
     return rawResult;
 }
 
-// 2. Layer 2 Model Building Function (Task 4.3A Data Architecture)
+// ------------------------------------------------------------------
+// Consumer Scenario Deep-Dive & Action Generators (Task 4.3C)
+// ------------------------------------------------------------------
+
+const OVERUSE_RISK_MAP = {
+    '甲': '容易将“目标感”演变为刚愎固执，不愿向他人暴露弱点或寻求支持，容易单打独斗导致能量透支。',
+    '乙': '容易将“适应力”演变为讨好妥协，为了维护表面和谐而模糊个人底线，累积隐性怨气。',
+    '丙': '容易将“热情感染”演变为急躁冒进与三分钟热度，缺乏深耕落地的耐心，面对迟缓反馈极易烦躁。',
+    '丁': '容易将“洞察敏锐”演变为思虑过度与情绪内耗，在暗中预设过多假想敌，消耗大量心力。',
+    '戊': '容易将“沉稳承载”演变为抗拒变革与固步自封，对新工具与新逻辑反应偏慢，承担过多沉重包袱。',
+    '己': '容易将“包容筹谋”演变为委曲求全与过度奉献，难以果断拒绝他人要求，常感精力被无度蚕食。',
+    '庚': '容易将“刚毅决断”演变为严苛批判与说话直硬，对低效容忍度极低，容易无意间刺伤他人。',
+    '辛': '容易将“追求精致”演变为死磕细节与完美主义内耗，对批评极其敏感，常因微小瑕疵而全盘自我怀疑。',
+    '壬': '容易将“宏观大局”演变为浮躁散漫与缺乏定力，难以忍受琐碎执行，容易在频繁转换赛道中迷失。',
+    '癸': '容易将“静水流深”演变为隐秘多虑与悲观预演，在脑海中排练过多灾难化假设，不敢果断采取行动。'
+};
+
+const ENERGY_RECHARGE_DRAIN_MAP = {
+    '甲': {
+        recharge: ['拥有自主支配权的拓荒项目', '明确且具挑战性的单点攻坚', '大自然绿植与户外徒步活动'],
+        drain: ['被微观管理与无序指挥', '缺乏明确决策权的拉扯会议', '繁琐重复的后期修修补补']
+    },
+    '乙': {
+        recharge: ['氛围融洽且相互支持的小型团队', '允许灵活调整推进方式的环境', '温馨舒适的私密生活空间'],
+        drain: ['针锋相对的高压冲突场合', '被要求做单点斩乱麻的残酷决断', '周围充斥消极抱怨与负能量']
+    },
+    '丙': {
+        recharge: ['能得到热烈正向反馈的公开舞台', '充满新鲜刺激的创意头脑风暴', '日光充足且视野开阔的明亮空间'],
+        drain: ['长达数周封闭枯燥的数据核对', '毫无情绪波动的冷漠办公氛围', '被要求按部就班做事务性打卡']
+    },
+    '丁': {
+        recharge: ['一对一深度交心的真诚沟通', '安静无打扰的独立专研时光', '阅读、艺术或具有精神滋养的活动'],
+        drain: ['人声嘈杂且毫无秩序的混乱社交', '情绪被粗暴忽视或被误解', '高频切换任务打断心流']
+    },
+    '戊': {
+        recharge: ['节奏稳健、权责明确的成熟平台', '有充分时间做前期调研评估的事项', '接触大地泥土与规律生活作息'],
+        drain: ['毫无预警的突发剧烈架构变动', '被逼迫在信息不足时盲目押注', '承诺被频繁单方面撕毁']
+    },
+    '己': {
+        recharge: ['被真诚认可与信任的后盾角色', '按照自己的节奏整合筹备资源', '家庭或亲密圈子的温暖陪伴'],
+        drain: ['需要正面发起攻坚抢夺资源的竞争', '付出被视为理所当然缺乏感谢', '被迫站上风口浪尖承担攻击']
+    },
+    '庚': {
+        recharge: ['清晰透明的规则与高效率协作', '大刀阔斧推行流程优化的裁决权', '高强度体能锻炼与利落整理'],
+        drain: ['说话弯弯绕绕不讲重点的低效沟通', '人浮于事、责任不清的推诿环境', '被迫配合毫无结果的虚假表演']
+    },
+    '辛': {
+        recharge: ['高品质、高审美的独立创作空间', '专业水准得到同行的极致赞誉', '精致整洁、极具格调的个人环境'],
+        drain: ['产出被粗糙对待或毫无品味地修改', '公开场合遭受不专业的贬低挑剔', '脏乱差且缺乏质感的工作环境']
+    },
+    '壬': {
+        recharge: ['自由度极高、跨界的宏观战略构想', '跨国、跨行业的新信息流转接触', '临水散步与不设限的思维漫游'],
+        drain: ['被按在固定工位做极其死板的微观记录', '视野狭隘、只看眼前蝇头小利的局限', '行动被重重繁琐流程层层审批']
+    },
+    '癸': {
+        recharge: ['凭借深层直觉默默布局并见效', '充足的水疗、静心冥想与睡眠休养', '与懂自己底层逻辑的知己轻声交谈'],
+        drain: ['被强行要求用严密逻辑证明所有直觉', '情绪隐私被公开展露与剖析', '长期处于身心缺水或极度亢奋状态']
+    }
+};
+
+const CAREER_SYNERGY_MAP = {
+    '身强': '你具备天生的主导者与破局者意识，在拥有充分自主权与决策权的战术位上绩效最高；若处于层层汇报的执行层，容易产生强烈的束缚内耗。',
+    '偏强': '你兼具强大的目标感与攻坚执行力，擅长在明确的大方向下独立负责重大板块，适合担任项目主推手或核心骨干。',
+    '身弱': '你对环境风向与资源变动极具敏锐度，擅长在成熟平台中借势发力，在智囊支持、跨部门协同或专业顾问岗位上长板最明显。',
+    '偏弱': '你擅长在既定框架下精雕细琢，具备出色的风险防御与品质把控能力，适合扮演专家顾问、品控中枢或关键辅助角色。',
+    '均势': '你攻守兼备，能根据项目不同阶段灵活切换“独立攻坚”与“团队统筹”角色，是团队中不可或缺的粘合剂与定海神针。'
+};
+
+const CAREER_CHAOS_MAP = {
+    '木': '面对行业变局，你倾向于快速生发新想法并尝试开路，但需防范盲目开拓新业务而分散有限资源。',
+    '火': '面对突发危机，你往往能以极高的爆发力迅速应对与鼓舞士气，但需注意保护体力，防范后期耐力断档。',
+    '土': '面对外部动荡，你的第一反应是坚守阵地与稳住基盘，但需警惕过度防御而错失主动转型的窗口期。',
+    '金': '面对效率危机，你能果断手起刀落斩断亏损环节，但需注意安抚团队情绪，避免因态度刚硬引发次生矛盾。',
+    '水': '面对市场变动，你的思维极其灵活善于捕捉新趋势，但需设立清晰的阶段止盈与止损点，防范方向摇摆。'
+};
+
+const RELATION_DEFENSE_MAP = {
+    '阳': '在遭遇关系冲突或误解时，你容易倾向于**直接反驳、争夺定义权或用行动掩盖情绪**，虽然初衷是解决问题，但外在表现容易让对方感受到强势与压迫感。',
+    '阴': '在遭遇关系冲突或压力时，你容易倾向于**沉默退缩、把委屈压在心底或开启防御性冷淡**，虽然避免了当场冲突，但容易在内心累积隐性隔阂与怨气。'
+};
+
+const RELATION_BOUNDARY_MAP = {
+    '身强': {
+        bottomLine: '保持彼此的独立人格与平等尊重，不接受单方面的控制与无理索取。',
+        vulnerability: '容易因责任感过强而过度大包大揽，不知不觉承担了本该由对方承担的生活或情绪责任。'
+    },
+    '偏强': {
+        bottomLine: '沟通开诚布公，坦荡相待，不接受隐瞒与玩弄心机。',
+        vulnerability: '习惯用“我为你好”的付出方式代替倾听，容易忽略对方细腻的心理感受。'
+    },
+    '身弱': {
+        bottomLine: '需要稳定、可预测的情绪安全感，拒绝情绪暴力与冷暴力。',
+        vulnerability: '容易因为害怕关系破裂而一再退让底线，直到自身能量彻底透支崩溃。'
+    },
+    '偏弱': {
+        bottomLine: '尊重彼此的心理冷却空间，不接受过度侵入私人精神领域。',
+        vulnerability: '过度在意对方的微表情与情绪变化，容易因过度解读而陷入精神内耗。'
+    },
+    '均势': {
+        bottomLine: '讲求互惠互利与相互扶持，追求健康对等的双向奔赴。',
+        vulnerability: '有时过于理智客观看待感情，容易在对方需要情绪共鸣时显得过于冷静。'
+    }
+};
+
+const RELATION_REFLECTION_MAP = {
+    '甲': '在下一次感到沟通受阻时，尝试先向对方表达一句“我理解你的感受”，再阐述你的解决方案。',
+    '乙': '试着在感到不舒服的第一时间平静说出“我现在需要一些时间”，而不是委屈配合后再默默委屈。',
+    '丙': '在急于表达观点前，先深呼吸停留 3 秒，给对方完整的表达机会，避免抢话打断。',
+    '丁': '将你心中希望对方察觉的需求，用温和而明确的文字直接告诉对方，不留猜测盲区。',
+    '戊': '在坚持原则的同时，试着给对方一个温暖的肢体接触或温和的解释，软化紧绷气氛。',
+    '己': '明确划出一件你“不再代劳”的事情，让对方学会为自己的生活板块负责。',
+    '庚': '在指出问题后，补充一句肯定对方初衷的话，用柔软包裹锋芒。',
+    '辛': '当对方提出不同意见时，提醒自己“对方只是在讨论事情本身，并不是在否定我的价值”。',
+    '壬': '在向对方勾勒远大蓝图的同时，落实一个今天就能共同完成的生活小细节。',
+    '癸': '把脑海中反复纠结的某个担忧主动向对方核实，用真实对话打破臆想中的坏结果。'
+};
+
+// 2. Layer 2 Model Building Function (Task 4.3C Enhanced Architecture)
 function buildPersonalizedReportModel(parsedResult, formState) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
@@ -1394,43 +1511,112 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         coreObservation: `你在目标清晰、正向反馈及时的环境中更能发挥高绩效。真正需要留意的，通常不是能力不足，而是容易因过分追求完美或不愿示弱而独自承担过多事。`,
         topAdvantage: traitInfo.advantage,
         topBurnout: traitInfo.risk,
-        topAction: '未来两周尝试做一次“选择题减法”，主动暂停一个非核心消耗事项。',
+        topAction: activeScenario === 'confusion' 
+            ? '未来两周强制做“选择题减法”，只保留一个核心事项，暂停非核心拉扯。' 
+            : activeScenario === 'career'
+            ? '在接下来的两周内，把 80% 的注意力锁死在最有把握的专业壁垒上。'
+            : activeScenario === 'relationship'
+            ? '将一次含糊的情绪期待翻译为具体的真实需求，主动降低沟通门槛。'
+            : '未来两周尝试做一次“精力黑洞拦截”，主动暂停一个消耗型事项。',
         scenarioLabel: `本次关注: ${scenarioNames[activeScenario] || '了解自己'}`,
         scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
     };
 
-    // --- Task 4.3A 14-Day Action Experiments (带做什么、为什么、如何判断 3 要素) ---
-    const actionExperiments14Days = [
-        {
-            priorityPill: 'P1 核心突破',
-            action: '建立“精力黑洞”拦截清单：在接受新任务前，先写下目标、交付标准与权责边界。',
-            why: `由于你的驱动模式为【${traitInfo.title}】，提前划清边界可有效拦截由于缺乏准备而带来的后期反复修正内耗。`,
-            verifyMetric: '观察未来两周内任务返工或沟通拉扯的频次是否明显下降。'
-        },
-        {
-            priorityPill: 'P2 惯性防范',
-            action: '警惕“优势过度使用”的副作用：当习惯性冲动或理性过度分析时，强制暂停 3 秒再做回应。',
-            why: `【${strengthInfo.plainTitle}】的惯性容易让你在压力下习惯性硬扛或过度防御，建立 3 秒缓冲可保护情绪定力。`,
-            verifyMetric: '观察在遇到分歧时，自己是否能够平和、清晰地表达真实诉求而非陷入辩驳。'
-        },
-        {
-            priorityPill: 'P3 能量补给',
-            action: '设立不作决定的纯粹休养窗口：每周固定 2 小时关闭外部消息，不做任何重大抉择。',
-            why: `补充相对偏弱的【${parsedResult.weakestElement}】元素倾向，通过静心休养恢复精神敏锐度与直觉爆发力。`,
-            verifyMetric: '观察休养窗口结束后，次日工作的专注度与情绪安顿感是否提升。'
-        }
-    ];
+    // --- Task 4.3C Scenario-tailored 14-Day Action Experiments ---
+    let actionExperiments14Days = [];
+    if (activeScenario === 'career') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 战术定位',
+                action: '重新聚焦核心输出壁垒：放弃补齐无意义的平庸短板，将 80% 的工作精力聚焦在最不可替代的长板上。',
+                why: `你的驱动核心为【${traitInfo.title}】，单点发挥长板带来的边际收益远高于在低效环节挣扎。`,
+                verifyMetric: '观察本周内核心工作产出的质量是否提升，是否减少了在琐碎非核心事务上的耗时。'
+            },
+            {
+                priorityPill: 'P2 协作防范',
+                action: '划清权责隔离带：在跨部门或团队协作前，以书面形式明确各方交付节点与权责界限。',
+                why: `【${strengthInfo.plainTitle}】的特征提示：边界模糊容易导致中途返工或责任推诿，提前划界是保护工作心流的护城河。`,
+                verifyMetric: '观察在项目推进中，沟通扯皮或责任模糊的次数是否明显降低。'
+            },
+            {
+                priorityPill: 'P3 微步验证',
+                action: '启动两周职业微实验：选择一个低成本的新想法，在两周内完成最小闭环测试并获取真实反馈。',
+                why: `避免陷入无止境的筹备与分析瘫痪，用小步快跑的敏捷验证激活职业动能。`,
+                verifyMetric: '观察在两周结束时，是否拿到了具体的真实反馈，而非停留在脑海推演中。'
+            }
+        ];
+    } else if (activeScenario === 'relationship') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 表达升级',
+                action: '替换隐性期待：当产生情绪时，用“我感到...因为我需要...”的句式直接表达诉求，不期待对方猜测。',
+                why: `【${dm.yinYang === '阳' ? '阳干直接' : '阴干内敛'}】的表达倾向容易产生沟通错位，清晰直接是降低沟通摩擦的最短路径。`,
+                verifyMetric: '观察在表达需求后，对方的响应效率是否明显提升，是否减少了因猜疑而引发的冷战。'
+            },
+            {
+                priorityPill: 'P2 边界防护',
+                action: '设立 15 分钟心理冷却区：当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。',
+                why: `在情绪高压下容易触发防御本能，15 分钟的情绪缓冲能有效防止说出伤害关系的冲动言语。`,
+                verifyMetric: '观察在发生分歧时，自己是否能够避免情绪上头，实现平和理性的双向沟通。'
+            },
+            {
+                priorityPill: 'P3 关系反思',
+                action: `践行定制关系提醒：${RELATION_REFLECTION_MAP[stem] || '主动肯定对方一次付出'}。`,
+                why: `针对你的天干原型建立正向互动微习惯，逐步修复与强化亲密信任基石。`,
+                verifyMetric: '观察两周内与伴侣或重要伙伴之间的互动温度是否有所回暖。'
+            }
+        ];
+    } else if (activeScenario === 'confusion') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 强制减法',
+                action: '执行“选择题减法”：列出此刻卡住你的所有难题，只保留 1 个最关键问题，其余 100% 移出大脑关注区。',
+                why: `迷茫的根源往往不是无路可走，而是大脑被过多相互冲突的目标挤占导致认知过载。`,
+                verifyMetric: '观察在减少待办事项后，脑力负担是否明显减轻，注意力是否重新集中在核心行动上。'
+            },
+            {
+                priorityPill: 'P2 秩序重构',
+                action: '建立每日 100% 可控微习惯：每天早晨完成一件极小且绝对可控的事（如 10 分钟晨间记录或整理工位）。',
+                why: `从无法掌控的未来焦虑中抽离，通过触手可及的微小秩序重新建立生活的掌控感与安定感。`,
+                verifyMetric: '观察连续打卡 7 天后，内心的焦虑定力与确定感是否逐步回升。'
+            },
+            {
+                priorityPill: 'P3 极简验证',
+                action: '两周行动优先 Sprint：放弃寻找“完美解决方案”，先执行一个可控的探索小动作，在移动中调整方向。',
+                why: `【${strengthInfo.plainTitle}】在迷茫期容易停滞不前，行动是打破焦虑循环的唯一解药。`,
+                verifyMetric: '两周后回顾：自己是否已经在真实世界中迈出了实质性的一步。'
+            }
+        ];
+    } else {
+        // Default Scenario: self
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 核心突破',
+                action: '建立“精力黑洞”拦截清单：在接受新任务前，先写下目标、交付标准与权责边界。',
+                why: `由于你的驱动模式为【${traitInfo.title}】，提前划清边界可有效拦截由于缺乏准备而带来的后期反复修正内耗。`,
+                verifyMetric: '观察未来两周内任务返工或沟通拉扯的频次是否明显下降。'
+            },
+            {
+                priorityPill: 'P2 惯性防范',
+                action: '警惕“优势过度使用”的副作用：当习惯性冲动或理性过度分析时，强制暂停 3 秒再做回应。',
+                why: `【${strengthInfo.plainTitle}】的惯性容易让你在压力下习惯性硬扛或过度防御，建立 3 秒缓冲可保护情绪定力。`,
+                verifyMetric: '观察在遇到分歧时，自己是否能够平和、清晰地表达真实诉求而非陷入辩驳。'
+            },
+            {
+                priorityPill: 'P3 能量补给',
+                action: '设立不作决定的纯粹休养窗口：每周固定 2 小时关闭外部消息，不做任何重大抉择。',
+                why: `补充相对偏弱的【${parsedResult.weakestElement}】元素倾向，通过静心休养恢复精神敏锐度与直觉爆发力。`,
+                verifyMetric: '观察休养窗口结束后，次日工作的专注度与情绪安顿感是否提升。'
+            }
+        ];
+    }
 
-    // 1. Personality Section
-    const framingMap = {
-        self: `<p>【了解自己 · 精力模式拆解】本次报告重点聚焦于你的“内在精力结构”。在日常生活中，你最容易因为过度思考或追求完美而无意识消耗精神力。你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>）：</p>`,
-        career: `<p>【事业方向 · 战术定位拆解】本次报告优先切入你的“职场能量与战术位”。你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>），直接决定了你的工作爆发力与协作习惯：</p>`,
-        relationship: `<p>【关系模式 · 情感边界拆解】本次报告优先切入你的“关系互动与安全感机制”。在深度人际或亲密关系中，你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>），深刻影响着你如何索取与传递关怀：</p>`,
-        confusion: `<p>【走出迷茫 · 秩序重建拆解】本次报告优先切入你的“当下迷茫解构与秩序破局”。面对人生整理期，你的日主为 <strong>${traitInfo.name}</strong>（命局格局：<strong>${parsedResult.strength}</strong>）提示我们：迷茫往往是因为试图同时解决太多不属于当前核心的问题：</p>`
-    };
+    // --- 1. Personality Section Construction ---
+    const rechargeDrain = ENERGY_RECHARGE_DRAIN_MAP[stem] || ENERGY_RECHARGE_DRAIN_MAP['丙'];
+    const overuseRisk = OVERUSE_RISK_MAP[stem] || '容易因过分追求完美而产生内耗。';
 
-    const personalityHTML = `
-        ${framingMap[activeScenario] || framingMap.self}
+    let personalityHTML = `
+        <p>【内在驱动模式】你的核心驱动原型为 <strong>${traitInfo.name}</strong>（命局力量：<strong>${parsedResult.strength} · ${strengthInfo.plainTitle}</strong>）：</p>
         <div class="highlight-box">
             <p><strong>天干核心原型：</strong> ${traitInfo.title}</p>
             <p style="margin-top: 6px; font-size: 0.9rem;">${traitInfo.trait}</p>
@@ -1445,32 +1631,59 @@ function buildPersonalizedReportModel(parsedResult, formState) {
                 <div class="col-content">${traitInfo.risk}</div>
             </div>
         </div>
-        <p>👉 <strong>格局调和建议：</strong> ${strengthInfo.desc}</p>
-        <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-top: 8px;">💡 <strong>现实场景验证：</strong> ${traitInfo.realLifeScenario || ''}</p>
-        <p style="font-size: 0.88rem; color: var(--consumer-primary-dark);">❓ <strong>自我验证提问：</strong> ${traitInfo.selfVerifyQuestion || ''}</p>
+        <p>👉 <strong>力量调和建议：</strong> ${strengthInfo.desc}</p>
     `;
 
-    // 2. Energy Section with Visual Energy Bars
+    if (activeScenario === 'self') {
+        // Deep Dive for self scenario (占正文 35% 权重深度展开)
+        personalityHTML += `
+            <div class="highlight-box" style="background: #FFF9F2; border-left-color: var(--consumer-accent); margin-top: 24px;">
+                <p><strong>⚠ “优势过度使用”的隐藏代价：</strong> ${overuseRisk}</p>
+            </div>
+            <div class="scenario-matrix">
+                <div class="matrix-card card-primary">
+                    <h5>🔋 精力充能情境</h5>
+                    <ul>${rechargeDrain.recharge.map(i => `<li>${i}</li>`).join('')}</ul>
+                </div>
+                <div class="matrix-card card-accent">
+                    <h5>🪫 精力流失情境（精力黑洞）</h5>
+                    <ul>${rechargeDrain.drain.map(i => `<li>${i}</li>`).join('')}</ul>
+                </div>
+            </div>
+            <div class="reflection-card">
+                <h5>💡 现实场景验证与行为惯性</h5>
+                <p>${traitInfo.realLifeScenario || ''}</p>
+                <p style="margin-top: 10px; font-weight: 600; color: var(--consumer-primary-dark);">❓ 深度自我验证提问：${traitInfo.selfVerifyQuestion || ''}</p>
+            </div>
+        `;
+    } else {
+        personalityHTML += `
+            <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-top: 8px;">💡 <strong>现实场景验证：</strong> ${traitInfo.realLifeScenario || ''}</p>
+            <p style="font-size: 0.88rem; color: var(--consumer-primary-dark);">❓ <strong>自我验证提问：</strong> ${traitInfo.selfVerifyQuestion || ''}</p>
+        `;
+    }
+
+    // --- 2. Energy Section ---
     const totalScore = Object.values(parsedResult.elementScores).reduce((a, b) => a + b, 0) || 10;
     const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
     
     const strongestAdviceMap = {
         '木': '你的木属性能量充盈，创意生发力强；但需防范思虑漫无边际，宜将想法及时具象化落地。',
-        '火': '你的火属性能量旺盛，爆发力与感染力极高；但需防范冲动急躁，注意保护心血管与睡眠质量。',
+        '火': '你的火属性能量旺盛，爆发力与感染力极高；但需防范冲动急躁，注意保持稳定作息。',
         '土': '你的土属性能量厚重，包容与承载力极佳；但需防范过于固执守旧，适度保持思维的流动灵活性。',
         '金': '你的金属性能量刚锐，规则感与裁决力极强；但需防范过分严苛与批判锋芒，保留缓冲温情。',
-        '水': '你的水属性能量深沉，智谋与应变力突出；但需防范过度悲观多虑，多接触日光与户外活动。'
+        '水': '你的水属性能量深沉，智谋与应变力突出；但需防范过度多虑，多接触日光与户外活动。'
     };
     const weakestAdviceMap = {
-        '木': '多接触大自然绿植，增加体能拉伸，多吃青绿色蔬菜，补足生机与向上进取心。',
-        '火': '多接触阳光与明亮环境，适当饮用温热茶水，保持积极的社交接触以补充热情。',
-        '土': '建立规律的生活作息，赤脚接触大地或泥土沙滩，注重脾胃调理以扎实根基。',
-        '金': '保持居住与工作环境整洁干爽，佩戴金属饰品，行事培养果断利落的界限感。',
-        '水': '保证充足的睡眠休养，多饮用纯净水，通过静心或冥想沉淀杂念，滋养心神。'
+        '木': '多接触自然环境，建立结构化思考习惯，增强主动开拓的执行信心。',
+        '火': '保持明亮通透的生活工作环境，适度参与正向社交以补充情绪热情。',
+        '土': '建立规律的生活作息，把想法落实在具体文档或清单上，扎实基础。',
+        '金': '保持居住与工作环境整洁干爽，做事培养利落果断的边界感与决断力。',
+        '水': '保证充足的深度睡眠与休养，通过静心或冥想沉淀杂念，滋养专注力。'
     };
 
     const energyHTML = `
-        <p>在你的东方时间五行能量分布中，各维度占比与强弱可视化呈现如下：</p>
+        <p>在你的东方时间五行行为倾向分布中，各维度占比与强弱可视化呈现如下：</p>
         <div class="energy-bar-list">
             ${Object.keys(parsedResult.elementScores).map(elem => {
                 const score = parsedResult.elementScores[elem];
@@ -1486,16 +1699,16 @@ function buildPersonalizedReportModel(parsedResult, formState) {
                 `;
             }).join('')}
         </div>
-        <p>相对最主导的能量为 <strong>${parsedResult.strongestElement}</strong>（${strongestAdviceMap[parsedResult.strongestElement] || ''}），相对需滋养的能量为 <strong>${parsedResult.weakestElement}</strong>。</p>
+        <p>相对最主导的倾向为 <strong>${parsedResult.strongestElement}</strong>（${strongestAdviceMap[parsedResult.strongestElement] || ''}），相对需精细滋养的倾向为 <strong>${parsedResult.weakestElement}</strong>。</p>
         <div class="highlight-box">
-            <p><strong>五行滋养指南：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
+            <p><strong>精细滋养指南：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
         </div>
     `;
 
-    // 3. Career Section with Dos & Donts Tactical Redlines
+    // --- 3. Career Section Construction ---
     const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
-    const careerHTML = `
-        <p>根据你的天干 <strong>${dm.stem}${dm.element} (${dm.yinYang}${dm.element})</strong> 与 <strong>${parsedResult.strength}</strong> 格局：</p>
+    let careerHTML = `
+        <p>根据你的天干 <strong>${dm.stem}${dm.element} (${dm.yinYang}${dm.element})</strong> 与 <strong>${parsedResult.strength} · ${strengthInfo.plainTitle}</strong>：</p>
         <div class="dos-donts-container">
             <div class="dos-box">
                 <strong>✔ 最推荐的战术定位</strong>
@@ -1506,22 +1719,90 @@ function buildPersonalizedReportModel(parsedResult, formState) {
                 避免在精力低谷时硬撑承担非核心的无谓摩擦，避免无边界的琐碎消耗，将 80% 的注意力锁死在核心长板壁垒上。
             </div>
         </div>
-        <p>👉 <strong>最佳工作节奏：</strong> ${strengthInfo.workStyle}</p>
+        <p>👉 <strong>最佳工作推进节奏：</strong> ${strengthInfo.workStyle}</p>
     `;
 
-    // 4. Relationship Section
+    if (activeScenario === 'career') {
+        // Deep Dive for career scenario (占正文 35% 权重深度展开)
+        careerHTML += `
+            <div class="scenario-matrix" style="margin-top: 24px;">
+                <div class="matrix-card card-primary">
+                    <h5>⚔ 独立攻坚 vs 团队协同倾向</h5>
+                    <p>${CAREER_SYNERGY_MAP[parsedResult.strength] || ''}</p>
+                </div>
+                <div class="matrix-card card-accent">
+                    <h5>🌪 面对变局与逆境的反应模式</h5>
+                    <p>${CAREER_CHAOS_MAP[dm.element] || ''}</p>
+                </div>
+            </div>
+            <div class="reflection-card">
+                <h5>🎯 职场定位两周微实验建议</h5>
+                <p>在接下来的两周内，主动识别并减少一项低效拉扯的协调环节，将节省的精力投入到核心专业产出中，观察个人效能与情绪变化。</p>
+            </div>
+        `;
+    }
+
+    // --- 4. Relationship Section Construction ---
     const relationYinYangText = ELEMENT_RELATION_RULES[dm.yinYang] || ELEMENT_RELATION_RULES['阳'];
-    const relationshipHTML = `
-        <p>在人际与深度亲密关系中：</p>
+    const relationBoundary = RELATION_BOUNDARY_MAP[parsedResult.strength] || RELATION_BOUNDARY_MAP['均势'];
+    let relationshipHTML = `
+        <p>在深度人际与亲密关系中：</p>
         <p>👉 <strong>表达模式：</strong> ${relationYinYangText}</p>
-        <p>👉 <strong>安全感与边界：</strong> ${strengthInfo.relationStyle}</p>
+        <p>👉 <strong>安全感与边界机制：</strong> ${strengthInfo.relationStyle}</p>
         <div class="highlight-box">
             <p><strong>沟通防爆指南：</strong> 当感受到情绪透支或边界被侵犯时，第一时间申请独立的心理冷却空间，避免陷入无休止的内耗辩驳。</p>
         </div>
     `;
 
-    // 5. Action Section with Priority Action Cards (P1 / P2 / P3)
-    const actionHTML = `
+    if (activeScenario === 'relationship') {
+        // Deep Dive for relationship scenario (占正文 35% 权重深度展开)
+        relationshipHTML += `
+            <div class="scenario-matrix" style="margin-top: 24px;">
+                <div class="matrix-card card-primary">
+                    <h5>🛡 冲突状态下的典型防御姿态</h5>
+                    <p>${RELATION_DEFENSE_MAP[dm.yinYang] || ''}</p>
+                </div>
+                <div class="matrix-card card-accent">
+                    <h5>🤝 关系边界核查表</h5>
+                    <p><strong>应坚守底线：</strong> ${relationBoundary.bottomLine}</p>
+                    <p style="margin-top: 6px;"><strong>易被侵蚀软肋：</strong> ${relationBoundary.vulnerability}</p>
+                </div>
+            </div>
+            <div class="reflection-card">
+                <h5>❓ 关系深度自我觉察提问</h5>
+                <p>${RELATION_REFLECTION_MAP[stem] || '试着在下一次沟通中，先倾听对方的感受，再表达你的需求。'}</p>
+            </div>
+        `;
+    }
+
+    // --- 5. Action Section Construction ---
+    let actionHTML = '';
+    if (activeScenario === 'confusion') {
+        // Deep Dive for confusion scenario (占正文 35% 权重深度展开)
+        actionHTML += `
+            <p>【当下迷茫解构】迷茫的本质往往是“内在驱动力”与“当前外部节奏”发生了暂时性错位。重建掌控感的第一步，是建立清晰的划界清单：</p>
+            <div class="checklist-matrix">
+                <div class="checklist-col col-keep">
+                    <h5>✔ 100% 绝对可控（立即保留）</h5>
+                    <ul>
+                        <li>每天固定 30 分钟不被打扰的纯专注/休养时间</li>
+                        <li>以“做完一个小闭环”为最小交付单位，收回掌控感</li>
+                        <li>明确拒绝一次非核心的情绪索取或低效消耗</li>
+                    </ul>
+                </div>
+                <div class="checklist-col col-pause">
+                    <h5>✖ 暂不可控（强制减法/暂停）</h5>
+                    <ul>
+                        <li>试图一次性想通未来 3-5 年的所有人生规划</li>
+                        <li>过度揣测他人的负面评价与未发生的结果</li>
+                        <li>在身心低能期强行做出重大人生决策</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+
+    actionHTML += `
         <div class="priority-action-list">
             ${actionExperiments14Days.map(item => `
                 <div class="priority-action-card">
@@ -1536,7 +1817,7 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         </div>
     `;
 
-    // 6. Evidence Section
+    // --- 6. Evidence Section ---
     const stdoutSnippet = (parsedResult.rawStdout || '').substring(0, 240);
     const pillarsStr = parsedResult.fourPillars.year ? `年柱:${parsedResult.fourPillars.year} 月柱:${parsedResult.fourPillars.month} 日柱:${parsedResult.fourPillars.day} 时柱:${parsedResult.fourPillars.hour}` : '基础四柱已成功转换';
     const evidenceHTML = `
@@ -1654,6 +1935,35 @@ function renderConsumerReport(baziResult, formState) {
             confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
         };
 
+        const focusCardMap = {
+            self: 'personality',
+            career: 'career',
+            relationship: 'relationship',
+            confusion: 'action'
+        };
+        const activeFocusCardKey = focusCardMap[reportModel.scenario] || 'personality';
+
+        // Reset and highlight focus card
+        Object.keys(cardNodes).forEach(key => {
+            const card = cardNodes[key];
+            if (!card) return;
+            const badge = card.querySelector('.focus-badge');
+            if (badge) badge.remove();
+
+            if (key === activeFocusCardKey) {
+                card.classList.add('main-focus-card');
+                const header = card.querySelector('.card-header');
+                if (header) {
+                    const b = document.createElement('span');
+                    b.className = 'focus-badge';
+                    b.innerHTML = '✦ 本次聚焦主章节';
+                    header.appendChild(b);
+                }
+            } else {
+                card.classList.remove('main-focus-card');
+            }
+        });
+
         if (container && bottomActions) {
             const targetOrder = sectionOrders[reportModel.scenario] || sectionOrders.self;
             targetOrder.forEach(key => {
@@ -1698,7 +2008,6 @@ function renderConsumerReport(baziResult, formState) {
     if (mainView) mainView.classList.add('hidden');
     if (footer) footer.classList.add('hidden');
     reportView.classList.remove('hidden');
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
