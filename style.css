@@ -2515,14 +2515,77 @@ body {
 .report-bottom-actions {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
     margin-top: 32px;
     padding-top: 32px;
     border-top: 1px solid var(--consumer-border);
 }
 
+/* Toast Notification */
+.consumer-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(30, 48, 40, 0.92);
+    backdrop-filter: blur(8px);
+    color: #FFFFFF;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+}
+
+.consumer-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Print Styles for Exporting to PDF */
+@media print {
+    body {
+        background: #FFFFFF !important;
+        color: #1A1A1A !important;
+    }
+    .report-top-bar,
+    .report-bottom-actions,
+    .evidence-pro-entry,
+    .evidence-toggle-hint,
+    .consumer-toast,
+    .consumer-nav,
+    .consumer-footer {
+        display: none !important;
+    }
+    .consumer-report-view {
+        background: #FFFFFF !important;
+    }
+    .report-banner {
+        padding: 20px 0 !important;
+        border-bottom: 2px solid #E0E0E0 !important;
+    }
+    .report-card {
+        box-shadow: none !important;
+        border: 1px solid #E0E0E0 !important;
+        page-break-inside: avoid;
+        margin-bottom: 20px !important;
+    }
+    .evidence-accordion {
+        display: block !important;
+    }
+    .evidence-accordion[open] > .card-content {
+        display: block !important;
+    }
+}
+
 @media (max-width: 768px) {
     .report-top-bar { padding: 12px 20px; }
+    .top-bar-actions { flex-wrap: wrap; gap: 8px; }
     .report-banner { padding: 40px 20px 20px 20px; }
     .report-user-title { font-size: 28px; }
     .report-body { padding: 16px; }
@@ -2531,4 +2594,5 @@ body {
     .trait-split-box, .dos-donts-container { grid-template-columns: 1fr; }
     .priority-action-card { flex-direction: column; gap: 8px; }
     .report-bottom-actions { flex-direction: column; }
+    .checklist-matrix { grid-template-columns: 1fr; }
 }
