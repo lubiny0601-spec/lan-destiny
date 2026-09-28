@@ -20,7 +20,19 @@ if not os.path.exists(PYTHON_PATH):
     # Fallback to current running Python executable
     PYTHON_PATH = sys.executable
 
-SKILL_DIR = r"C:\Users\杨鲁斌\.claude\skills\bazi-mingli"
+# Skill directory with portable environment fallback
+DEFAULT_SKILL_DIR = os.path.expandvars(r"%USERPROFILE%\.claude\skills\bazi-mingli")
+FALLBACK_SKILL_DIR = r"C:\Users\杨鲁斌\.claude\skills\bazi-mingli"
+
+SKILL_DIR = os.environ.get("BAZI_SKILL_DIR")
+if not SKILL_DIR or not os.path.exists(SKILL_DIR):
+    if os.path.exists(DEFAULT_SKILL_DIR):
+        SKILL_DIR = DEFAULT_SKILL_DIR
+    elif os.path.exists(FALLBACK_SKILL_DIR):
+        SKILL_DIR = FALLBACK_SKILL_DIR
+    else:
+        SKILL_DIR = DEFAULT_SKILL_DIR
+
 SCRIPTS_DIR = os.path.join(SKILL_DIR, "scripts")
 
 class CalcRequest(BaseModel):
@@ -169,8 +181,10 @@ def calculate(req: CalcRequest):
     try:
         env = os.environ.copy()
         env["PYTHONIOENCODING"] = "utf-8"
-        res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True, encoding="utf-8")
+        res = subprocess.run(cmd, env=env, capture_output=True, text=True, check=True, encoding="utf-8", timeout=15)
         return {"stdout": res.stdout, "stderr": res.stderr}
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="推演进程执行超时（15秒熔断防护），请检查输入参数或稍后重试。")
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr or e.stdout or str(e)
         raise HTTPException(status_code=400, detail=f"Process execution failed: {error_msg.strip()}")

@@ -757,15 +757,43 @@ function populateBirthDateSelects() {
         monthSelect.appendChild(opt);
     }
     
-    daySelect.innerHTML = '';
-    for (let d = 1; d <= 31; d++) {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = `${d}日`;
-        if (d === 15) opt.selected = true;
-        daySelect.appendChild(opt);
+    // Helper to calculate valid days for a given year, month and calendar
+    function getDaysInMonth(year, month, calendarType) {
+        if (calendarType === 'lunar') {
+            return 30; // Chinese lunar month has at most 30 days
+        }
+        return new Date(year, month, 0).getDate();
     }
-    
+
+    function updateDaysInMonth() {
+        const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
+        const year = parseInt(yearSelect.value, 10) || 1995;
+        const month = parseInt(monthSelect.value, 10) || 5;
+        const calendarType = calendarRadio ? calendarRadio.value : 'solar';
+
+        const maxDays = getDaysInMonth(year, month, calendarType);
+        const prevDay = parseInt(daySelect.value, 10) || 15;
+        const targetDay = Math.min(prevDay, maxDays);
+
+        daySelect.innerHTML = '';
+        for (let d = 1; d <= maxDays; d++) {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = `${d}日`;
+            if (d === targetDay) opt.selected = true;
+            daySelect.appendChild(opt);
+        }
+    }
+
+    // Initial days generation
+    updateDaysInMonth();
+
+    // Dynamically adjust day options when year, month or calendar changes
+    yearSelect.addEventListener('change', updateDaysInMonth);
+    monthSelect.addEventListener('change', updateDaysInMonth);
+    const calRadios = document.querySelectorAll('input[name="consumer_calendar"]');
+    calRadios.forEach(r => r.addEventListener('change', updateDaysInMonth));
+
     hourSelect.innerHTML = '';
     const shichenList = [
         { val: 0, label: '00:00 (子时 23-01点)' },
@@ -993,6 +1021,13 @@ if (btnSubmitConsumerForm) {
         } else {
             consumerFormShellState.birthHour = rawHour;
             consumerFormShellState.timePrecision = precisionSelect ? precisionSelect.value : 'hour';
+        }
+
+        // Validate date boundaries defensively before dispatching to backend
+        const maxValidDays = (consumerFormShellState.calendarType === 'lunar') ? 30 : new Date(consumerFormShellState.birthYear, consumerFormShellState.birthMonth, 0).getDate();
+        if (consumerFormShellState.birthDay > maxValidDays) {
+            alert(`选择的出生日期无效：${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月最多只有 ${maxValidDays} 天，请核对。`);
+            return;
         }
 
         const calcPayload = {
@@ -2023,6 +2058,59 @@ function closeConsumerReportView() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// Toast & Export Utilities
+function showToast(msg) {
+    let toast = document.getElementById('consumer-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'consumer-toast';
+        toast.className = 'consumer-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2800);
+}
+
+function copyReportSummary() {
+    const name = document.getElementById('report-user-name')?.textContent || '我';
+    const obs = document.getElementById('summary-observation')?.textContent || '';
+    const adv = document.getElementById('summary-advantage')?.textContent || '';
+    const burnout = document.getElementById('summary-burnout')?.textContent || '';
+    const action = document.getElementById('summary-action')?.textContent || '';
+    const keywordEls = document.querySelectorAll('#summary-keywords .summary-keyword-tag');
+    const keywords = Array.from(keywordEls).map(el => el.textContent.trim()).join(' · ');
+
+    const copyText = `【${name} 的个人结构说明书 · 核心洞察】\n` +
+        `✦ 核心标签：${keywords || '自我探索'}\n` +
+        `✦ 核心观察：${obs}\n` +
+        `✦ 核心长板：${adv}\n` +
+        `✦ 精力损耗：${burnout}\n` +
+        `✦ 建议减法：${action}\n\n` +
+        `—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copyText).then(() => {
+            showToast('已复制核心说明书摘要至剪贴板！');
+        }).catch(() => {
+            prompt('请手动复制以下内容：', copyText);
+        });
+    } else {
+        prompt('请手动复制以下内容：', copyText);
+    }
+}
+
+function printReport() {
+    // Expand accordion before printing so the complete report is visible
+    const accordion = document.querySelector('.evidence-accordion');
+    if (accordion) {
+        accordion.setAttribute('open', '');
+    }
+    window.print();
+}
+
 // Global listeners for report view buttons
 document.addEventListener('click', (e) => {
     if (e.target.id === 'btn-report-edit' || e.target.id === 'btn-report-bottom-edit') {
@@ -2030,6 +2118,10 @@ document.addEventListener('click', (e) => {
         openConsumerFormShell();
     } else if (e.target.id === 'btn-report-close' || e.target.id === 'btn-report-bottom-home') {
         closeConsumerReportView();
+    } else if (e.target.id === 'btn-report-copy' || e.target.id === 'btn-report-bottom-copy') {
+        copyReportSummary();
+    } else if (e.target.id === 'btn-report-print' || e.target.id === 'btn-report-bottom-print') {
+        printReport();
     } else if (e.target.id === 'btn-enter-pro-from-evidence') {
         closeConsumerReportView();
         switchViewMode(VIEW_MODES.PROFESSIONAL);

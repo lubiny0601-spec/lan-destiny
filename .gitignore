@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+output/
+fix_js.py
+.superpowers/
+.vscode/
+.idea/
+node_modules/
