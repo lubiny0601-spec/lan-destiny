@@ -239,22 +239,22 @@
                     <!-- 30秒看懂自己 (Level 1 Summary) -->
                     <div class="summary-30s-card" id="card-section-summary30s">
                         <div class="summary-header">
-                            <span class="summary-badge">⚡ 30秒看懂自己</span>
+                            <span class="summary-badge" id="summary-badge-text">⚡ 30秒看懂自己</span>
                             <div class="summary-keywords" id="summary-keywords"></div>
                             <button type="button" id="btn-summary-poster" class="btn-summary-poster">🖼 生成分享海报</button>
                         </div>
                         <div class="summary-observation" id="summary-observation"></div>
                         <div class="summary-trio-grid">
                             <div class="trio-item trio-advantage">
-                                <span class="trio-label">✦ 主要优势</span>
+                                <span class="trio-label" id="summary-label-adv">✦ 主要优势</span>
                                 <p id="summary-advantage"></p>
                             </div>
                             <div class="trio-item trio-burnout">
-                                <span class="trio-label">⚠ 主要精力消耗点</span>
+                                <span class="trio-label" id="summary-label-burnout">⚠ 主要精力消耗点</span>
                                 <p id="summary-burnout"></p>
                             </div>
                             <div class="trio-item trio-action">
-                                <span class="trio-label">🎯 当前建议减法</span>
+                                <span class="trio-label" id="summary-label-action">🎯 当前建议减法</span>
                                 <p id="summary-action"></p>
                             </div>
                         </div>
@@ -543,66 +543,13 @@
                                         </div>
                                     </div>
 
-                                    <!-- 3 Behavioral Situational Calibration Questions (情境校准题) -->
+                                    <!-- 3 Behavioral Situational Calibration Questions (动态情境校准题) -->
                                     <div class="situational-calibration-block">
                                         <div class="situational-block-header">
-                                            <span class="situational-badge">✦ 现实情境校准</span>
-                                            <span class="situational-sub">结合你当下的真实处境，让行动建议更精准（点击可切换）</span>
+                                            <span class="situational-badge" id="situational-badge-title">✦ 现实情境校准</span>
+                                            <span class="situational-sub" id="situational-badge-sub">结合你当下的真实处境，让行动建议更精准</span>
                                         </div>
-
-                                        <div class="situational-question">
-                                            <div class="sq-title">Q1. 面对突发压力或卡点时，你的第一反应更接近？</div>
-                                            <div class="sq-options">
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q1" value="push" checked>
-                                                    <span>⚡ 主动硬扛推进</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q1" value="think">
-                                                    <span>🔍 反复推演求稳</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q1" value="harmony">
-                                                    <span>🤝 顾全各方情绪</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div class="situational-question">
-                                            <div class="sq-title">Q2. 最近最消耗你精力的真实场景是？</div>
-                                            <div class="sq-options">
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q2" value="overload" checked>
-                                                    <span>🌀 事项太多太杂</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q2" value="boundary">
-                                                    <span>🕸 协作与关系拉扯</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q2" value="stagnation">
-                                                    <span>🌫 方向摇摆难决断</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div class="situational-question">
-                                            <div class="sq-title">Q3. 未来两周，你更希望采取哪种微调方式？</div>
-                                            <div class="sq-options">
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q3" value="subtract" checked>
-                                                    <span>✂ 做减法清场聚焦</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q3" value="breakthrough">
-                                                    <span>🚀 单点小闭环验证</span>
-                                                </label>
-                                                <label class="sq-pill">
-                                                    <input type="radio" name="situational_q3" value="recharge">
-                                                    <span>🛡 重建边界与充能</span>
-                                                </label>
-                                            </div>
-                                        </div>
+                                        <div id="situational-questions-container"></div>
                                     </div>
 
                                     <div id="consumer-form-error" class="form-inline-error hidden" role="alert"></div>
