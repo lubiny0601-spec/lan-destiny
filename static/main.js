@@ -1846,9 +1846,9 @@ const RELATION_REFLECTION_MAP = {
 };
 
 const PLAIN_ELEMENT_MAP = {
-    '木': { name: '生长开拓', short: '开拓规划', color: '#315C4C' },
-    '火': { name: '表达感染', short: '传播号召', color: '#C85A32' },
-    '土': { name: '承载统筹', short: '稳健整合', color: '#B58A52' },
+    '木': { name: '生长开拓', short: '开拓规划', color: '#006241' },
+    '火': { name: '表达感染', short: '传播号召', color: '#c82014' },
+    '土': { name: '承载统筹', short: '稳健整合', color: '#cba258' },
     '金': { name: '秩序决断', short: '精密裁决', color: '#607870' },
     '水': { name: '洞察思辨', short: '策略流动', color: '#2B4C5E' }
 };
@@ -2523,19 +2523,16 @@ function renderSharePosterCanvas(model) {
     canvas.width = W;
     canvas.height = H;
 
-    const fontSans = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
-    const fontSerif = '"Songti SC", "Noto Serif SC", "STSong", "SimSun", serif';
+    const fontSans = '"Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    const fontSerif = '"Lora", "Songti SC", "Noto Serif SC", "STSong", serif';
 
-    // 1. Warm Rice-Paper Background & Subtle Texture
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#F8F5EE');
-    bgGrad.addColorStop(1, '#F1ECE1');
-    ctx.fillStyle = bgGrad;
+    // 1. Warm Cream Background & Subtle Canvas Tone
+    ctx.fillStyle = '#f2f0eb';
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle botanical watermark circle in top-right
+    // Subtle House Green watermark circle in top-right
     ctx.save();
-    ctx.strokeStyle = 'rgba(49, 92, 76, 0.06)';
+    ctx.strokeStyle = 'rgba(0, 98, 65, 0.05)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(W - 140, 210, 180, 0, Math.PI * 2);
@@ -2545,188 +2542,188 @@ function renderSharePosterCanvas(model) {
     ctx.stroke();
     ctx.restore();
 
-    // 2. Double Herbarium Frame Border
-    ctx.strokeStyle = '#315C4C';
+    // 2. Double Heritage Frame Border
+    ctx.strokeStyle = '#006241';
     ctx.lineWidth = 3;
     ctx.strokeRect(36, 36, W - 72, H - 72);
-    ctx.strokeStyle = 'rgba(49, 92, 76, 0.28)';
+    ctx.strokeStyle = 'rgba(0, 98, 65, 0.22)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(48, 48, W - 96, H - 96);
 
     // 3. Top Header Metadata
-    ctx.fillStyle = '#315C4C';
+    ctx.fillStyle = '#006241';
     ctx.font = `700 22px ${fontSans}`;
-    ctx.fillText('观澜 LAN.DESTINY · 个人结构标本卡', 84, 108);
+    ctx.fillText('观澜 LAN.DESTINY · 个人结构说明卡', 84, 108);
 
-    ctx.fillStyle = '#7A8680';
-    ctx.font = `500 20px ${fontSans}`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    ctx.font = `600 20px ${fontSans}`;
     const metaRight = `${model.userHeader?.scenarioLabel || '本次关注：了解自己'}`;
     const metaRightW = ctx.measureText(metaRight).width;
     ctx.fillText(metaRight, W - 84 - metaRightW, 108);
 
     // Divider line
-    ctx.strokeStyle = 'rgba(49, 92, 76, 0.2)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#edebe9';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(84, 130);
     ctx.lineTo(W - 84, 130);
     ctx.stroke();
 
-    // 4. User Title & Cinnabar Seal Stamp
+    // 4. User Title & Seal Stamp
     const nickname = model.userHeader?.nickname || '阿澜';
-    ctx.fillStyle = '#1E2B25';
-    ctx.font = `700 54px ${fontSerif}`;
+    ctx.fillStyle = '#006241';
+    ctx.font = `700 52px ${fontSerif}`;
     ctx.fillText(`${nickname} 的内在结构说明书`, 84, 206);
 
-    ctx.fillStyle = '#52635B';
-    ctx.font = `500 24px ${fontSans}`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    ctx.font = `600 22px ${fontSans}`;
     const subMeta = `${model.userHeader?.birthText || ''}  |  ${model.userHeader?.genderText || ''}  |  ${model.userHeader?.calendarText || ''}`;
     ctx.fillText(subMeta, 84, 250);
 
     // Traditional Cinnabar Seal Stamp (朱砂印章)
     ctx.save();
     drawRoundedRect(ctx, W - 210, 158, 126, 98, 8);
-    ctx.fillStyle = 'rgba(200, 90, 50, 0.1)';
+    ctx.fillStyle = 'rgba(200, 32, 20, 0.08)';
     ctx.fill();
-    ctx.strokeStyle = '#C85A32';
+    ctx.strokeStyle = '#c82014';
     ctx.lineWidth = 2.5;
     ctx.stroke();
-    ctx.fillStyle = '#C85A32';
+    ctx.fillStyle = '#c82014';
     ctx.font = `700 24px ${fontSerif}`;
     ctx.fillText('观澜', W - 172, 198);
     ctx.font = `600 18px ${fontSans}`;
     ctx.fillText('本机推演印', W - 192, 232);
     ctx.restore();
 
-    // 5. Core Archetype Hero Card
-    drawRoundedRect(ctx, 84, 284, W - 168, 198, 18);
-    ctx.fillStyle = '#26493C';
+    // 5. Core Archetype Hero Card (House Green #1E3932)
+    drawRoundedRect(ctx, 84, 284, W - 168, 198, 16);
+    ctx.fillStyle = '#1E3932';
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-    ctx.font = `600 20px ${fontSans}`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.70)';
+    ctx.font = `700 20px ${fontSans}`;
     ctx.fillText('CORE DRIVE ARCHETYPE · 核心驱动与力量模式', 120, 330);
 
-    ctx.fillStyle = '#F7F4EC';
-    ctx.font = `700 42px ${fontSans}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 42px ${fontSans}`;
     ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 388);
 
-    // Keyword Pills inside Hero Card
+    // Keyword Pills inside Hero Card (Gold Accents #cba258)
     const kws = [
         ...(model.summary30s?.keywords || []),
         ...(model.situationalTags || []).slice(1, 2)
     ].slice(0, 4);
     let kwX = 120;
     kws.forEach(kw => {
-        ctx.font = `600 22px ${fontSans}`;
-        const padW = ctx.measureText(`✦ ${kw}`).width + 36;
+        ctx.font = `700 22px ${fontSans}`;
+        const padW = ctx.measureText(`★ ${kw}`).width + 36;
         drawRoundedRect(ctx, kwX, 414, padW, 44, 22);
-        ctx.fillStyle = 'rgba(247, 244, 236, 0.16)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(247, 244, 236, 0.38)';
+        ctx.strokeStyle = 'rgba(203, 162, 88, 0.45)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
-        ctx.fillStyle = '#FCC84E';
-        ctx.fillText(`✦ ${kw}`, kwX + 18, 444);
+        ctx.fillStyle = '#cba258';
+        ctx.fillText(`★ ${kw}`, kwX + 18, 444);
         kwX += padW + 16;
     });
 
-    // 6. 30-Second Core Observation Box
-    drawRoundedRect(ctx, 84, 510, W - 168, 200, 16);
-    ctx.fillStyle = '#FFFFFF';
+    // 6. 30-Second Core Observation Box (Pure White #ffffff)
+    drawRoundedRect(ctx, 84, 510, W - 168, 200, 14);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
-    ctx.strokeStyle = '#DFD7C8';
+    ctx.strokeStyle = '#edebe9';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#315C4C';
+    ctx.fillStyle = '#00754A';
     ctx.font = `700 24px ${fontSans}`;
     ctx.fillText('⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
 
-    ctx.fillStyle = '#25332D';
-    ctx.font = `500 25px ${fontSans}`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
+    ctx.font = `600 24px ${fontSans}`;
     wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 600, W - 232, 38, 3);
 
-    // 7. 5-Dimension Behavioral Energy Spectrum
-    drawRoundedRect(ctx, 84, 736, W - 168, 290, 16);
-    ctx.fillStyle = '#FAF7F0';
+    // 7. 5-Dimension Behavioral Energy Spectrum (Pure White Surface #ffffff)
+    drawRoundedRect(ctx, 84, 736, W - 168, 290, 14);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
-    ctx.strokeStyle = '#E2DDD3';
+    ctx.strokeStyle = '#edebe9';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = '#25332D';
+    ctx.fillStyle = '#006241';
     ctx.font = `700 24px ${fontSans}`;
     ctx.fillText('📊 五维行为能量光谱分布', 116, 780);
 
     const bars = model.energyBarsData || [];
     bars.forEach((b, idx) => {
         const rowY = 822 + idx * 38;
-        ctx.fillStyle = '#25332D';
-        ctx.font = `600 22px ${fontSans}`;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
+        ctx.font = `700 22px ${fontSans}`;
         ctx.fillText(b.label, 116, rowY);
 
         // Track
         const trackX = 250;
         const trackW = W - 450;
         drawRoundedRect(ctx, trackX, rowY - 18, trackW, 20, 10);
-        ctx.fillStyle = '#E6E0D4';
+        ctx.fillStyle = '#edebe9';
         ctx.fill();
 
         // Fill
         const fillW = Math.max(24, Math.round((b.pct / 100) * trackW));
         drawRoundedRect(ctx, trackX, rowY - 18, fillW, 20, 10);
-        ctx.fillStyle = b.color || '#315C4C';
+        ctx.fillStyle = b.color || '#00754A';
         ctx.fill();
 
         // Percentage text
-        ctx.fillStyle = '#52635B';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
         ctx.font = `700 22px ${fontSans}`;
         ctx.fillText(`${b.pct}%`, trackX + trackW + 20, rowY);
     });
 
     // 8. Trio Insights: Advantage / Burnout / 14-Day Action Experiment
     const drawInsightCard = (yPos, height, bg, borderCol, titleCol, badgeText, bodyText) => {
-        drawRoundedRect(ctx, 84, yPos, W - 168, height, 14);
+        drawRoundedRect(ctx, 84, yPos, W - 168, height, 12);
         ctx.fillStyle = bg;
         ctx.fill();
         ctx.strokeStyle = borderCol;
-        ctx.lineWidth = 1.8;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.fillStyle = titleCol;
-        ctx.font = `700 23px ${fontSans}`;
-        ctx.fillText(badgeText, 116, yPos + 40);
+        ctx.font = `700 22px ${fontSans}`;
+        ctx.fillText(badgeText, 116, yPos + 38);
 
-        ctx.fillStyle = '#25332D';
-        ctx.font = `500 23px ${fontSans}`;
-        wrapCanvasText(ctx, bodyText, 116, yPos + 78, W - 232, 34, 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
+        ctx.font = `500 22px ${fontSans}`;
+        wrapCanvasText(ctx, bodyText, 116, yPos + 74, W - 232, 34, 2);
     };
 
     drawInsightCard(
         1050, 124,
-        '#EFF5F2', 'rgba(49, 92, 76, 0.25)', '#315C4C',
+        '#d4e9e2', 'rgba(0, 117, 74, 0.3)', '#006241',
         '✦ 天生核心长板',
         model.summary30s?.topAdvantage || ''
     );
 
     drawInsightCard(
         1192, 124,
-        '#FFF6F2', 'rgba(200, 90, 50, 0.25)', '#C85A32',
+        '#FFF4F2', 'rgba(200, 32, 20, 0.3)', '#c82014',
         '⚠ 现实精力黑洞（情境校准）',
         model.summary30s?.topBurnout || ''
     );
 
     drawInsightCard(
         1334, 124,
-        '#FFFDF6', 'rgba(181, 138, 82, 0.35)', '#9A6E32',
+        '#faf6ee', '#dfc49d', '#cba258',
         '🎯 未来 14 天微行动实验',
         model.summary30s?.topAction || ''
     );
 
     // 9. Footer Signature
-    ctx.fillStyle = '#7A8680';
-    ctx.font = `500 20px ${fontSans}`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    ctx.font = `600 20px ${fontSans}`;
     ctx.fillText('观澜 Lan.Destiny · 基于东方时间模型与行为情境校准的个人结构说明书', 84, 1496);
     const rightFooter = '浏览器本机实时计算 · 零隐私上传';
     const rfW = ctx.measureText(rightFooter).width;
