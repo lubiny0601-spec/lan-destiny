@@ -1312,9 +1312,11 @@ if (btnSubmitConsumerForm) {
         // Validate date boundaries defensively
         const maxValidDays = (consumerFormShellState.calendarType === 'lunar') ? 30 : new Date(consumerFormShellState.birthYear, consumerFormShellState.birthMonth, 0).getDate();
         if (consumerFormShellState.birthDay > maxValidDays) {
+            if (daySelect) daySelect.classList.add('is-error');
             showConsumerFormError(`选择的出生日期超出范围：${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月最多只有 ${maxValidDays} 天，请重新选择日期。`);
             return;
         }
+        if (daySelect) daySelect.classList.remove('is-error');
 
         const isHourKnown = consumerFormShellState.birthHour >= 0 && consumerFormShellState.timePrecision !== 'unknown';
         const calcPayload = {
@@ -1329,6 +1331,7 @@ if (btnSubmitConsumerForm) {
         };
 
         btnSubmitConsumerForm.disabled = true;
+        btnSubmitConsumerForm.classList.add('is-loading');
         btnSubmitConsumerForm.textContent = '1/3 正在读取出生资料与情境答案...';
 
         try {
@@ -1351,7 +1354,9 @@ if (btnSubmitConsumerForm) {
             }
 
             setTimeout(() => {
-                btnSubmitConsumerForm.textContent = '3/3 正在生成个人说明书与海报...';
+                btnSubmitConsumerForm.classList.remove('is-loading');
+                btnSubmitConsumerForm.classList.add('is-success');
+                btnSubmitConsumerForm.textContent = '✓ 3/3 已生成个人说明书';
             }, 220);
 
             setTimeout(() => {
@@ -1359,6 +1364,7 @@ if (btnSubmitConsumerForm) {
                 if (formStep2) formStep2.classList.remove('hidden');
                 if (step2Completed) step2Completed.classList.add('hidden');
                 btnSubmitConsumerForm.disabled = false;
+                btnSubmitConsumerForm.classList.remove('is-loading', 'is-success');
                 btnSubmitConsumerForm.textContent = '生成我的结构说明书';
                 
                 renderConsumerReport(consumerFormShellState.baziResult, consumerFormShellState);
@@ -1366,6 +1372,7 @@ if (btnSubmitConsumerForm) {
 
         } catch (err) {
             btnSubmitConsumerForm.disabled = false;
+            btnSubmitConsumerForm.classList.remove('is-loading', 'is-success');
             btnSubmitConsumerForm.textContent = '生成我的结构说明书';
             showConsumerFormError('浏览器本机推演遇到异常，请检查出生日期格式后再试。', err);
         }
