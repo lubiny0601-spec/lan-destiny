@@ -677,17 +677,19 @@ if (helpBtn && (!professionalView || professionalView.classList.contains('hidden
 
 // --- Consumer Page Interactions ---
 
-// 1. Scenario Cards Selection
+// 1. Scenario Cards Selection & Direct Step 2 Trigger
 const scenarioCards = document.querySelectorAll('.scenario-card');
-let selectedScenario = null;
-
 scenarioCards.forEach(card => {
-    card.addEventListener('click', () => {
-        // Deselect all
-        scenarioCards.forEach(c => c.classList.remove('selected'));
-        // Select current
-        card.classList.add('selected');
-        selectedScenario = card.dataset.scenario;
+    card.addEventListener('click', (e) => {
+        // If clicking inside the form modal step 1, standard radio selection applies
+        if (card.closest('#consumer-form-shell')) return;
+        
+        e.preventDefault();
+        const scenario = card.dataset.scenario || 'self';
+        consumerFormShellState.scenario = scenario;
+        consumerFormShellState.step = 2;
+        renderConsumerFormShellState();
+        openConsumerFormShell(card);
     });
 });
 
@@ -867,6 +869,209 @@ const scenarioStep2Map = {
     }
 };
 
+const SCENARIO_CALIBRATION_CONFIG = {
+    self: {
+        badgeSub: '了解内在精力充能与消耗模式，让自我探索更深刻',
+        questions: [
+            {
+                key: 'q1',
+                title: 'Q1 · 面对推进卡点时，你最本能的应对方式？',
+                options: [
+                    { id: 'push', label: '单点硬攻型', desc: '习惯先一个人顶上去强行推进破局', tag: '单点攻坚型', note: '习惯迎难而上单点破局，但需警惕在高压下无意识透支身体与情绪' },
+                    { id: 'think', label: '深度思辨型', desc: '习惯先停下来反复推演底层逻辑与风险', tag: '深度思辨型', note: '习惯谋定而后动，但需防范在复杂变量中思维过度反刍' },
+                    { id: 'harmony', label: '关系敏锐型', desc: '习惯先顾全各方感受与表面和谐', tag: '关系敏锐型', note: '对人际氛围感知极高，但需防范因迁就他人而压抑真实诉求' }
+                ]
+            },
+            {
+                key: 'q2',
+                title: 'Q2 · 近期最让你感到精力被严重掏空的是？',
+                options: [
+                    { id: 'overload', label: '多线超载', desc: '多任务并行与高频打断，注意力被稀释', tag: '多线超载', drainFocus: '多线程任务并行与碎片化打断正在稀释你的核心专注力', cutTarget: '砍掉 2 项低价值的非核心琐事' },
+                    { id: 'boundary', label: '边界模糊', desc: '被动承担他人情绪或琐碎杂事，难以拒绝', tag: '边界模糊', drainFocus: '权责不清的配合拉扯与情绪吸收正在持续损耗心流', cutTarget: '明确拒绝 1 次模糊越界的配合请求' },
+                    { id: 'stagnation', label: '内驱受阻', desc: '缺乏正向反馈或看不到进展，陷入空转', tag: '内驱受阻', drainFocus: '在缺乏正向反馈的环境中空转，产生无价值感焦虑', cutTarget: '停止自我怀疑，锁定 1 个最小可交付动作' }
+                ]
+            },
+            {
+                key: 'q3',
+                title: 'Q3 · 面对接下来的调整，你最渴望建立哪种状态？',
+                options: [
+                    { id: 'subtract', label: '减法聚焦', desc: '砍掉冗余琐事，收敛黄金注意力', tag: '减法聚焦', actionVerb: '执行“强制减法清场”：每天早晨划掉清单上最不重要的 30% 事项' },
+                    { id: 'breakthrough', label: '单点破局', desc: '锁定最小闭环，48 小时快速拿结果', tag: '单点破局', actionVerb: '执行“单点最小闭环”：用 48 小时完成一个最核心想法的极简样品并获取反馈' },
+                    { id: 'recharge', label: '边界充能', desc: '设立专属免打扰充电与放空空间', tag: '边界充能', actionVerb: '执行“护城河充能”：每天设立 45 分钟免打扰窗口，切断一切非紧急响应' }
+                ]
+            }
+        ]
+    },
+    career: {
+        badgeSub: '梳理职场定位与战略节奏，打造辨识度战术长板',
+        questions: [
+            {
+                key: 'q1',
+                title: 'Q1 · 在业务推进或团队协作中，你最擅长扮演什么角色？',
+                options: [
+                    { id: 'push', label: '攻坚操盘手', desc: '直面核心目标，独立拿结果与定方向', tag: '攻坚操盘手', note: '具备极强的主战破局力与目标牵引力，适合独当一面负责核心业务' },
+                    { id: 'think', label: '幕僚规划师', desc: '负责体系搭建、逻辑推演与风险把控', tag: '幕僚规划师', note: '擅长宏观推演与底层标准制定，是团队不可或缺的智囊与风控中枢' },
+                    { id: 'harmony', label: '资源协同者', desc: '跨角色连接、协调沟通与粘合团队', tag: '资源协同者', note: '具备极佳的人际润滑与资源整合手腕，擅长借力打力促成多方共赢' }
+                ]
+            },
+            {
+                key: 'q2',
+                title: 'Q2 · 当前职场中最让你感到内耗或阻碍发挥的是？',
+                options: [
+                    { id: 'overload', label: '协作内耗', desc: '流程冗长、权责不清或推诿扯皮', tag: '协作内耗', drainFocus: '低效的跨部门推诿与责任盲区正在消耗你最宝贵的战术精力', cutTarget: '划清交付边界，不为他人未履职的环节兜底' },
+                    { id: 'boundary', label: '空间受限', desc: '缺乏自主裁决权，被过度微观管理', tag: '空间受限', drainFocus: '过多的微观干预与汇报链路正在压制你的主观能动性', cutTarget: '争取 1 项拥有完整闭环决策权的小型试验' },
+                    { id: 'stagnation', label: '方向抉择', desc: '面临赛道或平台选择，缺乏清晰抓手', tag: '方向抉择', drainFocus: '在多条可能路径之间徘徊权衡，缺乏低成本验证手段', cutTarget: '停止空想比对，挑选 1 个赛道开展轻量级测水' }
+                ]
+            },
+            {
+                key: 'q3',
+                title: 'Q3 · 未来 14 天最希望在职场取得的战术突破？',
+                options: [
+                    { id: 'subtract', label: '硬核成果', desc: '完成 1 个高辨识度的核心业务交付', tag: '硬核成果', actionVerb: '推进“标杆交付攻坚”：集中精力完成 1 个最具说服力的高质量成果' },
+                    { id: 'breakthrough', label: '流程优化', desc: '理顺 1 条混乱协作链路，建立标准', tag: '流程优化', actionVerb: '启动“协作规则重塑”：拉齐核心干系人，敲定清晰明确的权责交接协议' },
+                    { id: 'recharge', label: '向上破圈', desc: '与关键决策人对齐长期目标与资源', tag: '向上破圈', actionVerb: '进行“关键对齐沟通”：与核心上级明确你的战术长板定位与资源支持' }
+                ]
+            }
+        ]
+    },
+    relationship: {
+        badgeSub: '洞察沟通表达与心理边界，建立健康舒展的人际互动',
+        questions: [
+            {
+                key: 'q1',
+                title: 'Q1 · 在重要人际或亲密互动中，你的主要表达习惯？',
+                options: [
+                    { id: 'push', label: '直接坦诚型', desc: '有事当面讲清楚，习惯主动推动沟通', tag: '直接表达型', note: '沟通坦荡直接且极具责任感，但需防范在情绪紧绷时语气过于犀利' },
+                    { id: 'think', label: '冷静防御型', desc: '习惯先退后冷静思考，回避正面冲突', tag: '冷静防御型', note: '理性克制且注重安全空间，但需防范用沉默冷处理加深彼此隔阂' },
+                    { id: 'harmony', label: '顾全大局型', desc: '习惯先照顾对方情绪，委屈自身诉求', tag: '顾全大局型', note: '体贴包容且共情力极强，但需警惕过度讨好导致内在委屈积压' }
+                ]
+            },
+            {
+                key: 'q2',
+                title: 'Q2 · 在人际互动中最容易触发你疲惫或防御的是？',
+                options: [
+                    { id: 'overload', label: '边界失守', desc: '对方过度干涉私人空间或单方面索取', tag: '边界失守', drainFocus: '无休止的被动响应与边界侵蚀正在吞噬你的安全感底线', cutTarget: '设立 1 条清晰的个人心理边界并温和声明' },
+                    { id: 'boundary', label: '深度匮乏', desc: '缺乏真正的情绪共鸣，只停留在表面', tag: '深度匮乏', drainFocus: '浮于表面的无效社交与缺乏共鸣的回应让你倍感孤独消耗', cutTarget: '减少 50% 走过场的表面应酬，聚焦高品质连接' },
+                    { id: 'stagnation', label: '安全感焦虑', desc: '关系状态不稳定、不可控或缺乏承诺', tag: '安全感焦虑', drainFocus: '在不确定的关系氛围中反复揣测对方意图，引发精神内耗', cutTarget: '用 1 次开诚布公的对话直接确认彼此真实期望' }
+                ]
+            },
+            {
+                key: 'q3',
+                title: 'Q3 · 接下来 14 天最希望在关系中实践的调频动作？',
+                options: [
+                    { id: 'subtract', label: '坦诚表达', desc: '温和但坚定地说出一次你的真实需求', tag: '坦诚表达', actionVerb: '实践“非暴力真实表达”：温和但清晰地说出一次你的底线与期望' },
+                    { id: 'breakthrough', label: '深度共处', desc: '创造 1 次无手机干扰的高质量深聊', tag: '深度共处', actionVerb: '安排“高质量独处/深聊”：留出 1 小时完全专注且无外界干扰的交流' },
+                    { id: 'recharge', label: '独立留白', desc: '留出专属独处时间，停止过度代劳', tag: '独立留白', actionVerb: '设立“心理独立窗口”：停止对他人情绪过度负责，专注滋养自己' }
+                ]
+            }
+        ]
+    },
+    confusion: {
+        badgeSub: '降低多线内耗，从混乱中确立当下的优先破局支柱',
+        questions: [
+            {
+                key: 'q1',
+                title: 'Q1 · 当你感到迷茫焦虑时，最容易出现的行为反应？',
+                options: [
+                    { id: 'push', label: '盲目多动型', desc: '抓各种事情做以缓解焦虑，却无核心抓手', tag: '盲目多动型', note: '用战术上的勤奋掩盖战略上的迷茫，容易在多线消耗中身心俱疲' },
+                    { id: 'think', label: '思维反刍型', desc: '在脑中反复推演各种可能，迟迟不敢动', tag: '思维反刍型', note: '在脑海中排练过多灾难化假设，导致分析瘫痪而错失行动时机' },
+                    { id: 'harmony', label: '避难拖延型', desc: '逃避核心重大抉择，沉迷于低难度琐事', tag: '避难拖延型', note: '通过处理次要事务回避核心矛盾，暂时舒缓却在后续积累更大压力' }
+                ]
+            },
+            {
+                key: 'q2',
+                title: 'Q2 · 导致你当前处于迷茫状态的最主要阻力？',
+                options: [
+                    { id: 'overload', label: '选择过载', desc: '选项太多或建议太杂，不知先抓哪个', tag: '选择过载', drainFocus: '过多的外部噪音与相互冲突的信息流正在瓦解你的决断力', cutTarget: '暂停接收外界建议 3 天，回归自身直觉' },
+                    { id: 'boundary', label: '反馈匮乏', desc: '投入很多却没有得到确定性的正向结果', tag: '反馈匮乏', drainFocus: '长期处于付出与收益脱节的状态，侵蚀了行动的自我效能感', cutTarget: '设计 1 个能在 24 小时内获得正反馈的极小动作' },
+                    { id: 'stagnation', label: '求稳畏错', desc: '害怕做错决定而一再推迟迈出第一步', tag: '求稳畏错', drainFocus: '将单次尝试的结果看得过重，陷入“不完美就不启动”的泥潭', cutTarget: '允许自己在 1 个微小尝试上“粗糙上线，小步迭代”' }
+                ]
+            },
+            {
+                key: 'q3',
+                title: 'Q3 · 重建秩序与掌控感的第一步，你最想做的是？',
+                options: [
+                    { id: 'subtract', label: '物理止损', desc: '暂停 1 项最耗神且无效益的日常事务', tag: '物理止损', actionVerb: '执行“强制事务止损”：立即叫停 1 项投入产出比极低的消耗型事项' },
+                    { id: 'breakthrough', label: '最小闭环', desc: '用 48 小时做一个极简验证行动', tag: '最小闭环', actionVerb: '打造“48小时微闭环”：挑选最简单的一个切入点，直接产出原型' },
+                    { id: 'recharge', label: '资产盘点', desc: '盘点手头已有的确定性资源与底牌', tag: '资产盘点', actionVerb: '进行“确定性基盘盘点”：写下 3 项无论外界如何变化你都拥有的核心优势' }
+                ]
+            }
+        ]
+    }
+};
+
+function renderSituationalCalibrationQuestions(scenario) {
+    const container = document.getElementById('situational-questions-container');
+    const badgeSub = document.getElementById('situational-badge-sub');
+    if (!container) return;
+
+    const scConfig = SCENARIO_CALIBRATION_CONFIG[scenario] || SCENARIO_CALIBRATION_CONFIG.self;
+    if (badgeSub) badgeSub.textContent = scConfig.badgeSub;
+
+    const currentAnswers = consumerFormShellState.situationalAnswers || {};
+
+    container.innerHTML = scConfig.questions.map((q) => {
+        const selectedVal = currentAnswers[q.key] || q.options[0].id;
+        return `
+            <div class="situational-q-group" style="margin-bottom: 20px;">
+                <div class="situational-q-title" style="font-weight: 700; color: var(--consumer-text-main); margin-bottom: 10px; font-size: 0.95rem;">
+                    ${q.title}
+                </div>
+                <div class="situational-options-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    ${q.options.map((opt, optIdx) => {
+                        const isChecked = selectedVal === opt.id || (!currentAnswers[q.key] && optIdx === 0);
+                        return `
+                            <label class="situational-opt-card ${isChecked ? 'active' : ''}" style="display: block; position: relative; border: 1.5px solid ${isChecked ? 'var(--consumer-primary)' : 'var(--consumer-border)'}; border-radius: 8px; padding: 12px; background: ${isChecked ? '#F4F8F6' : 'var(--consumer-surface)'}; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+                                <input type="radio" name="situational_${q.key}" value="${opt.id}" class="visually-hidden" ${isChecked ? 'checked' : ''}>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: ${isChecked ? 'var(--consumer-primary)' : 'var(--consumer-text-main)'}; margin-bottom: 4px;">
+                                    ${opt.label}
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--consumer-text-sub); line-height: 1.4;">
+                                    ${opt.desc}
+                                </div>
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Bind change listeners to update styling and state
+    const radios = container.querySelectorAll('input[type="radio"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const qKey = e.target.name.replace('situational_', '');
+            if (!consumerFormShellState.situationalAnswers) {
+                consumerFormShellState.situationalAnswers = {};
+            }
+            consumerFormShellState.situationalAnswers[qKey] = e.target.value;
+
+            // Update card UI classes within the same group
+            const group = e.target.closest('.situational-q-group');
+            if (group) {
+                const optCards = group.querySelectorAll('.situational-opt-card');
+                optCards.forEach(c => {
+                    const r = c.querySelector('input[type="radio"]');
+                    if (r && r.checked) {
+                        c.classList.add('active');
+                        c.style.borderColor = 'var(--consumer-primary)';
+                        c.style.background = '#F4F8F6';
+                        const titleEl = c.querySelector('div:first-of-type');
+                        if (titleEl) titleEl.style.color = 'var(--consumer-primary)';
+                    } else {
+                        c.classList.remove('active');
+                        c.style.borderColor = 'var(--consumer-border)';
+                        c.style.background = 'var(--consumer-surface)';
+                        const titleEl = c.querySelector('div:first-of-type');
+                        if (titleEl) titleEl.style.color = 'var(--consumer-text-main)';
+                    }
+                });
+            }
+        });
+    });
+}
+
 function renderConsumerFormShellState() {
     const btnNext = document.getElementById('btn-next-form-shell');
     if (btnNext) {
@@ -902,6 +1107,9 @@ function renderConsumerFormShellState() {
             if (labelEl) labelEl.textContent = config.label;
             if (titleEl) titleEl.textContent = config.title;
             if (descEl) descEl.textContent = config.desc;
+
+            // Render scenario-specific calibration questions
+            renderSituationalCalibrationQuestions(activeScenario);
         }
     }
 }
@@ -1906,24 +2114,6 @@ const MONTH_RHYTHM_MAP = {
     '丑': '季冬坚韧般的默默蓄力感'
 };
 
-const SITUATIONAL_CALIBRATION_RULES = {
-    q1: {
-        push: { tag: '高压硬扛态', note: '当下面对卡点时倾向于先顶上去强行推进，需警惕身体与情绪在不知不觉中透支' },
-        think: { tag: '审慎推演态', note: '当下面对卡点时倾向于反复推演所有细节与风险，需防范思维过载导致的行动迟滞' },
-        harmony: { tag: '关系顾全态', note: '当下面对卡点时优先照顾各方情绪与表面和谐，需防范委屈自身真实诉求' }
-    },
-    q2: {
-        overload: { tag: '多线过载源', drainFocus: '多线程任务并行与高频打断正在稀释你的核心长板', cutTarget: '砍掉 2 项低价值的非核心琐事' },
-        boundary: { tag: '边界拉扯源', drainFocus: '权责不清的协作拉扯或隐性情绪索取正在消耗你的心流', cutTarget: '明确拒绝 1 次模糊越界的配合请求' },
-        stagnation: { tag: '摇摆内耗源', drainFocus: '在多个方向之间反复权衡却未迈出验证步，正在造成空转焦虑', cutTarget: '停止无休止的方案比较，锁定 1 个最小验证动作' }
-    },
-    q3: {
-        subtract: { tag: '减法清场', actionVerb: '执行“强制减法清场”：每天早晨划掉清单上最不重要的 30% 事项' },
-        breakthrough: { tag: '单点破局', actionVerb: '执行“单点最小闭环”：用 48 小时完成一个最核心想法的极简样品并获取反馈' },
-        recharge: { tag: '边界充能', actionVerb: '执行“护城河充能”：每天设立 45 分钟免打扰窗口，切断一切非紧急响应' }
-    }
-};
-
 // 2. Layer 2 Model Building Function (Multidimensional + Situational Calibration)
 function buildPersonalizedReportModel(parsedResult, formState) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
@@ -1949,10 +2139,20 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const weakElemPlain = PLAIN_ELEMENT_MAP[parsedResult.weakestElement] || PLAIN_ELEMENT_MAP['水'];
     const monthRhythm = MONTH_RHYTHM_MAP[parsedResult.monthBranch] || '敏锐推进力';
 
-    const sq = formState.situationalAnswers || { q1: 'push', q2: 'overload', q3: 'subtract' };
-    const sq1 = SITUATIONAL_CALIBRATION_RULES.q1[sq.q1] || SITUATIONAL_CALIBRATION_RULES.q1.push;
-    const sq2 = SITUATIONAL_CALIBRATION_RULES.q2[sq.q2] || SITUATIONAL_CALIBRATION_RULES.q2.overload;
-    const sq3 = SITUATIONAL_CALIBRATION_RULES.q3[sq.q3] || SITUATIONAL_CALIBRATION_RULES.q3.subtract;
+    // Extract scenario-specific situational questions and selections
+    const activeScenarioConfig = SCENARIO_CALIBRATION_CONFIG[activeScenario] || SCENARIO_CALIBRATION_CONFIG.self;
+    const q1Config = activeScenarioConfig.questions[0];
+    const q2Config = activeScenarioConfig.questions[1];
+    const q3Config = activeScenarioConfig.questions[2];
+
+    const sq = formState.situationalAnswers || {};
+    const sq1Val = sq.q1 || q1Config.options[0].id;
+    const sq2Val = sq.q2 || q2Config.options[0].id;
+    const sq3Val = sq.q3 || q3Config.options[0].id;
+
+    const sq1 = q1Config.options.find(o => o.id === sq1Val) || q1Config.options[0];
+    const sq2 = q2Config.options.find(o => o.id === sq2Val) || q2Config.options[0];
+    const sq3 = q3Config.options.find(o => o.id === sq3Val) || q3Config.options[0];
 
     // Decade stage rhythm (varies by gender's 顺排/逆排)
     const decade = parsedResult.currentDecade;
@@ -1983,44 +2183,160 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         weakestPlain: `精细补给倾向: ${weakElemPlain.name}`
     };
 
-    // Dynamic 30s Summary (Guaranteed unique across combinations of stem + monthBranch + strength + topTenGod + strong/weak elements + situational answers)
+    // Scenario Badges & Trio Labels
+    const summaryBadges = {
+        self: '⚡ 30秒精力说明书（先天结构 × 精力模式校准）',
+        career: '⚡ 30秒职场说明书（先天结构 × 职场定位校准）',
+        relationship: '⚡ 30秒关系说明书（先天结构 × 沟通边界校准）',
+        confusion: '⚡ 30秒破局说明书（先天结构 × 优先破局校准）'
+    };
+
+    const summaryTrioLabels = {
+        self: { adv: '✦ 天生核心长板', burnout: '⚠ 现实精力黑洞', action: '🎯 建议减法实验' },
+        career: { adv: '✦ 职场核心战力', burnout: '⚠ 职场内耗卡点', action: '🎯 职场战术突破' },
+        relationship: { adv: '✦ 关系优势底色', burnout: '⚠ 关系防御软肋', action: '🎯 关系调频微动作' },
+        confusion: { adv: '✦ 核心确定性支柱', burnout: '⚠ 当前迷茫死循环', action: '🎯 破局第一行动' }
+    };
+
+    const scenario30sObservations = {
+        self: `你兼具「${traitInfo.title.split(' · ')[0]}」的${monthRhythm}与「${strengthInfo.plainTitle}」的行动底色，最擅长以【${topTgInfo.label}】配搭【${strongElemPlain.name}】打开局面；当下最需警惕的是${topTgInfo.burnoutTrap}，尤其在面对【${sq2.tag}】时容易忽略【${weakElemPlain.name}】的补给。`,
+        career: `在职场定位中，你的核心底色为「${traitInfo.title.split(' · ')[0]}」主导的【${sq1.tag}】，擅长以【${topTgInfo.label}】构建核心竞争壁垒；当下最关键的卡点在于【${sq2.tag}】对你【${strongElemPlain.name}】战力输出的持续稀释。`,
+        relationship: `在关系互动中，你呈现出「${traitInfo.title.split(' · ')[0]}」的深度底色与【${sq1.tag}】表达特质；当下最易触发防御机制的是【${sq2.tag}】，需要通过清晰边界守护内心情感安全感。`,
+        confusion: `当前迷茫的本质并非能力不足，而是「${traitInfo.title.split(' · ')[0]}」的内在诉求与现实中【${sq2.tag}】的拉扯导致了决策瘫痪；突破死循环的核心在于依托【${topTgInfo.label}】启动最小闭环。`
+    };
+
+    const scenarioTopAdvantages = {
+        self: `${traitInfo.advantage}同时兼具【${topTgInfo.label}】与【${secondTgInfo.label}】的复合长板，${topTgInfo.careerEdge}。`,
+        career: `在业务推进中具备【${topTgInfo.label}】的天然敏锐度，能将「${strongElemPlain.name}」势能转化为高辨识度的专业壁垒与硬核交付。`,
+        relationship: `具备「${traitInfo.title.split(' · ')[0]}」的真实关怀深度与【${secondTgInfo.label}】的默契感知，在深层连接中能给予对方极高的安全感与价值认同。`,
+        confusion: `拥有「${traitInfo.title.split(' · ')[0]}」深厚的底层定力与【${strongElemPlain.name}】的破局本能，只要聚焦单点，启动速度与反弹韧性极强。`
+    };
+
+    const scenarioTopBurnouts = {
+        self: `${traitInfo.risk}结合当前情境（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，正挤压你宝贵的【${strongElemPlain.name}】势能。`,
+        career: `职场内耗卡点（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，导致【${weakElemPlain.name}】支撑不足、身心负荷过载。`,
+        relationship: `关系防御卡点（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，容易在委曲求全与防御性冷淡之间反复拉扯。`,
+        confusion: `迷茫空转死循环（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，导致宝贵的注意力在过度推演中被空耗。`
+    };
+
+    const scenarioTopActions = {
+        self: `${sq3.actionVerb}，${sq2.cutTarget}，为【${weakElemPlain.name}】留出恢复空间。`,
+        career: `${sq3.actionVerb}，${sq2.cutTarget}，在核心赛道上抢占主导权。`,
+        relationship: `${sq3.actionVerb}，${sq2.cutTarget}，建立健康舒展的互动节奏。`,
+        confusion: `${sq3.actionVerb}，${sq2.cutTarget}，以 48 小时最小行动打破迷茫死循环。`
+    };
+
     const combinedKeywords = [
         ...(traitInfo.keywords || ['主动推动', '重视反馈']).slice(0, 2),
         topTgInfo.label,
         sq1.tag
     ];
 
+    const currentTrioLabels = summaryTrioLabels[activeScenario] || summaryTrioLabels.self;
+
     const summary30s = {
+        badgeText: summaryBadges[activeScenario] || summaryBadges.self,
+        labelAdv: currentTrioLabels.adv,
+        labelBurnout: currentTrioLabels.burnout,
+        labelAction: currentTrioLabels.action,
         keywords: combinedKeywords,
-        coreObservation: `你兼具「${traitInfo.title.split(' · ')[0]}」的${monthRhythm}与「${strengthInfo.plainTitle}」的行动底色，最擅长以【${topTgInfo.label}】配搭【${strongElemPlain.name}】打开局面；当下最需留意的不是能力短板，而是${topTgInfo.burnoutTrap}，尤其在${sq2.tag}下容易忽略【${weakElemPlain.name}】的补给。`,
-        topAdvantage: `${traitInfo.advantage}同时兼具【${topTgInfo.label}】与【${secondTgInfo.label}】的复合长板，${topTgInfo.careerEdge}。`,
-        topBurnout: `${traitInfo.risk}结合当前情境（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，正挤压你宝贵的【${strongElemPlain.name}】势能。`,
-        topAction: `${sq3.actionVerb}，${sq2.cutTarget}，为【${weakElemPlain.name}】留出恢复空间。`,
+        coreObservation: scenario30sObservations[activeScenario] || scenario30sObservations.self,
+        topAdvantage: scenarioTopAdvantages[activeScenario] || scenarioTopAdvantages.self,
+        topBurnout: scenarioTopBurnouts[activeScenario] || scenarioTopBurnouts.self,
+        topAction: scenarioTopActions[activeScenario] || scenarioTopActions.self,
         scenarioLabel: `本次关注: ${scenarioNames[activeScenario] || '了解自己'}`,
         scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
     };
 
     // Scenario & Chart tailored 14-Day Action Experiments
-    const actionExperiments14Days = [
-        {
-            priorityPill: 'P1 精力止损',
-            action: `针对【${sq2.tag}】启动减法拦截：未来 14 天内${sq2.cutTarget}，将 80% 黄金注意力锁死在【${strongElemPlain.name} · ${topTgInfo.label}】长板上。`,
-            why: `你的核心驱动为「${traitInfo.title}」配搭「${strengthInfo.plainTitle}」，${sq1.note}。`,
-            verifyMetric: `观察两周内因「${sq2.tag}」干扰【${strongElemPlain.name}】产出的返工或透支频次是否下降 50% 以上。`
-        },
-        {
-            priorityPill: 'P2 节奏微调',
-            action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中提前划清协作交付边界。`,
-            why: `${decadeStageNote}，用清晰的微节奏替代无意识硬撑最能保护心流。`,
-            verifyMetric: `连续执行 7 天后，评估自己在「${traitInfo.title.split(' · ')[0]}」主导事项上的掌控感是否显著回升。`
-        },
-        {
-            priorityPill: 'P3 能量补给',
-            action: `每周固定预留 2 小时专属【${weakElemPlain.name}】恢复窗口，践行定制提醒：${RELATION_REFLECTION_MAP[stem] || '主动给身心留出缓冲余地'}`,
-            why: `你当前分布中【${weakElemPlain.name}】占比相对偏低，定向补给能有效化解「${traitInfo.keywords ? traitInfo.keywords[2] : '隐性内耗'}」的副作用。`,
-            verifyMetric: `观察补充【${weakElemPlain.name}】窗口次日，你在【${topTgInfo.label}】决策与沟通中的定力是否更加从容。`
-        }
-    ];
+    let actionExperiments14Days = [];
+    if (activeScenario === 'career') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 战术破局',
+                action: `针对【${sq2.tag}】启动拦截：未来 14 天内${sq2.cutTarget}，将 80% 核心精力锁定在【${strongElemPlain.name} · ${topTgInfo.label}】优势交付上。`,
+                why: `作为「${traitInfo.title}」且行动模式为「${strengthInfo.plainTitle}」，${sq1.note}。`,
+                verifyMetric: `观察两周内核心交付质量是否获得关键决策人直接认可，因「${sq2.tag}」产生的内耗频次是否减半。`
+            },
+            {
+                priorityPill: 'P2 协作解耦',
+                action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中与上下游明确交付协议。`,
+                why: `${decadeStageNote}，清晰的规则交接能最大化释放你的推进效率。`,
+                verifyMetric: `连续执行 7 天后，评估自己在跨部门协同中的推动阻力是否显著降低。`
+            },
+            {
+                priorityPill: 'P3 势能沉淀',
+                action: `每周固定设立 2 小时【${weakElemPlain.name}】策略复盘窗口，提炼 1 套可复用的工作方法论。`,
+                why: `通过补给【${weakElemPlain.name}】，能有效平衡「${topTgInfo.label}」的高频消耗，沉淀长期资产。`,
+                verifyMetric: `复盘产出 1 份标准化文档或流程模版，供团队或个人后续复用。`
+            }
+        ];
+    } else if (activeScenario === 'relationship') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 边界声明',
+                action: `针对【${sq2.tag}】执行边界防护：未来 14 天内${sq2.cutTarget}，守护情感安全感底线。`,
+                why: `你的核心互动模式为「${traitInfo.title}」，${sq1.note}。`,
+                verifyMetric: `在遇到不适情境时，能否在 24 小时内温和但明确地向对方表达你的真实感受。`
+            },
+            {
+                priorityPill: 'P2 深度连接',
+                action: `${sq3.actionVerb}，践行定制调频提醒：${RELATION_REFLECTION_MAP[stem] || '主动创造无干扰交流时光'}。`,
+                why: `健康的深层关系建立在真实表达之上，而非单方面的过度隐忍或猜测。`,
+                verifyMetric: `观察交流后彼此的理解深度与信任感是否明显提升。`
+            },
+            {
+                priorityPill: 'P3 自我滋养',
+                action: `每周固定安排 2 小时完全属于自己的【${weakElemPlain.name}】独处窗口，做一件纯粹滋养自我的事。`,
+                why: `补充【${weakElemPlain.name}】能量，能有效化解因过度关注外界情绪而产生的疲惫。`,
+                verifyMetric: `评估自己在独处后面对人际互动时的定力与包容度是否更为从容。`
+            }
+        ];
+    } else if (activeScenario === 'confusion') {
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 紧急止损',
+                action: `针对【${sq2.tag}】启动止损：未来 14 天内${sq2.cutTarget}，暂停无意义的横向比对与焦虑反刍。`,
+                why: `迷茫期最忌多线空转，「${traitInfo.title}」需要通过聚焦单点来重新积聚力量。`,
+                verifyMetric: `观察因信息过载或摇摆不定引发的焦虑感是否在 3 天内明显缓解。`
+            },
+            {
+                priorityPill: 'P2 最小验证',
+                action: `${sq3.actionVerb}，围绕【${strongElemPlain.name} · ${topTgInfo.label}】在 48 小时内打通 1 个极简闭环。`,
+                why: `行动是治愈焦虑的良药，用小闭环的真实反馈打破脑海中的死循环。`,
+                verifyMetric: `48 小时内获得至少 1 个来自真实场景的正向反馈或数据验证。`
+            },
+            {
+                priorityPill: 'P3 资产锚定',
+                action: `写下 3 项属于你的【${strongElemPlain.name}】确定性长板，贴在显眼位置作为每日定心锚点。`,
+                why: `${decadeStageNote}，确立不可动摇的底层安全感，是开启下一阶段探索的基石。`,
+                verifyMetric: `在面临犹豫时，以这 3 项确定性长板作为所有决策的第一筛选标准。`
+            }
+        ];
+    } else {
+        // Default: self
+        actionExperiments14Days = [
+            {
+                priorityPill: 'P1 精力止损',
+                action: `针对【${sq2.tag}】启动减法拦截：未来 14 天内${sq2.cutTarget}，将 80% 黄金注意力锁死在【${strongElemPlain.name} · ${topTgInfo.label}】长板上。`,
+                why: `你的核心驱动为「${traitInfo.title}」配搭「${strengthInfo.plainTitle}」，${sq1.note}。`,
+                verifyMetric: `观察两周内因「${sq2.tag}」干扰【${strongElemPlain.name}】产出的返工或透支频次是否下降 50% 以上。`
+            },
+            {
+                priorityPill: 'P2 节奏微调',
+                action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中提前划清协作交付边界。`,
+                why: `${decadeStageNote}，用清晰的微节奏替代无意识硬撑最能保护心流。`
+                ,
+                verifyMetric: `连续执行 7 天后，评估自己在「${traitInfo.title.split(' · ')[0]}」主导事项上的掌控感是否显著回升。`
+            },
+            {
+                priorityPill: 'P3 能量补给',
+                action: `每周固定预留 2 小时专属【${weakElemPlain.name}】恢复窗口，践行定制提醒：${RELATION_REFLECTION_MAP[stem] || '主动给身心留出缓冲余地'}。`,
+                why: `你当前分布中【${weakElemPlain.name}】占比相对偏低，定向补给能有效化解「${traitInfo.keywords ? traitInfo.keywords[2] : '隐性内耗'}」的副作用。`,
+                verifyMetric: `观察补充【${weakElemPlain.name}】窗口次日，你在【${topTgInfo.label}】决策与沟通中的定力是否更加从容。`
+            }
+        ];
+    }
 
     // --- 1. Personality Section Construction (Zero Jargon in Layer 2) ---
     const rechargeDrain = ENERGY_RECHARGE_DRAIN_MAP[stem] || ENERGY_RECHARGE_DRAIN_MAP['丙'];
@@ -2339,6 +2655,23 @@ function renderConsumerReport(baziResult, formState) {
         }
 
         // Render Level 1: 30-Second Summary Card
+        const summaryBadgeEl = document.getElementById('summary-badge-text');
+        if (summaryBadgeEl && reportModel.summary30s) {
+            summaryBadgeEl.textContent = reportModel.summary30s.badgeText;
+        }
+        const summaryLabelAdvEl = document.getElementById('summary-label-adv');
+        if (summaryLabelAdvEl && reportModel.summary30s) {
+            summaryLabelAdvEl.textContent = reportModel.summary30s.labelAdv;
+        }
+        const summaryLabelBurnoutEl = document.getElementById('summary-label-burnout');
+        if (summaryLabelBurnoutEl && reportModel.summary30s) {
+            summaryLabelBurnoutEl.textContent = reportModel.summary30s.labelBurnout;
+        }
+        const summaryLabelActionEl = document.getElementById('summary-label-action');
+        if (summaryLabelActionEl && reportModel.summary30s) {
+            summaryLabelActionEl.textContent = reportModel.summary30s.labelAction;
+        }
+
         const summaryKeywordsEl = document.getElementById('summary-keywords');
         if (summaryKeywordsEl && reportModel.summary30s) {
             summaryKeywordsEl.innerHTML = (reportModel.summary30s.keywords || [])
@@ -2389,13 +2722,33 @@ function renderConsumerReport(baziResult, formState) {
         };
         const activeFocusCardKey = focusCardMap[reportModel.scenario] || 'personality';
 
-        // Reset and highlight focus card
-        Object.keys(cardNodes).forEach(key => {
+        // Reorder cards and renumber sections dynamically
+        const targetOrder = sectionOrders[reportModel.scenario] || sectionOrders.self;
+        let orderNum = 1;
+
+        targetOrder.forEach(key => {
             const card = cardNodes[key];
             if (!card) return;
+
+            // Reorder in DOM
+            if (container && bottomActions) {
+                container.insertBefore(card, bottomActions);
+            }
+
+            // Clean previous badge
             const badge = card.querySelector('.focus-badge');
             if (badge) badge.remove();
 
+            // Renumber section numbers (01, 02, 03, 04, 05)
+            if (key !== 'evidence') {
+                const numEl = card.querySelector('.section-num');
+                if (numEl) {
+                    numEl.textContent = String(orderNum).padStart(2, '0');
+                }
+                orderNum++;
+            }
+
+            // Highlight main focus card
             if (key === activeFocusCardKey) {
                 card.classList.add('main-focus-card');
                 const header = card.querySelector('.card-header');
@@ -2409,15 +2762,6 @@ function renderConsumerReport(baziResult, formState) {
                 card.classList.remove('main-focus-card');
             }
         });
-
-        if (container && bottomActions) {
-            const targetOrder = sectionOrders[reportModel.scenario] || sectionOrders.self;
-            targetOrder.forEach(key => {
-                if (cardNodes[key]) {
-                    container.insertBefore(cardNodes[key], bottomActions);
-                }
-            });
-        }
 
         // Fill Level 2 Content
         const personalityEl = document.getElementById('report-section-personality');
@@ -2638,7 +2982,7 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#00754A';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText('⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
+    ctx.fillText(model.summary30s?.badgeText || '⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
     ctx.font = `600 24px ${fontSans}`;
@@ -2703,21 +3047,21 @@ function renderSharePosterCanvas(model) {
     drawInsightCard(
         1050, 124,
         '#d4e9e2', 'rgba(0, 117, 74, 0.3)', '#006241',
-        '✦ 天生核心长板',
+        model.summary30s?.labelAdv || '✦ 天生核心长板',
         model.summary30s?.topAdvantage || ''
     );
 
     drawInsightCard(
         1192, 124,
         '#FFF4F2', 'rgba(200, 32, 20, 0.3)', '#c82014',
-        '⚠ 现实精力黑洞（情境校准）',
+        model.summary30s?.labelBurnout || '⚠ 现实精力黑洞（情境校准）',
         model.summary30s?.topBurnout || ''
     );
 
     drawInsightCard(
         1334, 124,
         '#faf6ee', '#dfc49d', '#cba258',
-        '🎯 未来 14 天微行动实验',
+        model.summary30s?.labelAction || '🎯 未来 14 天微行动实验',
         model.summary30s?.topAction || ''
     );
 
