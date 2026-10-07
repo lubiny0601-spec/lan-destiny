@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="观澜命理 · Lan.Destiny 本地命理与占测系统。提供高颜值的八字排盘、紫微斗数安星、合婚对照及易数占卜分析。">
     <title>观澜命理 · Lan.Destiny</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Lora:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#F7F5F0">
+    <!-- Offline-ready font stack -->
+    <!-- Local system font stack used for fast loading -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -36,16 +36,17 @@
                         <p class="hero-desc">基于东方时间模型，生成一份关于性格倾向、工作方式、关系模式与行动方向的个人说明书。</p>
                         <div class="hero-actions">
                             <button class="btn-primary start-generation-btn" data-action="open-consumer-form">免费生成我的说明书</button>
-                            <a href="#report-preview" class="btn-secondary">先看看报告内容</a>
+                            <button type="button" id="btn-quick-demo-report" class="btn-secondary">✨ 一键演示报告与海报</button>
                         </div>
                         <div class="hero-tips">
-                            约3分钟 · 无需注册 · 本机完成计算
+                            约1分钟 · 浏览器本机实时计算 · 支持生成高清分享海报
                         </div>
                     </div>
                     <div class="hero-visual-area">
-                        <div class="report-preview-card">
+                        <div class="report-preview-card" id="hero-preview-card" title="点击直接体验演示报告与分享海报" style="cursor: pointer;">
                             <div class="rpc-header">
                                 <span class="rpc-label">PERSONAL PROFILE</span>
+                                <span class="rpc-demo-badge">点击体验示例</span>
                                 <span class="rpc-title">个人结构档案</span>
                             </div>
                             <div class="rpc-keywords">
@@ -54,7 +55,7 @@
                                 <span class="keyword">✦ 创造</span>
                             </div>
                             <div class="rpc-abstract">
-                                <div class="rpc-abstract-title">核心观察：</div>
+                                <div class="rpc-abstract-title">核心观察（示例）：</div>
                                 <p>在你的结构中，我们看到了对秩序的追求和优秀的执行力，但同时可能伴随着对失控的隐忧...</p>
                             </div>
                             <div class="rpc-chapters">
@@ -72,7 +73,7 @@
                 <div class="section-container">
                     <div class="section-header">
                         <h3 class="section-title">你此刻最想看清什么？</h3>
-                        <p class="section-subtitle">选择一个方向，我们会调整报告的阅读顺序。</p>
+                        <p class="section-subtitle">选择一个方向，我们会围绕该主题为你深度展开。</p>
                     </div>
                     <div class="scenario-cards">
                         <button class="scenario-card" data-scenario="self">
@@ -198,7 +199,7 @@
                     <h3 class="cta-title">从一个问题开始，<br>重新理解自己</h3>
                     <button class="btn-primary start-generation-btn" data-action="open-consumer-form">免费生成我的说明书</button>
                     <div class="cta-disclaimer">
-                        当前版本通过本机服务完成计算，暂未建立在线账号与云端报告库。
+                        当前版本在浏览器本机直接完成计算，无需后端服务即可离线体验与生成海报。
                     </div>
                 </div>
             </section>
@@ -211,10 +212,11 @@
                 <div class="top-bar-inner">
                     <div class="top-bar-brand">观澜 Lan.Destiny · 个人结构说明书</div>
                     <div class="top-bar-actions">
+                        <button id="btn-report-poster" class="btn-primary-sm btn-poster-accent" title="生成可保存的精美分享海报">🖼 生成分享海报</button>
                         <button id="btn-report-copy" class="btn-secondary-sm" title="复制说明书核心结论">📋 复制摘要</button>
                         <button id="btn-report-print" class="btn-secondary-sm" title="存为PDF或打印">🖨 存为PDF/打印</button>
                         <button id="btn-report-edit" class="btn-secondary-sm">修改资料</button>
-                        <button id="btn-report-close" class="btn-primary-sm">返回首页</button>
+                        <button id="btn-report-close" class="btn-secondary-sm">返回首页</button>
                     </div>
                 </div>
             </div>
@@ -232,11 +234,14 @@
                         <span class="meta-pill pill-accent" id="report-meta-scenario">本次关注：了解自己</span>
                     </div>
 
+                    <div id="report-confidence-banner" class="report-confidence-banner hidden"></div>
+
                     <!-- 30秒看懂自己 (Level 1 Summary) -->
                     <div class="summary-30s-card" id="card-section-summary30s">
                         <div class="summary-header">
                             <span class="summary-badge">⚡ 30秒看懂自己</span>
                             <div class="summary-keywords" id="summary-keywords"></div>
+                            <button type="button" id="btn-summary-poster" class="btn-summary-poster">🖼 生成分享海报</button>
                         </div>
                         <div class="summary-observation" id="summary-observation"></div>
                         <div class="summary-trio-grid">
@@ -321,13 +326,38 @@
 
                     <!-- Report Bottom Actions -->
                     <div class="report-bottom-actions">
+                        <button id="btn-report-bottom-poster" class="btn-primary">🖼 生成分享海报</button>
                         <button id="btn-report-bottom-copy" class="btn-secondary">📋 复制核心结论</button>
                         <button id="btn-report-bottom-print" class="btn-secondary">🖨 存为 PDF / 打印</button>
                         <button id="btn-report-bottom-edit" class="btn-secondary">修改资料并重新推演</button>
-                        <button id="btn-report-bottom-home" class="btn-primary">返回首页</button>
+                        <button id="btn-report-bottom-home" class="btn-secondary">返回首页</button>
                     </div>
                 </div>
             </section>
+        </div>
+
+        <!-- Share Poster Preview Modal -->
+        <div id="poster-preview-modal" class="poster-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="poster-modal-title">
+            <div class="poster-modal-backdrop" data-action="close-poster-modal"></div>
+            <div class="poster-modal-card">
+                <div class="poster-modal-header">
+                    <div>
+                        <span class="poster-modal-eyebrow">LAN.DESTINY SPECIMEN CARD</span>
+                        <h3 id="poster-modal-title">个人结构标本 · 分享海报预览</h3>
+                    </div>
+                    <button type="button" id="btn-close-poster-modal" class="poster-close-btn" aria-label="关闭">&times;</button>
+                </div>
+                <div class="poster-canvas-stage">
+                    <canvas id="share-poster-canvas" width="1080" height="1560"></canvas>
+                </div>
+                <div class="poster-modal-footer">
+                    <div class="poster-footer-hint">✦ 高清 2x 植物标本风长图 · 适合保存至本地或直接分享演示</div>
+                    <div class="poster-footer-btns">
+                        <button type="button" id="btn-poster-copy-quote" class="btn-secondary-sm">📋 复制金句文案</button>
+                        <button type="button" id="btn-download-poster" class="btn-primary-sm btn-poster-accent">⬇ 下载高清海报 (PNG)</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <footer class="consumer-footer">
@@ -342,7 +372,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                当前版本：V0 本地体验原型
+                当前版本：V0 本地体验原型 · 浏览器本机实时推演
             </div>
         </footer>
 
@@ -367,7 +397,7 @@
                         <div class="form-body-inner">
                             <div class="form-left-col">
                                 <h2 id="form-shell-title">此刻，你最想看清什么？</h2>
-                                <p class="form-shell-desc">选择一个最接近你当前状态的方向。它只会调整报告的阅读顺序，不会改变基础计算结果。</p>
+                                <p class="form-shell-desc">选择一个最接近你当前状态的方向。我们会围绕该主题深度展开，并定制 14 天行动实验。</p>
                             </div>
                             <div class="form-right-col">
                                 <div class="scenario-grid">
@@ -440,7 +470,7 @@
                                     <button type="button" id="btn-change-scenario" class="btn-link">更换方向</button>
                                 </div>
                                 <h2 id="form-shell-title-step2">先认识一下你</h2>
-                                <p id="form-shell-desc-step2" class="form-shell-desc">填写必要的出生资料，我们会优先整理你的性格倾向、优势模式和精力消耗点。</p>
+                                <p id="form-shell-desc-step2" class="form-shell-desc">结合出生时间结构与 3 道当下情境校准题，浏览器将在本机为你实时生成专属说明书与分享海报。</p>
                             </div>
                             <div class="form-right-col">
                                 <form id="consumer-step2-form" onsubmit="return false;">
@@ -461,6 +491,7 @@
                                                     <span>女</span>
                                                 </label>
                                             </div>
+                                            <div class="field-hint">用于计算阶段节奏走向，基础性格由出生时间决定</div>
                                         </div>
                                     </div>
 
@@ -511,6 +542,71 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- 3 Behavioral Situational Calibration Questions (情境校准题) -->
+                                    <div class="situational-calibration-block">
+                                        <div class="situational-block-header">
+                                            <span class="situational-badge">✦ 现实情境校准</span>
+                                            <span class="situational-sub">结合你当下的真实处境，让行动建议更精准（点击可切换）</span>
+                                        </div>
+
+                                        <div class="situational-question">
+                                            <div class="sq-title">Q1. 面对突发压力或卡点时，你的第一反应更接近？</div>
+                                            <div class="sq-options">
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q1" value="push" checked>
+                                                    <span>⚡ 主动硬扛推进</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q1" value="think">
+                                                    <span>🔍 反复推演求稳</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q1" value="harmony">
+                                                    <span>🤝 顾全各方情绪</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="situational-question">
+                                            <div class="sq-title">Q2. 最近最消耗你精力的真实场景是？</div>
+                                            <div class="sq-options">
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q2" value="overload" checked>
+                                                    <span>🌀 事项太多太杂</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q2" value="boundary">
+                                                    <span>🕸 协作与关系拉扯</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q2" value="stagnation">
+                                                    <span>🌫 方向摇摆难决断</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="situational-question">
+                                            <div class="sq-title">Q3. 未来两周，你更希望采取哪种微调方式？</div>
+                                            <div class="sq-options">
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q3" value="subtract" checked>
+                                                    <span>✂ 做减法清场聚焦</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q3" value="breakthrough">
+                                                    <span>🚀 单点小闭环验证</span>
+                                                </label>
+                                                <label class="sq-pill">
+                                                    <input type="radio" name="situational_q3" value="recharge">
+                                                    <span>🛡 重建边界与充能</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="consumer-form-error" class="form-inline-error hidden" role="alert"></div>
+                                    <div class="form-privacy-note">🔒 浏览器本机直接完成计算，不依赖外部服务器、不上传个人隐私</div>
                                 </form>
 
                                 <div id="step2-completed-state" class="hidden">

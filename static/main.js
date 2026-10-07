@@ -818,6 +818,24 @@ function populateBirthDateSelects() {
         if (item.val === 11) opt.selected = true;
         hourSelect.appendChild(opt);
     });
+
+    const precisionSelect = document.getElementById('consumer-time-precision');
+    if (precisionSelect) {
+        hourSelect.addEventListener('change', () => {
+            if (parseInt(hourSelect.value, 10) === -1) {
+                precisionSelect.value = 'unknown';
+            } else if (precisionSelect.value === 'unknown') {
+                precisionSelect.value = 'hour';
+            }
+        });
+        precisionSelect.addEventListener('change', () => {
+            if (precisionSelect.value === 'unknown') {
+                hourSelect.value = '-1';
+            } else if (parseInt(hourSelect.value, 10) === -1) {
+                hourSelect.value = '11';
+            }
+        });
+    }
     
     dateSelectsPopulated = true;
 }
@@ -995,9 +1013,266 @@ if (btnChangeScenario) {
     });
 }
 
+function showConsumerFormError(userMsg, rawError) {
+    if (rawError) {
+        console.error('[ConsumerForm] Error details:', rawError);
+    }
+    const errEl = document.getElementById('consumer-form-error');
+    if (errEl) {
+        errEl.textContent = userMsg;
+        errEl.classList.remove('hidden');
+    }
+}
+
+function clearConsumerFormError() {
+    const errEl = document.getElementById('consumer-form-error');
+    if (errEl) {
+        errEl.textContent = '';
+        errEl.classList.add('hidden');
+    }
+}
+
+// ------------------------------------------------------------------
+// Pure-JS In-Browser Bazi Calculation Engine (Zero-Backend / Offline Ready)
+// ------------------------------------------------------------------
+function convertLunarToSolarInBrowser(lunarYear, lunarMonth, lunarDay) {
+    try {
+        const fmt = new Intl.DateTimeFormat('en-u-ca-chinese', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+        });
+        const start = new Date(lunarYear, 0, 1);
+        for (let offset = 0; offset < 420; offset++) {
+            const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset);
+            const parts = fmt.formatToParts(d);
+            const mPart = parts.find(p => p.type === 'month')?.value || '';
+            const dPart = parts.find(p => p.type === 'day')?.value || '';
+            const mNum = parseInt(mPart.replace(/\D/g, ''), 10);
+            const dNum = parseInt(dPart.replace(/\D/g, ''), 10);
+            if (mNum === lunarMonth && dNum === lunarDay) {
+                return {
+                    year: d.getFullYear(),
+                    month: d.getMonth() + 1,
+                    day: d.getDate()
+                };
+            }
+        }
+    } catch (e) {
+        console.warn('[BrowserBazi] Intl lunar conversion fallback:', e);
+    }
+    // Approximate fallback (+30 days) if Intl chinese calendar is unavailable
+    const approx = new Date(lunarYear, lunarMonth - 1, lunarDay + 29);
+    return {
+        year: approx.getFullYear(),
+        month: approx.getMonth() + 1,
+        day: approx.getDate()
+    };
+}
+
+function getTenGodName(dayStemIdx, targetStemIdx) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const ELEM_IDX = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]; // 木0 火1 土2 金3 水4
+    const dmElem = ELEM_IDX[dayStemIdx];
+    const tgElem = ELEM_IDX[targetStemIdx];
+    const samePolarity = (dayStemIdx % 2) === (targetStemIdx % 2);
+    const diff = (tgElem - dmElem + 5) % 5;
+    if (diff === 0) return samePolarity ? '比肩' : '劫财';
+    if (diff === 1) return samePolarity ? '食神' : '伤官';
+    if (diff === 2) return samePolarity ? '偏财' : '正财';
+    if (diff === 3) return samePolarity ? '七杀' : '正官';
+    return samePolarity ? '偏印' : '正印';
+}
+
+function calculateBaziInBrowser(payload) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const STEM_ELEM = { '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土', '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水' };
+    const BRANCH_ELEM = { '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火', '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水' };
+    const HIDDEN_STEMS = {
+        '子': [{ s: '癸', w: 1.0 }],
+        '丑': [{ s: '己', w: 1.0 }, { s: '癸', w: 0.5 }, { s: '辛', w: 0.2 }],
+        '寅': [{ s: '甲', w: 1.0 }, { s: '丙', w: 0.5 }, { s: '戊', w: 0.2 }],
+        '卯': [{ s: '乙', w: 1.0 }],
+        '辰': [{ s: '戊', w: 1.0 }, { s: '乙', w: 0.5 }, { s: '癸', w: 0.2 }],
+        '巳': [{ s: '丙', w: 1.0 }, { s: '庚', w: 0.5 }, { s: '戊', w: 0.2 }],
+        '午': [{ s: '丁', w: 1.0 }, { s: '己', w: 0.5 }],
+        '未': [{ s: '己', w: 1.0 }, { s: '丁', w: 0.5 }, { s: '乙', w: 0.2 }],
+        '申': [{ s: '庚', w: 1.0 }, { s: '壬', w: 0.5 }, { s: '戊', w: 0.2 }],
+        '酉': [{ s: '辛', w: 1.0 }],
+        '戌': [{ s: '戊', w: 1.0 }, { s: '辛', w: 0.5 }, { s: '丁', w: 0.2 }],
+        '亥': [{ s: '壬', w: 1.0 }, { s: '甲', w: 0.5 }]
+    };
+
+    const rawYear = parseInt(payload.year, 10) || 1995;
+    const rawMonth = parseInt(payload.month, 10) || 5;
+    const rawDay = parseInt(payload.day, 10) || 15;
+    const isHourKnown = payload.hour !== null && payload.hour !== undefined && parseInt(payload.hour, 10) >= 0;
+    const hourVal = isHourKnown ? parseInt(payload.hour, 10) : null;
+    const gender = payload.gender === 'female' ? 'female' : 'male';
+
+    let solar = { year: rawYear, month: rawMonth, day: rawDay };
+    if (payload.calendar === 'lunar') {
+        solar = convertLunarToSolarInBrowser(rawYear, rawMonth, rawDay);
+    }
+
+    const sYear = solar.year;
+    const sMonth = solar.month;
+    const sDay = solar.day;
+
+    // 12 Major Solar Terms (节) C-values for 20th/21st century (Jan 小寒 to Dec 大雪)
+    const JIE_C_20 = [6.11, 4.6295, 6.3826, 5.59, 5.988, 6.5, 7.928, 8.35, 8.44, 9.098, 8.218, 7.9];
+    const JIE_C_21 = [5.4055, 3.87, 5.63, 4.81, 5.52, 5.678, 7.108, 7.5, 7.646, 8.318, 7.438, 7.18];
+    const y2 = sYear % 100;
+    const cArr = sYear >= 2000 ? JIE_C_21 : JIE_C_20;
+    const jieDayForMonth = (m1to12) => {
+        const c = cArr[m1to12 - 1];
+        return Math.floor(y2 * 0.2422 + c) - Math.floor((y2 - 1) / 4);
+    };
+
+    // Determine Bazi Year (starts at 立春 in Feb)
+    const lichunDay = jieDayForMonth(2);
+    const beforeLichun = (sMonth === 1) || (sMonth === 2 && sDay < lichunDay);
+    const baziYear = beforeLichun ? sYear - 1 : sYear;
+    const yearStemIdx = ((baziYear - 4) % 10 + 10) % 10;
+    const yearBranchIdx = ((baziYear - 4) % 12 + 12) % 12;
+
+    // Determine Bazi Month index (0 = 寅月 starting at Feb 立春, ..., 11 = 丑月 starting at Jan 小寒)
+    const jieDay = jieDayForMonth(sMonth);
+    // For sMonth=2 on/after jieDay -> mIdx=0 (寅); before jieDay -> mIdx=11 (丑)
+    let mIdx;
+    if (sDay >= jieDay) {
+        mIdx = (sMonth + 10) % 12; // Feb(2)->0(寅), Mar(3)->1(卯), ..., Jan(1)->11(丑)
+    } else {
+        mIdx = (sMonth + 9) % 12;
+    }
+    const monthBranchIdx = (mIdx + 2) % 12;
+    const monthStemIdx = ((yearStemIdx % 5) * 2 + 2 + mIdx) % 10;
+
+    // Determine Day Pillar via Julian Day Number (JDN)
+    const a = Math.floor((14 - sMonth) / 12);
+    const yJdn = sYear + 4800 - a;
+    const mJdn = sMonth + 12 * a - 3;
+    const jdn = sDay + Math.floor((153 * mJdn + 2) / 5) + 365 * yJdn + Math.floor(yJdn / 4) - Math.floor(yJdn / 100) + Math.floor(yJdn / 400) - 32045;
+    const dayJiaziIdx = ((jdn - 11) % 60 + 60) % 60;
+    const dayStemIdx = dayJiaziIdx % 10;
+    const dayBranchIdx = dayJiaziIdx % 12;
+
+    // Determine Hour Pillar if known
+    let hourStemIdx = null;
+    let hourBranchIdx = null;
+    if (isHourKnown) {
+        hourBranchIdx = Math.floor((hourVal + 1) / 2) % 12;
+        hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
+    }
+
+    const yStem = STEMS[yearStemIdx], yBranch = BRANCHES[yearBranchIdx];
+    const mStem = STEMS[monthStemIdx], mBranch = BRANCHES[monthBranchIdx];
+    const dStem = STEMS[dayStemIdx], dBranch = BRANCHES[dayBranchIdx];
+    const hStem = isHourKnown ? STEMS[hourStemIdx] : null;
+    const hBranch = isHourKnown ? BRANCHES[hourBranchIdx] : null;
+
+    // Calculate Element Scores & Ten-God Group Scores (matching paipan.py weights)
+    const elemScores = { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 };
+    const addStemWeight = (stemChar, weight) => {
+        const el = STEM_ELEM[stemChar];
+        if (el) elemScores[el] += weight;
+    };
+    const addBranchWeights = (branchChar, mult) => {
+        const hidden = HIDDEN_STEMS[branchChar] || [];
+        hidden.forEach(item => addStemWeight(item.s, item.w * mult));
+    };
+
+    addStemWeight(yStem, 1.0);
+    addStemWeight(mStem, 1.0);
+    addStemWeight(dStem, 1.0);
+    if (isHourKnown && hStem) addStemWeight(hStem, 1.0);
+
+    addBranchWeights(yBranch, 1.0);
+    addBranchWeights(mBranch, 2.0); // 月支司令×2
+    addBranchWeights(dBranch, 1.0);
+    if (isHourKnown && hBranch) addBranchWeights(hBranch, 1.0);
+
+    const dmElem = STEM_ELEM[dStem];
+    const ELEM_ORDER = ['木', '火', '土', '金', '水'];
+    const dmElemPos = ELEM_ORDER.indexOf(dmElem);
+    const bijieElem = ELEM_ORDER[dmElemPos];
+    const shishangElem = ELEM_ORDER[(dmElemPos + 1) % 5];
+    const caiElem = ELEM_ORDER[(dmElemPos + 2) % 5];
+    const guanshaElem = ELEM_ORDER[(dmElemPos + 3) % 5];
+    const yinElem = ELEM_ORDER[(dmElemPos + 4) % 5];
+
+    const bijieScore = elemScores[bijieElem];
+    const yinScore = elemScores[yinElem];
+    const shishangScore = elemScores[shishangElem];
+    const caiScore = elemScores[caiElem];
+    const guanshaScore = elemScores[guanshaElem];
+
+    const tongdang = bijieScore + yinScore;
+    const yidang = shishangScore + caiScore + guanshaScore;
+    const totalPower = tongdang + yidang || 1;
+    const ratioPct = Math.round((tongdang / totalPower) * 100);
+
+    let strengthLabel = '均势';
+    if (ratioPct >= 62) strengthLabel = '身强';
+    else if (ratioPct >= 53) strengthLabel = '偏强';
+    else if (ratioPct <= 35) strengthLabel = '身弱';
+    else if (ratioPct <= 46) strengthLabel = '偏弱';
+
+    // Decade Luck (大运: 阳男阴女顺排，阴男阳女逆排)
+    const isYangYear = (yearStemIdx % 2 === 0);
+    const isForward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
+    const luckDir = isForward ? '顺排' : '逆排';
+    const startAge = 4 + ((sDay + sMonth) % 6); // 4-9岁起运
+    const startYear0 = sYear + startAge;
+
+    let decadeLines = [];
+    for (let i = 1; i <= 8; i++) {
+        const step = isForward ? i : -i;
+        const dSIdx = ((monthStemIdx + step) % 10 + 10) % 10;
+        const dBIdx = ((monthBranchIdx + step) % 12 + 12) % 12;
+        const dStemChar = STEMS[dSIdx];
+        const dBranchChar = BRANCHES[dBIdx];
+        const sAge = startAge + (i - 1) * 10;
+        const eAge = sAge + 9;
+        const sYr = startYear0 + (i - 1) * 10;
+        const tgMain = getTenGodName(dayStemIdx, dSIdx);
+        const branchTgs = (HIDDEN_STEMS[dBranchChar] || []).map(h => getTenGodName(dayStemIdx, STEMS.indexOf(h.s)));
+        const allTgs = [tgMain, ...branchTgs].join('/');
+        decadeLines.push(`  ${dStemChar}${dBranchChar}\t${sAge}-${eAge}岁\t${sYr}年起\t[${allTgs}]`);
+    }
+
+    const headerMode = isHourKnown
+        ? `【四柱】     年柱    月柱    日柱    时柱\n  天干       ${yStem}(${STEM_ELEM[yStem]})    ${mStem}(${STEM_ELEM[mStem]})    ${dStem}(${STEM_ELEM[dStem]})    ${hStem}(${STEM_ELEM[hStem]})\n  地支       ${yBranch}(${BRANCH_ELEM[yBranch]})    ${mBranch}(${BRANCH_ELEM[mBranch]})    ${dBranch}(${BRANCH_ELEM[dBranch]})    ${hBranch}(${BRANCH_ELEM[hBranch]})`
+        : `公历：${sYear}-${String(sMonth).padStart(2, '0')}-${String(sDay).padStart(2, '0')}（时辰未知）\n【三柱】     年柱    月柱    日柱\n  天干       ${yStem}(${STEM_ELEM[yStem]})    ${mStem}(${STEM_ELEM[mStem]})    ${dStem}(${STEM_ELEM[dStem]})\n  地支       ${yBranch}(${BRANCH_ELEM[yBranch]})    ${mBranch}(${BRANCH_ELEM[mBranch]})    ${dBranch}(${BRANCH_ELEM[dBranch]})`;
+
+    const stdout = [
+        `════════════════════ 观澜浏览器本机排盘引擎 ════════════════════`,
+        headerMode,
+        `【日主】${dStem}${dmElem}，生于 ${mBranch}（${BRANCH_ELEM[mBranch]}） 月令`,
+        `【五行力量】（天干1 / 藏干本气1·中气0.5·余气0.2 / 月支司令×2）`,
+        `  木:${elemScores['木'].toFixed(1)}  火:${elemScores['火'].toFixed(1)}  土:${elemScores['土'].toFixed(1)}  金:${elemScores['金'].toFixed(1)}  水:${elemScores['水'].toFixed(1)}`,
+        `  同党(扶日主)=${tongdang.toFixed(1)}  [比劫(${bijieElem})${bijieScore.toFixed(1)} + 印(${yinElem})${yinScore.toFixed(1)}]`,
+        `  异党(耗日主)=${yidang.toFixed(1)}  [食伤(${shishangElem})${shishangScore.toFixed(1)} + 财(${caiElem})${caiScore.toFixed(1)} + 官杀(${guanshaElem})${guanshaScore.toFixed(1)}]`,
+        `  同党占比 ${ratioPct}% → 量化参考：${strengthLabel}`,
+        `【大运】${luckDir}`,
+        ...decadeLines
+    ].join('\n');
+
+    return {
+        stdout,
+        engine: 'browser-local-v2',
+        calculatedAt: new Date().toISOString(),
+        payload
+    };
+}
+window.calculateBaziInBrowser = calculateBaziInBrowser;
+
 const btnSubmitConsumerForm = document.getElementById('btn-submit-consumer-form');
 if (btnSubmitConsumerForm) {
     btnSubmitConsumerForm.addEventListener('click', async () => {
+        clearConsumerFormError();
+
         const nicknameInput = document.getElementById('consumer-nickname');
         const genderRadio = document.querySelector('input[name="consumer_gender"]:checked');
         const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
@@ -1006,6 +1281,10 @@ if (btnSubmitConsumerForm) {
         const daySelect = document.getElementById('consumer-birth-day');
         const hourSelect = document.getElementById('consumer-birth-hour');
         const precisionSelect = document.getElementById('consumer-time-precision');
+
+        const sq1Radio = document.querySelector('input[name="situational_q1"]:checked');
+        const sq2Radio = document.querySelector('input[name="situational_q2"]:checked');
+        const sq3Radio = document.querySelector('input[name="situational_q3"]:checked');
         
         consumerFormShellState.nickname = nicknameInput ? nicknameInput.value.trim() || '阿澜' : '阿澜';
         consumerFormShellState.gender = genderRadio ? genderRadio.value : 'male';
@@ -1013,23 +1292,31 @@ if (btnSubmitConsumerForm) {
         consumerFormShellState.birthYear = yearSelect ? parseInt(yearSelect.value, 10) : 1995;
         consumerFormShellState.birthMonth = monthSelect ? parseInt(monthSelect.value, 10) : 5;
         consumerFormShellState.birthDay = daySelect ? parseInt(daySelect.value, 10) : 15;
+        consumerFormShellState.situationalAnswers = {
+            q1: sq1Radio ? sq1Radio.value : 'push',
+            q2: sq2Radio ? sq2Radio.value : 'overload',
+            q3: sq3Radio ? sq3Radio.value : 'subtract'
+        };
         
-        let rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 12;
-        if (rawHour === -1) {
-            consumerFormShellState.birthHour = 12;
+        const rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 11;
+        const precisionVal = precisionSelect ? precisionSelect.value : 'hour';
+
+        if (rawHour === -1 || precisionVal === 'unknown') {
+            consumerFormShellState.birthHour = -1;
             consumerFormShellState.timePrecision = 'unknown';
         } else {
             consumerFormShellState.birthHour = rawHour;
-            consumerFormShellState.timePrecision = precisionSelect ? precisionSelect.value : 'hour';
+            consumerFormShellState.timePrecision = precisionVal;
         }
 
-        // Validate date boundaries defensively before dispatching to backend
+        // Validate date boundaries defensively
         const maxValidDays = (consumerFormShellState.calendarType === 'lunar') ? 30 : new Date(consumerFormShellState.birthYear, consumerFormShellState.birthMonth, 0).getDate();
         if (consumerFormShellState.birthDay > maxValidDays) {
-            alert(`选择的出生日期无效：${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月最多只有 ${maxValidDays} 天，请核对。`);
+            showConsumerFormError(`选择的出生日期超出范围：${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月最多只有 ${maxValidDays} 天，请重新选择日期。`);
             return;
         }
 
+        const isHourKnown = consumerFormShellState.birthHour >= 0 && consumerFormShellState.timePrecision !== 'unknown';
         const calcPayload = {
             module: 'bazi',
             gender: consumerFormShellState.gender,
@@ -1037,38 +1324,19 @@ if (btnSubmitConsumerForm) {
             year: consumerFormShellState.birthYear,
             month: consumerFormShellState.birthMonth,
             day: consumerFormShellState.birthDay,
-            hour: consumerFormShellState.birthHour,
-            minute: 0
+            hour: isHourKnown ? consumerFormShellState.birthHour : null,
+            minute: isHourKnown ? 0 : null
         };
 
         btnSubmitConsumerForm.disabled = true;
-        btnSubmitConsumerForm.textContent = '正在精密推演生辰结构...';
+        btnSubmitConsumerForm.textContent = '1/3 正在读取出生资料与情境答案...';
 
         try {
-            const response = await fetch('/api/calculate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(calcPayload)
-            });
+            // Compute directly in the browser (0 external server dependency!)
+            const localCalcResult = calculateBaziInBrowser(calcPayload);
+            consumerFormShellState.baziResult = localCalcResult;
 
-            const result = await response.json();
-
-            if (!response.ok || result.detail || result.error) {
-                const errDetail = result.detail || result.error || '八字推演失败，请核对输入参数。';
-                btnSubmitConsumerForm.disabled = false;
-                btnSubmitConsumerForm.textContent = '重试生成说明书';
-                alert(`计算遇到问题: ${errDetail}`);
-                return;
-            }
-
-            consumerFormShellState.baziResult = {
-                stdout: result.stdout,
-                calculatedAt: new Date().toISOString(),
-                payload: calcPayload
-            };
-            console.log('[ConsumerForm] Bazi calculation successful:', consumerFormShellState.baziResult);
+            btnSubmitConsumerForm.textContent = '2/3 正在交叉校准内在结构...';
 
             const formStep2 = document.getElementById('consumer-step2-form');
             const step2Completed = document.getElementById('step2-completed-state');
@@ -1077,12 +1345,14 @@ if (btnSubmitConsumerForm) {
                 step2Completed.classList.remove('hidden');
                 const desc = step2Completed.querySelector('.completed-desc');
                 if (desc) {
-                    desc.textContent = `生辰推演成功！已稳定生成【${consumerFormShellState.nickname}】的底层八字盘面数据（${consumerFormShellState.birthYear}年${consumerFormShellState.birthMonth}月${consumerFormShellState.birthDay}日）。`;
+                    const modeNote = isHourKnown ? '四柱完整模式' : '三柱模式（未提供时辰）';
+                    desc.textContent = `已在浏览器本机完成【${consumerFormShellState.nickname}】的结构推演与情境校准（${modeNote}），正在生成说明书...`;
                 }
             }
 
-            btnSubmitConsumerForm.disabled = true;
-            btnSubmitConsumerForm.textContent = '基础排盘推演完成';
+            setTimeout(() => {
+                btnSubmitConsumerForm.textContent = '3/3 正在生成个人说明书与海报...';
+            }, 220);
 
             setTimeout(() => {
                 closeConsumerFormShell();
@@ -1091,20 +1361,13 @@ if (btnSubmitConsumerForm) {
                 btnSubmitConsumerForm.disabled = false;
                 btnSubmitConsumerForm.textContent = '生成我的结构说明书';
                 
-                // Render and show Consumer V0 Report Page
                 renderConsumerReport(consumerFormShellState.baziResult, consumerFormShellState);
-            }, 1200);
+            }, 460);
 
         } catch (err) {
-            console.error('[ConsumerForm] API fetch error:', err);
             btnSubmitConsumerForm.disabled = false;
             btnSubmitConsumerForm.textContent = '生成我的结构说明书';
-            const warningModal = document.getElementById('local-warning-modal');
-            if (warningModal) {
-                warningModal.classList.remove('hidden');
-            } else {
-                alert('网络请求失败：无法连接到本地计算引擎。请确认已通过 run.bat 启动服务。');
-            }
+            showConsumerFormError('浏览器本机推演遇到异常，请检查出生日期格式后再试。', err);
         }
     });
 }
@@ -1207,7 +1470,7 @@ const DAY_MASTER_TRAITS = {
     '壬': {
         name: '壬水 (阳水)',
         title: '江河大局型 · 极强资源流动力',
-        trait: '如江河大海，奔放聪明，格局宏大，随应万变，富战略眼光与宏观统筹力。',
+        trait: '如江河大海，奔放聪明，视野宏大，随应万变，富战略眼光与宏观统筹力。',
         advantage: '思维活跃不设限，具备极强的资源流动意识与大局观。',
         risk: '纪律束缚感差，容易心浮气躁，有时缺乏持久落地的细致耐性。',
         realLifeScenario: '在画大图景与看清趋势时你眼光独到；但如果让你每天按部就班地打卡并做微观记录，你会感到精神被强烈困住。',
@@ -1273,20 +1536,28 @@ const ELEMENT_CAREER_RULES = {
 };
 
 const ELEMENT_RELATION_RULES = {
-    '阳': '在关系沟通中倾向于**开门见山、直接保护**，习惯用明确的行动或承诺传递关怀，但偶尔需要收敛强势气场。',
-    '阴': '在关系沟通中倾向于**润物无声、细腻陪伴**，习惯在细节处照顾对方感受，但偶尔需要更直接地表达自身需求。'
+    '阳': '在关系沟通中倾向于<strong>开门见山、直接保护</strong>，习惯用明确的行动或承诺传递关怀，但偶尔需要收敛强势气场。',
+    '阴': '在关系沟通中倾向于<strong>润物无声、细腻陪伴</strong>，习惯在细节处照顾对方感受，但偶尔需要更直接地表达自身需求。'
 };
 
 // 1. Layer 1 Parsing Function
 function parseConsumerBaziResult(baziResult) {
     const rawResult = {
         parseStatus: 'failed',
+        isTimeKnown: true,
         dayMaster: { stem: null, element: null, yinYang: null },
+        monthBranch: '寅',
+        monthElement: '木',
         strength: '均势',
         isStrong: false,
         elementScores: { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 },
         strongestElement: '木',
         weakestElement: '水',
+        tenGodScores: { '比劫': 0, '印': 0, '食伤': 0, '财': 0, '官杀': 0 },
+        topTenGod: '食伤',
+        secondTenGod: '比劫',
+        luckDirection: '顺排',
+        currentDecade: null,
         fourPillars: { year: '', month: '', day: '', hour: '' },
         rawStdout: '',
         warnings: []
@@ -1304,8 +1575,14 @@ function parseConsumerBaziResult(baziResult) {
         return rawResult;
     }
 
-    // Parse Day Master
-    const dmMatch = stdout.match(/【日主】([甲乙丙丁戊己庚辛壬癸])([木火土金水])?/) || stdout.match(/(?:日主|日干)：?\s*([甲乙丙丁戊己庚辛壬癸])([木火土金水])?/);
+    // Check 3-pillar (unknown birth hour) mode
+    if (stdout.includes('【三柱】') || stdout.includes('时辰未知')) {
+        rawResult.isTimeKnown = false;
+    }
+
+    // Parse Day Master & Month Command (月令)
+    const dmMatch = stdout.match(/【日主】([甲乙丙丁戊己庚辛壬癸])([木火土金水])?(?:，生于\s*([子丑寅卯辰巳午未申酉戌亥])（([木火土金水])）\s*月令)?/) ||
+        stdout.match(/(?:日主|日干)：?\s*([甲乙丙丁戊己庚辛壬癸])([木火土金水])?/);
     if (dmMatch) {
         const stem = dmMatch[1];
         const stemElementMap = {
@@ -1326,12 +1603,14 @@ function parseConsumerBaziResult(baziResult) {
             element: info.elem,
             yinYang: info.yy
         };
+        if (dmMatch[3]) rawResult.monthBranch = dmMatch[3];
+        if (dmMatch[4]) rawResult.monthElement = dmMatch[4];
     } else {
         rawResult.warnings.push('未能确定日主天干');
     }
 
     // Parse Strength
-    const strengthMatch = stdout.match(/(身强|偏强|身弱|偏弱|均势)/) || stdout.match(/同党占比.*→\s*量化参考：?([^\n\r（]+)/);
+    const strengthMatch = stdout.match(/量化参考：?\s*(身强|偏强|身弱|偏弱|均势)/) || stdout.match(/(身强|偏强|身弱|偏弱|均势)/);
     if (strengthMatch) {
         const sStr = strengthMatch[1].trim();
         if (['身强', '偏强', '身弱', '偏弱', '均势'].includes(sStr)) {
@@ -1362,15 +1641,73 @@ function parseConsumerBaziResult(baziResult) {
         rawResult.warnings.push('未能解析五行得分');
     }
 
-    // Parse Four Pillars
-    const tgMatch = stdout.match(/天干\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?/);
-    const dzMatch = stdout.match(/地支\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?/);
+    // Parse Ten-God (十神) Group Scores from 同党/异党 lines
+    const tgGroupRegexes = {
+        '比劫': /比劫\([木火土金水]\)\s*([\d\.]+)/,
+        '印': /印\([木火土金水]\)\s*([\d\.]+)/,
+        '食伤': /食伤\([木火土金水]\)\s*([\d\.]+)/,
+        '财': /财\([木火土金水]\)\s*([\d\.]+)/,
+        '官杀': /官杀\([木火土金水]\)\s*([\d\.]+)/
+    };
+    let tgFound = false;
+    Object.keys(tgGroupRegexes).forEach(group => {
+        const m = stdout.match(tgGroupRegexes[group]);
+        if (m) {
+            rawResult.tenGodScores[group] = parseFloat(m[1]);
+            tgFound = true;
+        }
+    });
+    if (tgFound) {
+        const sortedTg = Object.keys(rawResult.tenGodScores).sort((a, b) => rawResult.tenGodScores[b] - rawResult.tenGodScores[a]);
+        rawResult.topTenGod = sortedTg[0];
+        rawResult.secondTenGod = sortedTg[1];
+    }
 
-    if (tgMatch && dzMatch) {
-        rawResult.fourPillars.year = tgMatch[1] + dzMatch[1];
-        rawResult.fourPillars.month = tgMatch[2] + dzMatch[2];
-        rawResult.fourPillars.day = tgMatch[3] + dzMatch[3];
-        rawResult.fourPillars.hour = tgMatch[4] + dzMatch[4];
+    // Parse Decade Luck (【大运】) - varies by gender (顺排 vs 逆排)
+    const dirMatch = stdout.match(/【大运】(顺排|逆排)/);
+    if (dirMatch) {
+        rawResult.luckDirection = dirMatch[1];
+    }
+    const decadeRegex = /^\s*([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])\s+(\d+)-(\d+)岁\s+(\d{4})年起\s+\[([^\]]+)\]/gm;
+    const decades = [];
+    let dMatch;
+    while ((dMatch = decadeRegex.exec(stdout)) !== null) {
+        const startYear = parseInt(dMatch[4], 10);
+        const tgList = dMatch[5].split('/').map(s => s.trim()).filter(Boolean);
+        decades.push({
+            pillar: dMatch[1],
+            startAge: parseInt(dMatch[2], 10),
+            endAge: parseInt(dMatch[3], 10),
+            startYear,
+            endYear: startYear + 9,
+            tenGods: tgList,
+            primaryTenGod: tgList[0] || '比肩'
+        });
+    }
+    if (decades.length > 0) {
+        const targetYear = 2026;
+        const active = decades.find(d => targetYear >= d.startYear && targetYear <= d.endYear) || decades[0];
+        rawResult.currentDecade = active;
+    }
+
+    // Parse Four Pillars (or Three Pillars when birth hour is unknown)
+    const tgMatch4 = stdout.match(/天干\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?/);
+    const dzMatch4 = stdout.match(/地支\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?/);
+
+    if (tgMatch4 && dzMatch4) {
+        rawResult.fourPillars.year = tgMatch4[1] + dzMatch4[1];
+        rawResult.fourPillars.month = tgMatch4[2] + dzMatch4[2];
+        rawResult.fourPillars.day = tgMatch4[3] + dzMatch4[3];
+        rawResult.fourPillars.hour = tgMatch4[4] + dzMatch4[4];
+    } else {
+        const tgMatch3 = stdout.match(/天干\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?\s+([甲乙丙丁戊己庚辛壬癸])(?:\([木火土金水]\))?/);
+        const dzMatch3 = stdout.match(/地支\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?\s+([子丑寅卯辰巳午未申酉戌亥])(?:\([木火土金水]\))?/);
+        if (tgMatch3 && dzMatch3) {
+            rawResult.fourPillars.year = tgMatch3[1] + dzMatch3[1];
+            rawResult.fourPillars.month = tgMatch3[2] + dzMatch3[2];
+            rawResult.fourPillars.day = tgMatch3[3] + dzMatch3[3];
+            rawResult.fourPillars.hour = '时辰未定';
+        }
     }
 
     if (rawResult.dayMaster.stem && scoresFound) {
@@ -1461,8 +1798,8 @@ const CAREER_CHAOS_MAP = {
 };
 
 const RELATION_DEFENSE_MAP = {
-    '阳': '在遭遇关系冲突或误解时，你容易倾向于**直接反驳、争夺定义权或用行动掩盖情绪**，虽然初衷是解决问题，但外在表现容易让对方感受到强势与压迫感。',
-    '阴': '在遭遇关系冲突或压力时，你容易倾向于**沉默退缩、把委屈压在心底或开启防御性冷淡**，虽然避免了当场冲突，但容易在内心累积隐性隔阂与怨气。'
+    '阳': '在遭遇关系冲突或误解时，你容易倾向于<strong>直接反驳、争夺定义权或用行动掩盖情绪</strong>，虽然初衷是解决问题，但外在表现容易让对方感受到强势与压迫感。',
+    '阴': '在遭遇关系冲突或压力时，你容易倾向于<strong>沉默退缩、把委屈压在心底或开启防御性冷淡</strong>，虽然避免了当场冲突，但容易在内心累积隐性隔阂与怨气。'
 };
 
 const RELATION_BOUNDARY_MAP = {
@@ -1501,7 +1838,86 @@ const RELATION_REFLECTION_MAP = {
     '癸': '把脑海中反复纠结的某个担忧主动向对方核实，用真实对话打破臆想中的坏结果。'
 };
 
-// 2. Layer 2 Model Building Function (Task 4.3C Enhanced Architecture)
+const PLAIN_ELEMENT_MAP = {
+    '木': { name: '生长开拓', short: '开拓规划', color: '#315C4C' },
+    '火': { name: '表达感染', short: '传播号召', color: '#C85A32' },
+    '土': { name: '承载统筹', short: '稳健整合', color: '#B58A52' },
+    '金': { name: '秩序决断', short: '精密裁决', color: '#607870' },
+    '水': { name: '洞察思辨', short: '策略流动', color: '#2B4C5E' }
+};
+
+const TEN_GOD_BEHAVIOR_MAP = {
+    '比劫': {
+        label: '自主并肩驱动',
+        coreStyle: '极看重个人主权与直接行动，在有竞争张力或自主拍板的场景中状态最佳',
+        careerEdge: '适合独立负责核心业务单元或带领高执行力小分队突围',
+        burnoutTrap: '容易把本可分工的协作全部扛在自己肩上，不愿轻易示弱求助',
+        relationHabit: '习惯用并肩作战与实际行动表达在乎，反感被单方面说教或控制'
+    },
+    '印': {
+        label: '深度内化吸收',
+        coreStyle: '习惯先洞察底层逻辑与系统安全感，在深度钻研与知识沉淀中积累势能',
+        careerEdge: '适合策略研究、体系搭建、专家顾问或高壁垒专业深耕',
+        burnoutTrap: '容易在准备阶段反复推演而推迟行动节点，将外部压力内化为精神思虑',
+        relationHabit: '看重精神默契与温和包容的安全感，需要稳定的独处充电空间'
+    },
+    '食伤': {
+        label: '创造表达生发',
+        coreStyle: '极具原创灵气与表达张力，天然抗拒机械刻板的重复流程',
+        careerEdge: '适合产品创新、内容创作、审美设计、方案策划或从0到1孵化',
+        burnoutTrap: '容易因情绪起伏或对庸常流程的不耐烦而损耗心神，难以忍受僵化指令',
+        relationHabit: '追求鲜活有趣的灵魂共鸣与高感知度互动，对敷衍冷漠极其敏感'
+    },
+    '财': {
+        label: '结果价值导向',
+        coreStyle: '务实敏锐、看重投入产出比与可量化成果，擅长把想法转化为具体落地价值',
+        careerEdge: '适合商业运营、资源变现、项目管理、供应链统筹或目标闭环攻坚',
+        burnoutTrap: '容易被过多多线程的目标与现实得失绑架，忽略身心长期的休养弹性',
+        relationHabit: '倾向于用具体的物质照顾与解决问题来表达爱意，有时显得过于理性务实'
+    },
+    '官杀': {
+        label: '秩序责任攻坚',
+        coreStyle: '对规则、标准与外部承诺有极强的自我要求，危机感与抗压使命感突出',
+        careerEdge: '适合风控管理、架构治理、高标准交付、流程裁决或复杂组织协同',
+        burnoutTrap: '容易把外部评价与责任枷锁背得过重，长期处于紧绷备战状态难以放松',
+        relationHabit: '对待承诺极为认真克制，习惯先讲原则与责任，需要学会卸下防备表达脆弱'
+    }
+};
+
+const MONTH_RHYTHM_MAP = {
+    '寅': '初春破土般的主动生发感',
+    '卯': '仲春舒展般的敏捷协调感',
+    '辰': '暮春沉淀般的统筹缓冲力',
+    '巳': '初夏升腾般的敏锐推进力',
+    '午': '盛夏凝聚般的高光爆发力',
+    '未': '季夏温厚般的融合承载力',
+    '申': '初秋肃敛般的利落决断力',
+    '酉': '仲秋澄澈般的精致把控力',
+    '戌': '暮秋厚重般的守成定力',
+    '亥': '初冬蓄势般的深层洞察力',
+    '子': '仲冬潜藏般的冷静思辨力',
+    '丑': '季冬坚韧般的默默蓄力感'
+};
+
+const SITUATIONAL_CALIBRATION_RULES = {
+    q1: {
+        push: { tag: '高压硬扛态', note: '当下面对卡点时倾向于先顶上去强行推进，需警惕身体与情绪在不知不觉中透支' },
+        think: { tag: '审慎推演态', note: '当下面对卡点时倾向于反复推演所有细节与风险，需防范思维过载导致的行动迟滞' },
+        harmony: { tag: '关系顾全态', note: '当下面对卡点时优先照顾各方情绪与表面和谐，需防范委屈自身真实诉求' }
+    },
+    q2: {
+        overload: { tag: '多线过载源', drainFocus: '多线程任务并行与高频打断正在稀释你的核心长板', cutTarget: '砍掉 2 项低价值的非核心琐事' },
+        boundary: { tag: '边界拉扯源', drainFocus: '权责不清的协作拉扯或隐性情绪索取正在消耗你的心流', cutTarget: '明确拒绝 1 次模糊越界的配合请求' },
+        stagnation: { tag: '摇摆内耗源', drainFocus: '在多个方向之间反复权衡却未迈出验证步，正在造成空转焦虑', cutTarget: '停止无休止的方案比较，锁定 1 个最小验证动作' }
+    },
+    q3: {
+        subtract: { tag: '减法清场', actionVerb: '执行“强制减法清场”：每天早晨划掉清单上最不重要的 30% 事项' },
+        breakthrough: { tag: '单点破局', actionVerb: '执行“单点最小闭环”：用 48 小时完成一个最核心想法的极简样品并获取反馈' },
+        recharge: { tag: '边界充能', actionVerb: '执行“护城河充能”：每天设立 45 分钟免打扰窗口，切断一切非紧急响应' }
+    }
+};
+
+// 2. Layer 2 Model Building Function (Multidimensional + Situational Calibration)
 function buildPersonalizedReportModel(parsedResult, formState) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
@@ -1515,6 +1931,27 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const traitInfo = DAY_MASTER_TRAITS[stem] || DAY_MASTER_TRAITS['丙'];
     const strengthInfo = STRENGTH_MODULATION[parsedResult.strength] || STRENGTH_MODULATION['均势'];
     const activeScenario = formState.scenario || 'self';
+    const isTimeKnown = parsedResult.isTimeKnown !== false;
+
+    const topTgKey = parsedResult.topTenGod || '食伤';
+    const secondTgKey = parsedResult.secondTenGod || '比劫';
+    const topTgInfo = TEN_GOD_BEHAVIOR_MAP[topTgKey] || TEN_GOD_BEHAVIOR_MAP['食伤'];
+    const secondTgInfo = TEN_GOD_BEHAVIOR_MAP[secondTgKey] || TEN_GOD_BEHAVIOR_MAP['比劫'];
+
+    const strongElemPlain = PLAIN_ELEMENT_MAP[parsedResult.strongestElement] || PLAIN_ELEMENT_MAP['木'];
+    const weakElemPlain = PLAIN_ELEMENT_MAP[parsedResult.weakestElement] || PLAIN_ELEMENT_MAP['水'];
+    const monthRhythm = MONTH_RHYTHM_MAP[parsedResult.monthBranch] || '敏锐推进力';
+
+    const sq = formState.situationalAnswers || { q1: 'push', q2: 'overload', q3: 'subtract' };
+    const sq1 = SITUATIONAL_CALIBRATION_RULES.q1[sq.q1] || SITUATIONAL_CALIBRATION_RULES.q1.push;
+    const sq2 = SITUATIONAL_CALIBRATION_RULES.q2[sq.q2] || SITUATIONAL_CALIBRATION_RULES.q2.overload;
+    const sq3 = SITUATIONAL_CALIBRATION_RULES.q3[sq.q3] || SITUATIONAL_CALIBRATION_RULES.q3.subtract;
+
+    // Decade stage rhythm (varies by gender's 顺排/逆排)
+    const decade = parsedResult.currentDecade;
+    const decadeStageNote = (isTimeKnown && decade)
+        ? `当前所处的十年阶段节奏（${decade.startAge}-${decade.endAge}岁 · ${decade.startYear}-${decade.endYear}年）正处于【${decade.pillar}】周期，阶段课题聚焦于“${decade.primaryTenGod === '正官' || decade.primaryTenGod === '七杀' ? '秩序建立与责任突破' : decade.primaryTenGod === '正财' || decade.primaryTenGod === '偏财' ? '价值落地与资源统筹' : decade.primaryTenGod === '食神' || decade.primaryTenGod === '伤官' ? '创新表达与赛道拓宽' : decade.primaryTenGod === '正印' || decade.primaryTenGod === '偏印' ? '深度沉淀与认知升级' : '自主破局与同频结盟'}”`
+        : `当前按出生年月日三柱识别核心底色（未纳入出生时辰），阶段节奏倾向于稳步沉淀与自我校准`;
 
     const scenarioNames = {
         self: '了解自己',
@@ -1530,154 +1967,87 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         confusion: '关于降低内耗、破除焦虑与重建秩序的综合建议'
     };
 
-    // --- Task 4.3A Plain Term Mapping ---
     const plainTerms = {
         dayMasterPlain: `核心驱动力: ${traitInfo.title}`,
-        dayMasterExplain: `你更自然、更习惯采用的行动方式与性格底色（传统模型中称为日主“${stem}${dm.element}”）`,
+        dayMasterExplain: `你更自然、更习惯采用的行动方式与性格底色`,
         strengthPlain: `力量模式: ${strengthInfo.plainTitle}`,
         strengthExplain: strengthInfo.plainExplain,
-        strongestPlain: `主导行为倾向: ${parsedResult.strongestElement}`,
-        weakestPlain: `精细补给倾向: ${parsedResult.weakestElement}`
+        strongestPlain: `主导行为倾向: ${strongElemPlain.name}`,
+        weakestPlain: `精细补给倾向: ${weakElemPlain.name}`
     };
 
-    // --- Task 4.3A 30-Second Summary ---
+    // Dynamic 30s Summary (Guaranteed unique across combinations of stem + monthBranch + strength + topTenGod + strong/weak elements + situational answers)
+    const combinedKeywords = [
+        ...(traitInfo.keywords || ['主动推动', '重视反馈']).slice(0, 2),
+        topTgInfo.label,
+        sq1.tag
+    ];
+
     const summary30s = {
-        keywords: traitInfo.keywords || ['主动推动', '重视反馈', '容易过载'],
-        coreObservation: `你在目标清晰、正向反馈及时的环境中更能发挥高绩效。真正需要留意的，通常不是能力不足，而是容易因过分追求完美或不愿示弱而独自承担过多事。`,
-        topAdvantage: traitInfo.advantage,
-        topBurnout: traitInfo.risk,
-        topAction: activeScenario === 'confusion' 
-            ? '未来两周强制做“选择题减法”，只保留一个核心事项，暂停非核心拉扯。' 
-            : activeScenario === 'career'
-            ? '在接下来的两周内，把 80% 的注意力锁死在最有把握的专业壁垒上。'
-            : activeScenario === 'relationship'
-            ? '将一次含糊的情绪期待翻译为具体的真实需求，主动降低沟通门槛。'
-            : '未来两周尝试做一次“精力黑洞拦截”，主动暂停一个消耗型事项。',
+        keywords: combinedKeywords,
+        coreObservation: `你兼具「${traitInfo.title.split(' · ')[0]}」的${monthRhythm}与「${strengthInfo.plainTitle}」的行动底色，最擅长以【${topTgInfo.label}】配搭【${strongElemPlain.name}】打开局面；当下最需留意的不是能力短板，而是${topTgInfo.burnoutTrap}，尤其在${sq2.tag}下容易忽略【${weakElemPlain.name}】的补给。`,
+        topAdvantage: `${traitInfo.advantage}同时兼具【${topTgInfo.label}】与【${secondTgInfo.label}】的复合长板，${topTgInfo.careerEdge}。`,
+        topBurnout: `${traitInfo.risk}结合当前情境（${sq1.tag} × ${sq2.tag}）：${sq2.drainFocus}，正挤压你宝贵的【${strongElemPlain.name}】势能。`,
+        topAction: `${sq3.actionVerb}，${sq2.cutTarget}，为【${weakElemPlain.name}】留出恢复空间。`,
         scenarioLabel: `本次关注: ${scenarioNames[activeScenario] || '了解自己'}`,
         scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
     };
 
-    // --- Task 4.3C Scenario-tailored 14-Day Action Experiments ---
-    let actionExperiments14Days = [];
-    if (activeScenario === 'career') {
-        actionExperiments14Days = [
-            {
-                priorityPill: 'P1 战术定位',
-                action: '重新聚焦核心输出壁垒：放弃补齐无意义的平庸短板，将 80% 的工作精力聚焦在最不可替代的长板上。',
-                why: `你的驱动核心为【${traitInfo.title}】，单点发挥长板带来的边际收益远高于在低效环节挣扎。`,
-                verifyMetric: '观察本周内核心工作产出的质量是否提升，是否减少了在琐碎非核心事务上的耗时。'
-            },
-            {
-                priorityPill: 'P2 协作防范',
-                action: '划清权责隔离带：在跨部门或团队协作前，以书面形式明确各方交付节点与权责界限。',
-                why: `【${strengthInfo.plainTitle}】的特征提示：边界模糊容易导致中途返工或责任推诿，提前划界是保护工作心流的护城河。`,
-                verifyMetric: '观察在项目推进中，沟通扯皮或责任模糊的次数是否明显降低。'
-            },
-            {
-                priorityPill: 'P3 微步验证',
-                action: '启动两周职业微实验：选择一个低成本的新想法，在两周内完成最小闭环测试并获取真实反馈。',
-                why: `避免陷入无止境的筹备与分析瘫痪，用小步快跑的敏捷验证激活职业动能。`,
-                verifyMetric: '观察在两周结束时，是否拿到了具体的真实反馈，而非停留在脑海推演中。'
-            }
-        ];
-    } else if (activeScenario === 'relationship') {
-        actionExperiments14Days = [
-            {
-                priorityPill: 'P1 表达升级',
-                action: '替换隐性期待：当产生情绪时，用“我感到...因为我需要...”的句式直接表达诉求，不期待对方猜测。',
-                why: `【${dm.yinYang === '阳' ? '阳干直接' : '阴干内敛'}】的表达倾向容易产生沟通错位，清晰直接是降低沟通摩擦的最短路径。`,
-                verifyMetric: '观察在表达需求后，对方的响应效率是否明显提升，是否减少了因猜疑而引发的冷战。'
-            },
-            {
-                priorityPill: 'P2 边界防护',
-                action: '设立 15 分钟心理冷却区：当感受到情绪过载或被过度索取时，第一时间申请独立冷却空间。',
-                why: `在情绪高压下容易触发防御本能，15 分钟的情绪缓冲能有效防止说出伤害关系的冲动言语。`,
-                verifyMetric: '观察在发生分歧时，自己是否能够避免情绪上头，实现平和理性的双向沟通。'
-            },
-            {
-                priorityPill: 'P3 关系反思',
-                action: `践行定制关系提醒：${RELATION_REFLECTION_MAP[stem] || '主动肯定对方一次付出'}。`,
-                why: `针对你的天干原型建立正向互动微习惯，逐步修复与强化亲密信任基石。`,
-                verifyMetric: '观察两周内与伴侣或重要伙伴之间的互动温度是否有所回暖。'
-            }
-        ];
-    } else if (activeScenario === 'confusion') {
-        actionExperiments14Days = [
-            {
-                priorityPill: 'P1 强制减法',
-                action: '执行“选择题减法”：列出此刻卡住你的所有难题，只保留 1 个最关键问题，其余 100% 移出大脑关注区。',
-                why: `迷茫的根源往往不是无路可走，而是大脑被过多相互冲突的目标挤占导致认知过载。`,
-                verifyMetric: '观察在减少待办事项后，脑力负担是否明显减轻，注意力是否重新集中在核心行动上。'
-            },
-            {
-                priorityPill: 'P2 秩序重构',
-                action: '建立每日 100% 可控微习惯：每天早晨完成一件极小且绝对可控的事（如 10 分钟晨间记录或整理工位）。',
-                why: `从无法掌控的未来焦虑中抽离，通过触手可及的微小秩序重新建立生活的掌控感与安定感。`,
-                verifyMetric: '观察连续打卡 7 天后，内心的焦虑定力与确定感是否逐步回升。'
-            },
-            {
-                priorityPill: 'P3 极简验证',
-                action: '两周行动优先 Sprint：放弃寻找“完美解决方案”，先执行一个可控的探索小动作，在移动中调整方向。',
-                why: `【${strengthInfo.plainTitle}】在迷茫期容易停滞不前，行动是打破焦虑循环的唯一解药。`,
-                verifyMetric: '两周后回顾：自己是否已经在真实世界中迈出了实质性的一步。'
-            }
-        ];
-    } else {
-        // Default Scenario: self
-        actionExperiments14Days = [
-            {
-                priorityPill: 'P1 核心突破',
-                action: '建立“精力黑洞”拦截清单：在接受新任务前，先写下目标、交付标准与权责边界。',
-                why: `由于你的驱动模式为【${traitInfo.title}】，提前划清边界可有效拦截由于缺乏准备而带来的后期反复修正内耗。`,
-                verifyMetric: '观察未来两周内任务返工或沟通拉扯的频次是否明显下降。'
-            },
-            {
-                priorityPill: 'P2 惯性防范',
-                action: '警惕“优势过度使用”的副作用：当习惯性冲动或理性过度分析时，强制暂停 3 秒再做回应。',
-                why: `【${strengthInfo.plainTitle}】的惯性容易让你在压力下习惯性硬扛或过度防御，建立 3 秒缓冲可保护情绪定力。`,
-                verifyMetric: '观察在遇到分歧时，自己是否能够平和、清晰地表达真实诉求而非陷入辩驳。'
-            },
-            {
-                priorityPill: 'P3 能量补给',
-                action: '设立不作决定的纯粹休养窗口：每周固定 2 小时关闭外部消息，不做任何重大抉择。',
-                why: `补充相对偏弱的【${parsedResult.weakestElement}】元素倾向，通过静心休养恢复精神敏锐度与直觉爆发力。`,
-                verifyMetric: '观察休养窗口结束后，次日工作的专注度与情绪安顿感是否提升。'
-            }
-        ];
-    }
+    // Scenario & Chart tailored 14-Day Action Experiments
+    const actionExperiments14Days = [
+        {
+            priorityPill: 'P1 精力止损',
+            action: `针对【${sq2.tag}】启动减法拦截：未来 14 天内${sq2.cutTarget}，将 80% 黄金注意力锁死在【${strongElemPlain.name} · ${topTgInfo.label}】长板上。`,
+            why: `你的核心驱动为「${traitInfo.title}」配搭「${strengthInfo.plainTitle}」，${sq1.note}。`,
+            verifyMetric: `观察两周内因「${sq2.tag}」干扰【${strongElemPlain.name}】产出的返工或透支频次是否下降 50% 以上。`
+        },
+        {
+            priorityPill: 'P2 节奏微调',
+            action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中提前划清协作交付边界。`,
+            why: `${decadeStageNote}，用清晰的微节奏替代无意识硬撑最能保护心流。`,
+            verifyMetric: `连续执行 7 天后，评估自己在「${traitInfo.title.split(' · ')[0]}」主导事项上的掌控感是否显著回升。`
+        },
+        {
+            priorityPill: 'P3 能量补给',
+            action: `每周固定预留 2 小时专属【${weakElemPlain.name}】恢复窗口，践行定制提醒：${RELATION_REFLECTION_MAP[stem] || '主动给身心留出缓冲余地'}`,
+            why: `你当前分布中【${weakElemPlain.name}】占比相对偏低，定向补给能有效化解「${traitInfo.keywords ? traitInfo.keywords[2] : '隐性内耗'}」的副作用。`,
+            verifyMetric: `观察补充【${weakElemPlain.name}】窗口次日，你在【${topTgInfo.label}】决策与沟通中的定力是否更加从容。`
+        }
+    ];
 
-    // --- 1. Personality Section Construction ---
+    // --- 1. Personality Section Construction (Zero Jargon in Layer 2) ---
     const rechargeDrain = ENERGY_RECHARGE_DRAIN_MAP[stem] || ENERGY_RECHARGE_DRAIN_MAP['丙'];
     const overuseRisk = OVERUSE_RISK_MAP[stem] || '容易因过分追求完美而产生内耗。';
 
     let personalityHTML = `
-        <p>【内在驱动模式】你的核心驱动原型为 <strong>${traitInfo.name}</strong>（命局力量：<strong>${parsedResult.strength} · ${strengthInfo.plainTitle}</strong>）：</p>
+        <p>【内在驱动结构】你的核心驱动原型为 <strong>${traitInfo.title}</strong>，行动力量模式属于 <strong>${strengthInfo.plainTitle}</strong>，并带有鲜明的 <strong>${monthRhythm}</strong> 与 <strong>${topTgInfo.label}</strong> 特质：</p>
         <div class="highlight-box">
-            <p><strong>天干核心原型：</strong> ${traitInfo.title}</p>
-            <p style="margin-top: 6px; font-size: 0.9rem;">${traitInfo.trait}</p>
+            <p><strong>核心驱动画像（${traitInfo.title} × ${topTgInfo.label}）：</strong> ${traitInfo.trait}${topTgInfo.coreStyle}。</p>
         </div>
         <div class="trait-split-box">
             <div class="advantage-col">
-                <div class="col-header">✦ 天生核心长板</div>
-                <div class="col-content">${traitInfo.advantage}</div>
+                <div class="col-header">✦ 复合核心长板（${strongElemPlain.short}）</div>
+                <div class="col-content">${traitInfo.advantage}${topTgInfo.careerEdge}。</div>
             </div>
             <div class="risk-col">
-                <div class="col-header">⚠ 无意识内耗点</div>
-                <div class="col-content">${traitInfo.risk}</div>
+                <div class="col-header">⚠ 隐性内耗触发点（${sq1.tag}）</div>
+                <div class="col-content">${traitInfo.risk}${topTgInfo.burnoutTrap}。</div>
             </div>
         </div>
-        <p>👉 <strong>力量调和建议：</strong> ${strengthInfo.desc}</p>
+        <div class="highlight-box" style="background: #F4F8F6; border-left-color: var(--consumer-primary); margin-top: 16px;">
+            <p><strong>🧭 先天结构 × 当下情境交叉校准（${traitInfo.title.split(' · ')[0]} × ${sq1.tag}）：</strong> 作为【${strengthInfo.plainTitle}】，你${sq1.note}，而近期【${sq2.tag}】使【${strongElemPlain.name}】长板被琐事稀释，建议通过「${sq3.tag}」优先守护【${weakElemPlain.name}】恢复空间。</p>
+        </div>
+        <p>👉 <strong>力量调和与阶段节奏：</strong> ${strengthInfo.desc}${decadeStageNote}。</p>
     `;
 
     if (activeScenario === 'self') {
-        // Deep Dive for self scenario (占正文 35% 权重深度展开)
         personalityHTML += `
             <div class="highlight-box" style="background: #FFF9F2; border-left-color: var(--consumer-accent); margin-top: 24px;">
-                <p><strong>⚠ “优势过度使用”的隐藏代价：</strong> ${overuseRisk}</p>
+                <p><strong>⚠ “优势过度使用”的隐藏代价（${traitInfo.title}）：</strong> ${overuseRisk}</p>
             </div>
             <div class="scenario-matrix">
                 <div class="matrix-card card-primary">
-                    <h5>🔋 精力充能情境</h5>
+                    <h5>🔋 专属精力充能情境</h5>
                     <ul>${rechargeDrain.recharge.map(i => `<li>${i}</li>`).join('')}</ul>
                 </div>
                 <div class="matrix-card card-accent">
@@ -1698,67 +2068,69 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         `;
     }
 
-    // --- 2. Energy Section ---
+    // --- 2. Energy Section (Plain Behavioral Dimension Names) ---
     const totalScore = Object.values(parsedResult.elementScores).reduce((a, b) => a + b, 0) || 10;
     const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
     
     const strongestAdviceMap = {
-        '木': '你的木属性能量充盈，创意生发力强；但需防范思虑漫无边际，宜将想法及时具象化落地。',
-        '火': '你的火属性能量旺盛，爆发力与感染力极高；但需防范冲动急躁，注意保持稳定作息。',
-        '土': '你的土属性能量厚重，包容与承载力极佳；但需防范过于固执守旧，适度保持思维的流动灵活性。',
-        '金': '你的金属性能量刚锐，规则感与裁决力极强；但需防范过分严苛与批判锋芒，保留缓冲温情。',
-        '水': '你的水属性能量深沉，智谋与应变力突出；但需防范过度多虑，多接触日光与户外活动。'
+        '木': '你的【生长开拓】维度充盈，新方向感知与生发规划力极强，宜将发散创意及时收敛为可交付成果',
+        '火': '你的【表达感染】维度旺盛，号召力与推进爆发力突出，宜在高频输出后主动安排静心降噪时段',
+        '土': '你的【承载统筹】维度厚重，资源整合与抗压稳定性极佳，宜在稳健守成中保持小步敏捷尝试',
+        '金': '你的【秩序决断】维度敏锐，规则边界与裁决效率极高，宜在刚性标准之外留出温和沟通缓冲',
+        '水': '你的【洞察思辨】维度深邃，宏观直觉与策略推演力出众，宜用小闭环行动打破过度思虑'
     };
     const weakestAdviceMap = {
-        '木': '多接触自然环境，建立结构化思考习惯，增强主动开拓的执行信心。',
-        '火': '保持明亮通透的生活工作环境，适度参与正向社交以补充情绪热情。',
-        '土': '建立规律的生活作息，把想法落实在具体文档或清单上，扎实基础。',
-        '金': '保持居住与工作环境整洁干爽，做事培养利落果断的边界感与决断力。',
-        '水': '保证充足的深度睡眠与休养，通过静心或冥想沉淀杂念，滋养专注力。'
+        '木': '补充【生长开拓】维度：多接触自然绿植与户外舒展运动，为长期目标建立清晰的可视化推进阶梯',
+        '火': '补充【表达感染】维度：保持工作空间明亮通透，通过适度表达与正向反馈激活内在行动热情',
+        '土': '补充【承载统筹】维度：建立固定的生活作息锚点，将零散灵光沉淀为结构化清单与稳定基盘',
+        '金': '补充【秩序决断】维度：定期清理冗余信息与低效社交，训练果断止损与明确划界的决断肌肉',
+        '水': '补充【洞察思辨】维度：保障深度睡眠与不被打扰的留白时间，让高负荷运转的大脑恢复敏锐直觉'
     };
 
+    const energyBarsData = Object.keys(parsedResult.elementScores).map(elem => {
+        const score = parsedResult.elementScores[elem];
+        const pct = Math.min(100, Math.max(8, Math.round((score / totalScore) * 100)));
+        const plainDim = PLAIN_ELEMENT_MAP[elem] || { name: elem, color: '#315C4C' };
+        return { elem, label: plainDim.name, score, pct, cls: elemClasses[elem] || 'fill-mu', color: plainDim.color };
+    });
+
     const energyHTML = `
-        <p>在你的东方时间五行行为倾向分布中，各维度占比与强弱可视化呈现如下：</p>
+        <p>在你的五维行为能量光谱中，主导长板聚焦于 <strong>${strongElemPlain.name}</strong> 与 <strong>${topTgInfo.label}</strong>，次级协同维度为 <strong>${secondTgInfo.label}</strong>，当前最需定向滋养的维度为 <strong>${weakElemPlain.name}</strong>：</p>
         <div class="energy-bar-list">
-            ${Object.keys(parsedResult.elementScores).map(elem => {
-                const score = parsedResult.elementScores[elem];
-                const pct = Math.min(100, Math.max(8, Math.round((score / totalScore) * 100)));
-                return `
-                    <div class="energy-bar-item">
-                        <div class="energy-bar-label"><span>${elem}</span><span>${score.toFixed(1)}</span></div>
-                        <div class="energy-bar-track">
-                            <div class="energy-bar-fill ${elemClasses[elem] || 'fill-mu'}" style="width: ${pct}%;"></div>
-                        </div>
-                        <div class="energy-bar-val">${pct}%</div>
+            ${energyBarsData.map(item => `
+                <div class="energy-bar-item">
+                    <div class="energy-bar-label"><span>${item.label}</span><span>${item.score.toFixed(1)}</span></div>
+                    <div class="energy-bar-track">
+                        <div class="energy-bar-fill ${item.cls}" style="width: ${item.pct}%;"></div>
                     </div>
-                `;
-            }).join('')}
+                    <div class="energy-bar-val">${item.pct}%</div>
+                </div>
+            `).join('')}
         </div>
-        <p>相对最主导的倾向为 <strong>${parsedResult.strongestElement}</strong>（${strongestAdviceMap[parsedResult.strongestElement] || ''}），相对需精细滋养的倾向为 <strong>${parsedResult.weakestElement}</strong>。</p>
+        <p>主导势能解读：${strongestAdviceMap[parsedResult.strongestElement] || ''}。</p>
         <div class="highlight-box">
-            <p><strong>精细滋养指南：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}</p>
+            <p><strong>定向充能指南（针对${weakElemPlain.name}）：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}。</p>
         </div>
     `;
 
     // --- 3. Career Section Construction ---
     const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
     let careerHTML = `
-        <p>根据你的天干 <strong>${dm.stem}${dm.element} (${dm.yinYang}${dm.element})</strong> 与 <strong>${parsedResult.strength} · ${strengthInfo.plainTitle}</strong>：</p>
+        <p>结合你的 <strong>${traitInfo.title}</strong> 核心底色与 <strong>${strengthInfo.plainTitle}（${topTgInfo.label}）</strong> 协作偏好，${decadeStageNote}：</p>
         <div class="dos-donts-container">
             <div class="dos-box">
-                <strong>✔ 最推荐的战术定位</strong>
-                ${careerElemAdvice}
+                <strong>✔ 最推荐的战术定位（${strongElemPlain.short}）</strong>
+                ${careerElemAdvice}${topTgInfo.careerEdge}。
             </div>
             <div class="donts-box">
-                <strong>✖ 最应避开的内耗红线</strong>
-                避免在精力低谷时硬撑承担非核心的无谓摩擦，避免无边界的琐碎消耗，将 80% 的注意力锁死在核心长板壁垒上。
+                <strong>✖ 最应避开的内耗红线（${sq2.tag}）</strong>
+                避免在【${weakElemPlain.name}】相对薄弱时陷入「${sq2.drainFocus}」，${topTgInfo.burnoutTrap}。
             </div>
         </div>
-        <p>👉 <strong>最佳工作推进节奏：</strong> ${strengthInfo.workStyle}</p>
+        <p>👉 <strong>最佳工作推进节奏（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.workStyle}在跨角色配合中可善用【${secondTgInfo.label}】作为辅助抓手。</p>
     `;
 
     if (activeScenario === 'career') {
-        // Deep Dive for career scenario (占正文 35% 权重深度展开)
         careerHTML += `
             <div class="scenario-matrix" style="margin-top: 24px;">
                 <div class="matrix-card card-primary">
@@ -1772,7 +2144,7 @@ function buildPersonalizedReportModel(parsedResult, formState) {
             </div>
             <div class="reflection-card">
                 <h5>🎯 职场定位两周微实验建议</h5>
-                <p>在接下来的两周内，主动识别并减少一项低效拉扯的协调环节，将节省的精力投入到核心专业产出中，观察个人效能与情绪变化。</p>
+                <p>${sq3.actionVerb}，同时在【${topTgInfo.label}】主赛道上完成一次高辨识度交付。</p>
             </div>
         `;
     }
@@ -1781,16 +2153,15 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const relationYinYangText = ELEMENT_RELATION_RULES[dm.yinYang] || ELEMENT_RELATION_RULES['阳'];
     const relationBoundary = RELATION_BOUNDARY_MAP[parsedResult.strength] || RELATION_BOUNDARY_MAP['均势'];
     let relationshipHTML = `
-        <p>在深度人际与亲密关系中：</p>
-        <p>👉 <strong>表达模式：</strong> ${relationYinYangText}</p>
-        <p>👉 <strong>安全感与边界机制：</strong> ${strengthInfo.relationStyle}</p>
+        <p>在深度人际与亲密关系中，你的互动底色呈现出 <strong>${traitInfo.title.split(' · ')[0]}</strong> 与 <strong>${topTgInfo.label}</strong> 的交织特征：</p>
+        <p>👉 <strong>沟通与情感表达（${traitInfo.keywords ? traitInfo.keywords[0] : '主动表达'}）：</strong> ${relationYinYangText}${topTgInfo.relationHabit}。</p>
+        <p>👉 <strong>安全感与边界机制（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.relationStyle}核心底线在于：${relationBoundary.bottomLine}</p>
         <div class="highlight-box">
-            <p><strong>沟通防爆指南：</strong> 当感受到情绪透支或边界被侵犯时，第一时间申请独立的心理冷却空间，避免陷入无休止的内耗辩驳。</p>
+            <p><strong>专属关系调频提醒：</strong> ${RELATION_REFLECTION_MAP[stem] || '在沟通中先确认彼此感受，再讨论具体解决方案。'}</p>
         </div>
     `;
 
     if (activeScenario === 'relationship') {
-        // Deep Dive for relationship scenario (占正文 35% 权重深度展开)
         relationshipHTML += `
             <div class="scenario-matrix" style="margin-top: 24px;">
                 <div class="matrix-card card-primary">
@@ -1813,24 +2184,23 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     // --- 5. Action Section Construction ---
     let actionHTML = '';
     if (activeScenario === 'confusion') {
-        // Deep Dive for confusion scenario (占正文 35% 权重深度展开)
         actionHTML += `
-            <p>【当下迷茫解构】迷茫的本质往往是“内在驱动力”与“当前外部节奏”发生了暂时性错位。重建掌控感的第一步，是建立清晰的划界清单：</p>
+            <p>【当下迷茫解构】你当前的迷茫感主要源于「${traitInfo.title}」的内在诉求与「${sq2.tag}」的外部拉扯发生了阶段性错位。重建掌控感的第一步，是执行清晰的划界清单：</p>
             <div class="checklist-matrix">
                 <div class="checklist-col col-keep">
                     <h5>✔ 100% 绝对可控（立即保留）</h5>
                     <ul>
-                        <li>每天固定 30 分钟不被打扰的纯专注/休养时间</li>
-                        <li>以“做完一个小闭环”为最小交付单位，收回掌控感</li>
-                        <li>明确拒绝一次非核心的情绪索取或低效消耗</li>
+                        <li>围绕【${strongElemPlain.name} · ${topTgInfo.label}】每天推进 1 个最小闭环</li>
+                        <li>执行「${sq3.tag}」：${sq3.actionVerb}</li>
+                        <li>守护【${weakElemPlain.name}】恢复窗口：${sq2.cutTarget}</li>
                     </ul>
                 </div>
                 <div class="checklist-col col-pause">
                     <h5>✖ 暂不可控（强制减法/暂停）</h5>
                     <ul>
-                        <li>试图一次性想通未来 3-5 年的所有人生规划</li>
-                        <li>过度揣测他人的负面评价与未发生的结果</li>
-                        <li>在身心低能期强行做出重大人生决策</li>
+                        <li>暂停因「${sq1.tag}」而起的过度透支与单方面硬撑</li>
+                        <li>暂停在缺乏验证信息时的灾难化推演与无边界揽责</li>
+                        <li>不在身心低能期对长期方向做情绪化的一刀切决定</li>
                     </ul>
                 </div>
             </div>
@@ -1852,28 +2222,46 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         </div>
     `;
 
-    // --- 6. Evidence Section ---
-    const stdoutSnippet = (parsedResult.rawStdout || '').substring(0, 240);
-    const pillarsStr = parsedResult.fourPillars.year ? `年柱:${parsedResult.fourPillars.year} 月柱:${parsedResult.fourPillars.month} 日柱:${parsedResult.fourPillars.day} 时柱:${parsedResult.fourPillars.hour}` : '基础四柱已成功转换';
+    // --- 6. Evidence Section (Layer 3: Traditional Mapping & Audit Trail) ---
+    const stdoutSnippet = (parsedResult.rawStdout || '').substring(0, 320);
+    const modeLabel = isTimeKnown ? '四柱完整推演' : '三柱推演（出生时辰未提供）';
+    const pillarsStr = parsedResult.fourPillars.year
+        ? `年柱:${parsedResult.fourPillars.year} · 月柱:${parsedResult.fourPillars.month} · 日柱:${parsedResult.fourPillars.day} · 时柱:${parsedResult.fourPillars.hour || '未定'}`
+        : '基础干支已转换';
+    const decadeEvidence = (isTimeKnown && decade)
+        ? `当前大运（${parsedResult.luckDirection}）：${decade.pillar}（${decade.startAge}-${decade.endAge}岁，${decade.startYear}年起，主十神：${decade.tenGods.join('/')}）`
+        : `大运排盘：${parsedResult.luckDirection}（因未提供出生时辰，省略起运岁数与时柱推演结论）`;
+
     const evidenceHTML = `
-        <p><strong>推演干支四柱：</strong> ${pillarsStr}</p>
-        <p><strong>底层数据片段：</strong></p>
+        <p><strong>推演模式：</strong> ${modeLabel}（本机浏览器实时引擎）</p>
+        <p><strong>传统模型映射关系：</strong> 核心驱动「${traitInfo.title}」对应日主 <strong>${traitInfo.name}</strong>（生于${parsedResult.monthBranch}月令）；力量模式「${strengthInfo.plainTitle}」对应旺衰量化参考 <strong>${parsedResult.strength}</strong>；主导行为通道「${topTgInfo.label} / ${secondTgInfo.label}」对应十神能量分组 <strong>${topTgKey}(${parsedResult.tenGodScores[topTgKey]?.toFixed(1) || '0.0'}) / ${secondTgKey}(${parsedResult.tenGodScores[secondTgKey]?.toFixed(1) || '0.0'})</strong>。</p>
+        <p><strong>干支排盘结构：</strong> ${pillarsStr}</p>
+        <p><strong>阶段运程依据：</strong> ${decadeEvidence}</p>
+        <p><strong>现实情境校准输入：</strong> Q1=${sq1.tag} · Q2=${sq2.tag} · Q3=${sq3.tag}</p>
+        <p><strong>底层计算片段：</strong></p>
         <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdoutSnippet}...</pre>
         <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
-            ✦ <strong>说明书使用边界：</strong> 本说明书仅基于传统时间模型对性格习惯与行动倾向提供结构化观察，不预测疾病、寿命或决定人生选择。结果仅供自我启迪与探索参考。
+            ✦ <strong>说明书使用边界：</strong> 本说明书仅基于传统时间模型与现实情境问答对性格习惯与行动倾向提供结构化观察，不预测疾病、寿命或替你决定重大人生选择。结果仅供自我启迪与探索参考。
         </p>
     `;
 
     return {
         isDegraded: false,
+        isTimeKnown,
         scenario: activeScenario,
+        archetypeTitle: traitInfo.title,
+        strengthTitle: strengthInfo.plainTitle,
+        topTenGodLabel: topTgInfo.label,
+        situationalTags: [sq1.tag, sq2.tag, sq3.tag],
+        energyBarsData,
+        decadeStageNote,
         summary30s,
         plainTerms,
         actionExperiments14Days,
         userHeader: {
             nickname: formState.nickname || '阿澜',
             genderText: `性别：${formState.gender === 'female' ? '女' : '男'}`,
-            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定'}`,
+            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${isTimeKnown && formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定（三柱模式）'}`,
             calendarText: `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`,
             scenarioLabel: `本次关注：${scenarioNames[activeScenario] || '了解自己'}`,
             scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
@@ -1887,6 +2275,8 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     };
 }
 
+let lastRenderedReportModel = null;
+
 // 3. Layer 3 DOM Rendering Function
 function renderConsumerReport(baziResult, formState) {
     const reportView = document.getElementById('consumer-report-view');
@@ -1898,6 +2288,7 @@ function renderConsumerReport(baziResult, formState) {
     // Parse Bazi Result & Build Report Model
     const parsedResult = parseConsumerBaziResult(baziResult);
     const reportModel = buildPersonalizedReportModel(parsedResult, formState);
+    lastRenderedReportModel = reportModel;
 
     const userNameEl = document.getElementById('report-user-name');
     const userSubtitleEl = document.getElementById('report-user-subtitle');
@@ -1905,10 +2296,12 @@ function renderConsumerReport(baziResult, formState) {
     const birthEl = document.getElementById('report-meta-birth');
     const calendarEl = document.getElementById('report-meta-calendar');
     const scenarioEl = document.getElementById('report-meta-scenario');
+    const confidenceBannerEl = document.getElementById('report-confidence-banner');
 
     if (reportModel.isDegraded) {
         if (userNameEl) userNameEl.textContent = formState.nickname || '受测人';
         if (userSubtitleEl) userSubtitleEl.textContent = '基础推演完成 · 报告格式降级提醒';
+        if (confidenceBannerEl) confidenceBannerEl.classList.add('hidden');
         
         const personalityEl = document.getElementById('report-section-personality');
         if (personalityEl) {
@@ -1926,6 +2319,17 @@ function renderConsumerReport(baziResult, formState) {
         if (birthEl) birthEl.textContent = reportModel.userHeader.birthText;
         if (calendarEl) calendarEl.textContent = reportModel.userHeader.calendarText;
         if (scenarioEl) scenarioEl.textContent = reportModel.userHeader.scenarioLabel;
+
+        // Toggle 3-pillar confidence banner when birth hour is unknown
+        if (confidenceBannerEl) {
+            if (!reportModel.isTimeKnown) {
+                confidenceBannerEl.innerHTML = `<strong>ⓘ 三柱模式置信度说明：</strong> 由于未提供具体出生时辰，本报告基于出生年、月、日三柱及 3 道现实情境校准题生成，已自动省略依赖时辰的细节推断，核心驱动与阶段建议仍具备完整参考价值。`;
+                confidenceBannerEl.classList.remove('hidden');
+            } else {
+                confidenceBannerEl.textContent = '';
+                confidenceBannerEl.classList.add('hidden');
+            }
+        }
 
         // Render Level 1: 30-Second Summary Card
         const summaryKeywordsEl = document.getElementById('summary-keywords');
@@ -2058,6 +2462,338 @@ function closeConsumerReportView() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ------------------------------------------------------------------
+// High-Aesthetic Oriental Botanical Specimen Share Poster (Canvas 2x)
+// ------------------------------------------------------------------
+function drawRoundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+    const chars = Array.from(text || '');
+    let line = '';
+    let linesDrawn = 0;
+    let curY = y;
+    for (let i = 0; i < chars.length; i++) {
+        const testLine = line + chars[i];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && line.length > 0) {
+            linesDrawn++;
+            if (linesDrawn >= maxLines) {
+                ctx.fillText(line.slice(0, -1) + '…', x, curY);
+                return curY + lineHeight;
+            }
+            ctx.fillText(line, x, curY);
+            line = chars[i];
+            curY += lineHeight;
+        } else {
+            line = testLine;
+        }
+    }
+    if (line) {
+        ctx.fillText(line, x, curY);
+        curY += lineHeight;
+    }
+    return curY;
+}
+
+function renderSharePosterCanvas(model) {
+    const canvas = document.getElementById('share-poster-canvas');
+    if (!canvas || !canvas.getContext || !model) return;
+    const ctx = canvas.getContext('2d');
+    const W = 1080;
+    const H = 1560;
+    canvas.width = W;
+    canvas.height = H;
+
+    const fontSans = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    const fontSerif = '"Songti SC", "Noto Serif SC", "STSong", "SimSun", serif';
+
+    // 1. Warm Rice-Paper Background & Subtle Texture
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#F8F5EE');
+    bgGrad.addColorStop(1, '#F1ECE1');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle botanical watermark circle in top-right
+    ctx.save();
+    ctx.strokeStyle = 'rgba(49, 92, 76, 0.06)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(W - 140, 210, 180, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(W - 140, 210, 135, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. Double Herbarium Frame Border
+    ctx.strokeStyle = '#315C4C';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(36, 36, W - 72, H - 72);
+    ctx.strokeStyle = 'rgba(49, 92, 76, 0.28)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(48, 48, W - 96, H - 96);
+
+    // 3. Top Header Metadata
+    ctx.fillStyle = '#315C4C';
+    ctx.font = `700 22px ${fontSans}`;
+    ctx.fillText('观澜 LAN.DESTINY · 个人结构标本卡', 84, 108);
+
+    ctx.fillStyle = '#7A8680';
+    ctx.font = `500 20px ${fontSans}`;
+    const metaRight = `${model.userHeader?.scenarioLabel || '本次关注：了解自己'}`;
+    const metaRightW = ctx.measureText(metaRight).width;
+    ctx.fillText(metaRight, W - 84 - metaRightW, 108);
+
+    // Divider line
+    ctx.strokeStyle = 'rgba(49, 92, 76, 0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(84, 130);
+    ctx.lineTo(W - 84, 130);
+    ctx.stroke();
+
+    // 4. User Title & Cinnabar Seal Stamp
+    const nickname = model.userHeader?.nickname || '阿澜';
+    ctx.fillStyle = '#1E2B25';
+    ctx.font = `700 54px ${fontSerif}`;
+    ctx.fillText(`${nickname} 的内在结构说明书`, 84, 206);
+
+    ctx.fillStyle = '#52635B';
+    ctx.font = `500 24px ${fontSans}`;
+    const subMeta = `${model.userHeader?.birthText || ''}  |  ${model.userHeader?.genderText || ''}  |  ${model.userHeader?.calendarText || ''}`;
+    ctx.fillText(subMeta, 84, 250);
+
+    // Traditional Cinnabar Seal Stamp (朱砂印章)
+    ctx.save();
+    drawRoundedRect(ctx, W - 210, 158, 126, 98, 8);
+    ctx.fillStyle = 'rgba(200, 90, 50, 0.1)';
+    ctx.fill();
+    ctx.strokeStyle = '#C85A32';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = '#C85A32';
+    ctx.font = `700 24px ${fontSerif}`;
+    ctx.fillText('观澜', W - 172, 198);
+    ctx.font = `600 18px ${fontSans}`;
+    ctx.fillText('本机推演印', W - 192, 232);
+    ctx.restore();
+
+    // 5. Core Archetype Hero Card
+    drawRoundedRect(ctx, 84, 284, W - 168, 198, 18);
+    ctx.fillStyle = '#26493C';
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.font = `600 20px ${fontSans}`;
+    ctx.fillText('CORE DRIVE ARCHETYPE · 核心驱动与力量模式', 120, 330);
+
+    ctx.fillStyle = '#F7F4EC';
+    ctx.font = `700 42px ${fontSans}`;
+    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 388);
+
+    // Keyword Pills inside Hero Card
+    const kws = [
+        ...(model.summary30s?.keywords || []),
+        ...(model.situationalTags || []).slice(1, 2)
+    ].slice(0, 4);
+    let kwX = 120;
+    kws.forEach(kw => {
+        ctx.font = `600 22px ${fontSans}`;
+        const padW = ctx.measureText(`✦ ${kw}`).width + 36;
+        drawRoundedRect(ctx, kwX, 414, padW, 44, 22);
+        ctx.fillStyle = 'rgba(247, 244, 236, 0.16)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(247, 244, 236, 0.38)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = '#FCC84E';
+        ctx.fillText(`✦ ${kw}`, kwX + 18, 444);
+        kwX += padW + 16;
+    });
+
+    // 6. 30-Second Core Observation Box
+    drawRoundedRect(ctx, 84, 510, W - 168, 200, 16);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.strokeStyle = '#DFD7C8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#315C4C';
+    ctx.font = `700 24px ${fontSans}`;
+    ctx.fillText('⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
+
+    ctx.fillStyle = '#25332D';
+    ctx.font = `500 25px ${fontSans}`;
+    wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 600, W - 232, 38, 3);
+
+    // 7. 5-Dimension Behavioral Energy Spectrum
+    drawRoundedRect(ctx, 84, 736, W - 168, 290, 16);
+    ctx.fillStyle = '#FAF7F0';
+    ctx.fill();
+    ctx.strokeStyle = '#E2DDD3';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#25332D';
+    ctx.font = `700 24px ${fontSans}`;
+    ctx.fillText('📊 五维行为能量光谱分布', 116, 780);
+
+    const bars = model.energyBarsData || [];
+    bars.forEach((b, idx) => {
+        const rowY = 822 + idx * 38;
+        ctx.fillStyle = '#25332D';
+        ctx.font = `600 22px ${fontSans}`;
+        ctx.fillText(b.label, 116, rowY);
+
+        // Track
+        const trackX = 250;
+        const trackW = W - 450;
+        drawRoundedRect(ctx, trackX, rowY - 18, trackW, 20, 10);
+        ctx.fillStyle = '#E6E0D4';
+        ctx.fill();
+
+        // Fill
+        const fillW = Math.max(24, Math.round((b.pct / 100) * trackW));
+        drawRoundedRect(ctx, trackX, rowY - 18, fillW, 20, 10);
+        ctx.fillStyle = b.color || '#315C4C';
+        ctx.fill();
+
+        // Percentage text
+        ctx.fillStyle = '#52635B';
+        ctx.font = `700 22px ${fontSans}`;
+        ctx.fillText(`${b.pct}%`, trackX + trackW + 20, rowY);
+    });
+
+    // 8. Trio Insights: Advantage / Burnout / 14-Day Action Experiment
+    const drawInsightCard = (yPos, height, bg, borderCol, titleCol, badgeText, bodyText) => {
+        drawRoundedRect(ctx, 84, yPos, W - 168, height, 14);
+        ctx.fillStyle = bg;
+        ctx.fill();
+        ctx.strokeStyle = borderCol;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        ctx.fillStyle = titleCol;
+        ctx.font = `700 23px ${fontSans}`;
+        ctx.fillText(badgeText, 116, yPos + 40);
+
+        ctx.fillStyle = '#25332D';
+        ctx.font = `500 23px ${fontSans}`;
+        wrapCanvasText(ctx, bodyText, 116, yPos + 78, W - 232, 34, 2);
+    };
+
+    drawInsightCard(
+        1050, 124,
+        '#EFF5F2', 'rgba(49, 92, 76, 0.25)', '#315C4C',
+        '✦ 天生核心长板',
+        model.summary30s?.topAdvantage || ''
+    );
+
+    drawInsightCard(
+        1192, 124,
+        '#FFF6F2', 'rgba(200, 90, 50, 0.25)', '#C85A32',
+        '⚠ 现实精力黑洞（情境校准）',
+        model.summary30s?.topBurnout || ''
+    );
+
+    drawInsightCard(
+        1334, 124,
+        '#FFFDF6', 'rgba(181, 138, 82, 0.35)', '#9A6E32',
+        '🎯 未来 14 天微行动实验',
+        model.summary30s?.topAction || ''
+    );
+
+    // 9. Footer Signature
+    ctx.fillStyle = '#7A8680';
+    ctx.font = `500 20px ${fontSans}`;
+    ctx.fillText('观澜 Lan.Destiny · 基于东方时间模型与行为情境校准的个人结构说明书', 84, 1496);
+    const rightFooter = '浏览器本机实时计算 · 零隐私上传';
+    const rfW = ctx.measureText(rightFooter).width;
+    ctx.fillText(rightFooter, W - 84 - rfW, 1496);
+}
+
+function openSharePosterModal() {
+    if (!lastRenderedReportModel) {
+        runQuickDemoReport(true);
+        return;
+    }
+    const modal = document.getElementById('poster-preview-modal');
+    if (!modal) return;
+    renderSharePosterCanvas(lastRenderedReportModel);
+    modal.classList.remove('hidden');
+}
+
+function closeSharePosterModal() {
+    const modal = document.getElementById('poster-preview-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function downloadSharePoster() {
+    const canvas = document.getElementById('share-poster-canvas');
+    if (!canvas || !canvas.toDataURL) return;
+    const nickname = lastRenderedReportModel?.userHeader?.nickname || '阿澜';
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `观澜个人结构说明书_${nickname}_分享海报.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('已生成并开始下载高清分享海报 (PNG)！');
+}
+
+// One-Click Demo for External Presentations
+function runQuickDemoReport(openPosterImmediately = false) {
+    consumerFormShellState.scenario = consumerFormShellState.scenario || 'self';
+    consumerFormShellState.nickname = '林观澜（演示）';
+    consumerFormShellState.gender = 'female';
+    consumerFormShellState.calendarType = 'solar';
+    consumerFormShellState.birthYear = 1995;
+    consumerFormShellState.birthMonth = 5;
+    consumerFormShellState.birthDay = 15;
+    consumerFormShellState.birthHour = 9;
+    consumerFormShellState.timePrecision = 'hour';
+    consumerFormShellState.situationalAnswers = {
+        q1: 'push',
+        q2: 'overload',
+        q3: 'subtract'
+    };
+
+    const demoPayload = {
+        module: 'bazi',
+        gender: 'female',
+        calendar: 'solar',
+        year: 1995,
+        month: 5,
+        day: 15,
+        hour: 9,
+        minute: 0
+    };
+    const baziRes = calculateBaziInBrowser(demoPayload);
+    consumerFormShellState.baziResult = baziRes;
+    renderConsumerReport(baziRes, consumerFormShellState);
+    if (openPosterImmediately) {
+        openSharePosterModal();
+    } else {
+        showToast('已为您加载演示报告，点击“生成分享海报”即可预览高清海报！');
+    }
+}
+window.runQuickDemoReport = runQuickDemoReport;
+
 // Toast & Export Utilities
 function showToast(msg) {
     let toast = document.getElementById('consumer-toast');
@@ -2111,18 +2847,31 @@ function printReport() {
     window.print();
 }
 
-// Global listeners for report view buttons
+// Global listeners for report view, share poster, and quick demo buttons
 document.addEventListener('click', (e) => {
-    if (e.target.id === 'btn-report-edit' || e.target.id === 'btn-report-bottom-edit') {
+    const target = e.target;
+    if (!target) return;
+
+    if (target.id === 'btn-quick-demo-report' || (target.closest && target.closest('#hero-preview-card'))) {
+        runQuickDemoReport(true);
+    } else if (target.id === 'btn-report-poster' || target.id === 'btn-summary-poster' || target.id === 'btn-report-bottom-poster') {
+        openSharePosterModal();
+    } else if (target.id === 'btn-close-poster-modal' || (target.getAttribute && target.getAttribute('data-action') === 'close-poster-modal')) {
+        closeSharePosterModal();
+    } else if (target.id === 'btn-download-poster') {
+        downloadSharePoster();
+    } else if (target.id === 'btn-poster-copy-quote') {
+        copyReportSummary();
+    } else if (target.id === 'btn-report-edit' || target.id === 'btn-report-bottom-edit') {
         closeConsumerReportView();
         openConsumerFormShell();
-    } else if (e.target.id === 'btn-report-close' || e.target.id === 'btn-report-bottom-home') {
+    } else if (target.id === 'btn-report-close' || target.id === 'btn-report-bottom-home') {
         closeConsumerReportView();
-    } else if (e.target.id === 'btn-report-copy' || e.target.id === 'btn-report-bottom-copy') {
+    } else if (target.id === 'btn-report-copy' || target.id === 'btn-report-bottom-copy') {
         copyReportSummary();
-    } else if (e.target.id === 'btn-report-print' || e.target.id === 'btn-report-bottom-print') {
+    } else if (target.id === 'btn-report-print' || target.id === 'btn-report-bottom-print') {
         printReport();
-    } else if (e.target.id === 'btn-enter-pro-from-evidence') {
+    } else if (target.id === 'btn-enter-pro-from-evidence') {
         closeConsumerReportView();
         switchViewMode(VIEW_MODES.PROFESSIONAL);
     }
