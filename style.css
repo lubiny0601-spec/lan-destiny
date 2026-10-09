@@ -10,6 +10,7 @@
     --sb-green-uplift: #2b5148;   /* Secondary mid-dark green: Dark surface elevation & dividers */
     --sb-green-light: #d4e9e2;    /* Pale mint wash: Valid/selected form tints & soft utility tags */
     --sb-green-light-tint: rgba(212, 233, 226, 0.33); /* Form valid/selected field tint */
+    --sb-green-tint: rgba(0, 98, 65, 0.15);            /* Subtle green focus ring halo & accent washes */
 
     /* Secondary & Ceremonial Gold (Reserved for ceremony / status callouts only) */
     --sb-gold: #cba258;
@@ -22,10 +23,12 @@
     --sb-neutral-warm: #f2f0eb;   /* Primary warm cream page canvas */
     --sb-ceramic: #edebe9;        /* Warmer/darker cream for zone separators & alternating bands */
     --sb-black: #000000;          /* High-contrast top-level action accent */
+    --sb-border-subtle: rgba(0, 0, 0, 0.08); /* Crisp, subtle card & component border */
 
     /* Typography & Text Colors */
     --sb-text-black: rgba(0, 0, 0, 0.87);      /* Primary heading & body text on light surfaces */
     --sb-text-soft: rgba(0, 0, 0, 0.58);       /* Secondary / metadata text on light surfaces */
+    --sb-text-black-soft: rgba(0, 0, 0, 0.58); /* Secondary / metadata alias */
     --sb-text-white: rgba(255, 255, 255, 1);   /* Primary text on dark House Green surfaces */
     --sb-text-white-soft: rgba(255, 255, 255, 0.70); /* Secondary text on dark House Green surfaces */
     --sb-rewards-green: #33433d;               /* Dedicated slate-green reading color on ceremony blocks */
@@ -37,10 +40,22 @@
     --sb-input-border: #d6dbde;
     --sb-hairline: #e7e7e7;
 
-    /* Font Stacks (Inter/Helvetica substitute for SoDoSans; Iowan Old Style/Lora for Lander Tall) */
+    /* Font Stacks & Tracking */
     --font-sans: 'Inter', "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     --font-serif: "Iowan Old Style", "Lora", Georgia, "Songti SC", "Noto Serif SC", serif;
     --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sb-font-family: var(--font-sans);
+    --font-family-serif: var(--font-serif);
+    --sb-tracking-tight: -0.01em;
+    --sb-tracking-normal: 0;
+    --sb-tracking-wide: 0.05em;
+    --sb-line-height-tight: 1.2;
+    --sb-line-height-normal: 1.5;
+
+    /* Motion & Transitions */
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-fast: 150ms;
+    --motion-normal: 250ms;
 
     /* Spacing Scale (Anchored to 4/8/16/24/32/40/48/56/64px rhythm) */
     --space-1: 4px;
@@ -56,9 +71,13 @@
     /* Geometry & Elevation */
     --card-radius: 12px;
     --pill-radius: 50px;
+    --button-radius: 50px;
     --button-active-scale: scale(0.95);
     --card-shadow: 0px 0px 0.5px 0px rgba(0, 0, 0, 0.14), 0px 1px 1px 0px rgba(0, 0, 0, 0.24);
     --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 2px 2px rgba(0, 0, 0, 0.06), 0 0 2px rgba(0, 0, 0, 0.07);
+    --sb-shadow-nav: 0 1px 3px rgba(0, 0, 0, 0.1), 0 2px 2px rgba(0, 0, 0, 0.06);
+    --sb-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --sb-shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.16);
     --frap-shadow: 0 0 6px rgba(0, 0, 0, 0.24), 0 8px 12px rgba(0, 0, 0, 0.14);
     --frap-shadow-active: 0 0 6px rgba(0, 0, 0, 0.24), 0 8px 12px rgba(0, 0, 0, 0);
 
@@ -834,7 +853,6 @@ body {
     top: 0;
     z-index: 100;
     box-shadow: var(--sb-shadow-nav);
-    transition: height var(--motion-normal) var(--motion-ease);
 }
 
 #consumer-mode-view .nav-brand {
@@ -1299,13 +1317,17 @@ body {
     border-bottom: 1px solid var(--sb-border-subtle);
 }
 
-#consumer-mode-view .showcase-num {
-    font-family: var(--font-family-serif);
-    font-size: 1.5rem;
-    font-style: italic;
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    color: var(--sb-gold);
+#consumer-mode-view .showcase-dot {
+    font-size: 0.95rem;
+    color: var(--sb-green-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--sb-green-light-tint);
+    flex-shrink: 0;
 }
 
 #consumer-mode-view .showcase-text {
@@ -2046,22 +2068,55 @@ body {
 
 /* Mobile */
 @media (max-width: 768px) {
+    #consumer-mode-view .consumer-hero,
+    #consumer-mode-view .consumer-scenarios,
+    #consumer-mode-view .consumer-showcase,
+    #consumer-mode-view .consumer-process,
+    #consumer-mode-view .consumer-boundary {
+        padding: 48px 20px;
+    }
     #consumer-mode-view .hero-content {
         flex-direction: column;
-        gap: 40px;
+        gap: 36px;
     }
     #consumer-mode-view .hero-text-area {
         flex: 1;
+        width: 100%;
     }
     #consumer-mode-view .hero-visual-area {
         flex: 1;
         width: 100%;
     }
+    #consumer-mode-view .report-preview-card {
+        padding: 24px 20px;
+    }
+    #consumer-mode-view .rpc-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
     #consumer-mode-view .hero-title {
-        font-size: 38px;
+        font-size: clamp(28px, 7.5vw, 36px);
+        line-height: 1.2;
+        word-break: break-word;
+    }
+    #consumer-mode-view .hero-desc {
+        font-size: 15px;
+        margin-bottom: 28px;
     }
     #consumer-mode-view .hero-actions {
         flex-direction: column;
+        width: 100%;
+        gap: 12px;
+    }
+    #consumer-mode-view .hero-actions .btn-primary,
+    #consumer-mode-view .hero-actions .btn-secondary {
+        width: 100%;
+    }
+    #consumer-mode-view .section-title {
+        font-size: 26px;
+    }
+    #consumer-mode-view .section-header {
+        margin-bottom: 32px;
     }
     #consumer-mode-view .nav-links {
         gap: 12px;
@@ -2069,9 +2124,11 @@ body {
     }
     #consumer-mode-view .scenario-cards {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
     #consumer-mode-view .showcase-content {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
     #consumer-mode-view .process-timeline {
         flex-direction: column;
@@ -2096,6 +2153,10 @@ body {
     }
     #consumer-mode-view .boundary-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    #consumer-mode-view .boundary-box {
+        padding: 24px 20px;
     }
     
     #consumer-form-shell .form-shell-container {
@@ -2342,8 +2403,10 @@ body {
     color: var(--sb-text-black);
     margin-bottom: 20px;
     font-weight: 600;
-    border-left: 4px solid var(--sb-green-accent);
-    padding-left: 14px;
+    background: var(--sb-green-light-tint);
+    border: 1px solid rgba(0, 117, 74, 0.2);
+    border-radius: 8px;
+    padding: 14px 18px;
     text-wrap: pretty;
 }
 
@@ -2514,10 +2577,10 @@ body {
 }
 
 .report-card .highlight-box {
-    background: var(--sb-green-light);
-    border-left: 4px solid var(--sb-green-accent);
+    background: var(--sb-green-light-tint);
+    border: 1px solid rgba(0, 117, 74, 0.25);
     padding: 14px 18px;
-    border-radius: 0 8px 8px 0;
+    border-radius: 8px;
     margin: 18px 0;
 }
 
@@ -2677,14 +2740,14 @@ body {
 }
 
 .dos-box {
-    background-color: var(--sb-green-light);
-    border-left: 4px solid var(--sb-green-accent);
+    background-color: var(--sb-green-light-tint);
+    border: 1px solid rgba(0, 117, 74, 0.25);
     color: var(--sb-house-green);
 }
 
 .donts-box {
     background-color: #FFF4F2;
-    border-left: 4px solid #c82014;
+    border: 1px solid rgba(200, 32, 20, 0.25);
     color: #8C2014;
 }
 
@@ -2891,7 +2954,7 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--motion-normal) ease, transform var(--motion-normal) ease;
-    z-index: 9999;
+    z-index: 2000;
 }
 
 .consumer-toast.show {
@@ -3171,7 +3234,7 @@ body {
 .poster-modal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 2200;
+    z-index: 1100;
     display: flex;
     align-items: center;
     justify-content: center;
