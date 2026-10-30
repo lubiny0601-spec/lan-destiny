@@ -742,7 +742,8 @@ function populateBirthDateSelects() {
     if (!yearSelect || !monthSelect || !daySelect || !hourSelect) return;
     
     yearSelect.innerHTML = '';
-    for (let y = 2026; y >= 1940; y--) {
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 1940; y--) {
         const opt = document.createElement('option');
         opt.value = y;
         opt.textContent = `${y}年`;
@@ -1471,7 +1472,14 @@ function calculateBaziInBrowser(payload) {
         stdout,
         engine: 'browser-local-v2',
         calculatedAt: new Date().toISOString(),
-        payload
+        payload,
+        // Structured mirrors of what the stdout protocol above already reports.
+        // The consumer report still parses stdout; these fields only feed the
+        // three-source cross-check so it never has to re-derive solar dates.
+        solar: { year: sYear, month: sMonth, day: sDay },
+        yearPillar: `${yStem}${yBranch}`,
+        monthPillar: `${mStem}${mBranch}`,
+        isHourKnown
     };
 }
 window.calculateBaziInBrowser = calculateBaziInBrowser;
@@ -1900,7 +1908,7 @@ function parseConsumerBaziResult(baziResult) {
         });
     }
     if (decades.length > 0) {
-        const targetYear = 2026;
+        const targetYear = new Date().getFullYear();
         const active = decades.find(d => targetYear >= d.startYear && targetYear <= d.endYear) || decades[0];
         rawResult.currentDecade = active;
     }
@@ -2115,7 +2123,263 @@ const MONTH_RHYTHM_MAP = {
 };
 
 // 2. Layer 2 Model Building Function (Multidimensional + Situational Calibration)
-function buildPersonalizedReportModel(parsedResult, formState) {
+// ------------------------------------------------------------------
+// Three-Source Cross-Check Engine: 年柱生肖 × 太阳星座 × 五维行为光谱
+// ------------------------------------------------------------------
+// 生肖的维度不由动物性格硬编，而是取年支五行（与五维光谱同源），
+// 动物只提供表述质感；星座取西方四元素 × 三模式的可辩护映射。
+const ZODIAC_ANIMAL_BY_BRANCH = {
+    '子': '鼠', '丑': '牛', '寅': '虎', '卯': '兔', '辰': '龙', '巳': '蛇',
+    '午': '马', '未': '羊', '申': '猴', '酉': '鸡', '戌': '狗', '亥': '猪'
+};
+const ZODIAC_BRANCH_ELEMENT = {
+    '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+    '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水'
+};
+const ZODIAC_PROFILE = {
+    '鼠': { trait: '环境嗅探与资源调度', note: '先摸清地形与人心，再决定出手时机；擅长在有限条件里找到可走的缝隙。' },
+    '牛': { trait: '稳定承重与长期耕作', note: '靠持续投入累积信任，不擅长频繁切换赛道，但交付质量稳定。' },
+    '虎': { trait: '向外开路与主导推进', note: '习惯先行动再修正，对新方向敏感，但需要主动收敛战线。' },
+    '兔': { trait: '敏感感知与柔性生长', note: '靠关系与氛围生长，不喜欢硬碰硬的推进方式，遇冲突倾向绕行。' },
+    '龙': { trait: '整合资源与搭建框架', note: '擅长把分散的人与事组织成结构，对失序的容忍度偏低。' },
+    '蛇': { trait: '冷静表达与精准说服', note: '话不多但句句到位，靠判断力而不是音量建立影响力。' },
+    '马': { trait: '高速输出与现场感染力', note: '在行动与表达中获取能量，长期停滞反而容易焦躁。' },
+    '羊': { trait: '共情承接与关系维护', note: '愿意为他人留出空间，需警惕把承接变成无限度的承担。' },
+    '猴': { trait: '快速判断与规则拆解', note: '在复杂局面里找最短路径，代价是对慢节奏容易失去耐心。' },
+    '鸡': { trait: '标准意识与细节裁决', note: '对质量与边界敏感，适合做守门人角色，需注意表达的温度。' },
+    '狗': { trait: '责任守约与风险预警', note: '先想最坏情况再做承诺，忠诚度高，但不易快速信任新关系。' },
+    '猪': { trait: '宽厚吸收与直觉判断', note: '以包容换取信息，直觉准，却在决策前容易反复权衡。' }
+};
+
+const SIGN_BOUNDARY_DOY = [
+    [1, 20, '水瓶座'], [2, 19, '双鱼座'], [3, 21, '白羊座'], [4, 20, '金牛座'],
+    [5, 21, '双子座'], [6, 22, '巨蟹座'], [7, 23, '狮子座'], [8, 23, '处女座'],
+    [9, 23, '天秤座'], [10, 24, '天蝎座'], [11, 23, '射手座'], [12, 22, '摩羯座']
+];
+const SIGN_PROFILE = {
+    '白羊座': { element: '火', mode: '基本', dim: '表达感染', trait: '先发行动力', note: '以速度和直接表达打开局面，容易在开局阶段占优。' },
+    '金牛座': { element: '土', mode: '固定', dim: '承载统筹', trait: '稳定累积与质感坚持', note: '靠持续投入建立安全感，对突变与不确定的耐受度偏低。' },
+    '双子座': { element: '风', mode: '变动', dim: '洞察思辨', trait: '信息串联与快速理解', note: '靠不断获取新信息保持活力，深度需要主动补足。' },
+    '巨蟹座': { element: '水', mode: '基本', dim: '承载统筹', trait: '情绪承接与安全守护', note: '以照顾他人建立连接，需分清共情与过度负责。' },
+    '狮子座': { element: '火', mode: '固定', dim: '表达感染', trait: '中心表达与气场驱动', note: '在被人看见时输出最强，需警惕为维持形象而硬撑。' },
+    '处女座': { element: '土', mode: '变动', dim: '秩序决断', trait: '标准校准与流程优化', note: '通过发现问题体现价值，容易把自我要求变成对他人的挑剔。' },
+    '天秤座': { element: '风', mode: '基本', dim: '表达感染', trait: '关系协调与平衡表达', note: '擅长在多方之间找共识，代价是决策时容易延迟表态。' },
+    '天蝎座': { element: '水', mode: '固定', dim: '洞察思辨', trait: '深度洞察与专注穿透', note: '一旦认定就投入极深，需注意把洞察用于理解而非防御。' },
+    '射手座': { element: '火', mode: '变动', dim: '生长开拓', trait: '向外扩展与意义追寻', note: '靠新目标与新场景获得动力，落地执行需要外部结构支撑。' },
+    '摩羯座': { element: '土', mode: '基本', dim: '秩序决断', trait: '长期规划与责任担当', note: '以结构化方式推进目标，容易忽略过程中的情绪信号。' },
+    '水瓶座': { element: '风', mode: '固定', dim: '洞察思辨', trait: '系统视角与独立思考', note: '习惯跳出既有框架看问题，落地时需补足对他人的解释。' },
+    '双鱼座': { element: '水', mode: '变动', dim: '生长开拓', trait: '想象扩散与共感吸收', note: '以感受力理解世界，边界感需要主动建立。' }
+};
+
+function dayOfYear(month, day) {
+    const cumulative = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    return cumulative[month - 1] + day;
+}
+
+function getSolarSignName(month, day) {
+    const target = dayOfYear(month, day);
+    let name = '摩羯座'; // 1/1 – 1/19 仍属摩羯
+    SIGN_BOUNDARY_DOY.forEach(([m, d, n]) => {
+        if (target >= dayOfYear(m, d)) name = n;
+    });
+    return name;
+}
+
+function getDimByElement(elem) {
+    return (PLAIN_ELEMENT_MAP[elem] || PLAIN_ELEMENT_MAP['水']).name;
+}
+
+// 三源比对：把三条线索归到同一套五维语言后再比较
+function buildTriangulation(parsedResult, baziResult) {
+    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
+
+    const solar = (baziResult && baziResult.solar) || null;
+    const yearPillar = (baziResult && baziResult.yearPillar) || (parsedResult.fourPillars && parsedResult.fourPillars.year) || '';
+    if (!solar || yearPillar.length !== 2) return null;
+
+    const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const yearBranch = yearPillar[1];
+    if (!ZODIAC_ANIMAL_BY_BRANCH[yearBranch]) return null;
+
+    // 立春口径：直接取年柱地支（引擎已按立春换年）
+    const lichunAnimal = ZODIAC_ANIMAL_BY_BRANCH[yearBranch];
+
+    // 春节口径：大众习惯。春节在 1/2 月，出生早于春节则沿用上一干支年
+    let chunjie = null;
+    try {
+        chunjie = convertLunarToSolarInBrowser(solar.year, 1, 1);
+    } catch (e) {
+        chunjie = null;
+    }
+    let chunjieAnimal = null;
+    let chunjieDim = null;
+    let chunjieBranch = null;
+    if (chunjie) {
+        const beforeSpringFestival = (solar.month < chunjie.month) ||
+            (solar.month === chunjie.month && solar.day < chunjie.day);
+        const chunjieYear = beforeSpringFestival ? solar.year - 1 : solar.year;
+        chunjieBranch = BRANCHES[((chunjieYear - 4) % 12 + 12) % 12];
+        chunjieAnimal = ZODIAC_ANIMAL_BY_BRANCH[chunjieBranch];
+        chunjieDim = getDimByElement(ZODIAC_BRANCH_ELEMENT[chunjieBranch]);
+    }
+
+    const signName = getSolarSignName(solar.month, solar.day);
+    const signInfo = SIGN_PROFILE[signName] || SIGN_PROFILE['摩羯座'];
+
+    const zodiacDim = getDimByElement(ZODIAC_BRANCH_ELEMENT[yearBranch]);
+    const signDim = signInfo.dim;
+
+    // 五维排序：首位 / 次位 / 最需补给
+    const sortedElems = Object.keys(parsedResult.elementScores || {})
+        .sort((a, b) => (parsedResult.elementScores[b] || 0) - (parsedResult.elementScores[a] || 0));
+    const topElem = sortedElems[0] || '水';
+    const secondElem = sortedElems[1] || '土';
+    const weakElem = sortedElems[sortedElems.length - 1] || '水';
+    const spectrum = {
+        top1: getDimByElement(topElem),
+        top2: getDimByElement(secondElem),
+        weak: getDimByElement(weakElem),
+        top1Elem: topElem,
+        top2Elem: secondElem,
+        weakElem: weakElem
+    };
+    const topDims = [spectrum.top1, spectrum.top2];
+
+    // 归并模式（优先级从强到弱）
+    let pattern = 'offset';
+    if (zodiacDim === signDim && zodiacDim === spectrum.top1) pattern = 'resonance3';
+    else if (zodiacDim === signDim) pattern = 'resonance2';
+    else if (topDims.includes(zodiacDim) && topDims.includes(signDim)) pattern = 'complement';
+    else if (zodiacDim === spectrum.top1 || signDim === spectrum.top1) pattern = 'anchor';
+    else if (zodiacDim === spectrum.weak || signDim === spectrum.weak) pattern = 'tension';
+
+    const animal = lichunAnimal;
+    const animalProfile = ZODIAC_PROFILE[animal] || ZODIAC_PROFILE['猪'];
+
+    let consensusDim = null;
+    if (pattern === 'resonance3' || pattern === 'resonance2') consensusDim = zodiacDim;
+    else if (pattern === 'complement' || pattern === 'anchor') consensusDim = spectrum.top1;
+
+    const patternLabels = {
+        resonance3: '三方共振',
+        resonance2: '两源同向',
+        complement: '双轨互补',
+        anchor: '一源锚定',
+        tension: '期待与电量错位',
+        offset: '视角分化'
+    };
+
+    const verdictTitles = {
+        resonance3: `${spectrum.top1} · 三条线索落在同一处`,
+        resonance2: `${zodiacDim} · 交叉体系的一致信号`,
+        complement: `${spectrum.top1} × ${spectrum.top2} · 双通道并行`,
+        anchor: `${spectrum.top1} · 主通道在传统表述里同样被识别`,
+        tension: `${spectrum.weak} · 外部标签高于内部余量`,
+        offset: `结构分化 · 标签只描述了一部分你`
+    };
+
+    const bodies = {
+        resonance3: `生肖「${animal}」、${signName}与五维光谱的首位，都落在【${spectrum.top1}】。三条来源不同、算法不同的线索指向同一处，说明这个维度在你的结构里不是偶然偏好，而是稳定的主通道。`,
+        resonance2: `生肖「${animal}」与${signName}都把【${zodiacDim}】放在首位，这是跨体系的一致信号：进入陌生场景时，你会先调用这套行为。五维光谱显示你的首位是【${spectrum.top1}】、次位是【${spectrum.top2}】——若【${zodiacDim}】正好在其中，它承担主力输出；否则它更像一个可靠的备用策略。`,
+        complement: `生肖「${animal}」指向【${zodiacDim}】，${signName}指向【${signDim}】，而五维光谱的前两位正是【${spectrum.top1}】与【${spectrum.top2}】。两条独立线索分别对应光谱的两条主通道，说明你的行为不是单一风格，而是双轨并行。`,
+        anchor: `五维光谱的首位是【${spectrum.top1}】，生肖与星座中有一条正好落在这里，另一条指向【${zodiacDim === spectrum.top1 ? signDim : zodiacDim}】。这说明你的主通道在另一套传统表述里同样被识别到，剩下那条线索描述的是你的次级策略，而不是主线。`,
+        tension: `你的五维光谱里最需要补给的维度是【${spectrum.weak}】，而${zodiacDim === spectrum.weak ? `生肖「${animal}」` : signName}恰好把它放在首位。这不是矛盾，而是外部标签与内部电量的错位：你可能在这个维度上被他人期待，却未必有足够余量长期输出。`,
+        offset: `三条线索没有落在同一处：生肖「${animal}」指向【${zodiacDim}】，${signName}指向【${signDim}】，五维光谱的首位是【${spectrum.top1}】。这通常说明你的行为在不同关系与场景里分化明显——单一标签只能描述一部分你。`
+    };
+
+    const dimensionVerbs = {
+        '生长开拓': '开新局、探方向',
+        '表达感染': '开场、推动、号召',
+        '承载统筹': '承接、整合、稳住基本盘',
+        '秩序决断': '定标准、做取舍、收口',
+        '洞察思辨': '研判、拆解、做长线判断'
+    };
+    const verbOf = dim => dimensionVerbs[dim] || '推进';
+
+    const actions = {
+        resonance3: `把【${spectrum.top1}】当成默认武器：在需要${verbOf(spectrum.top1)}的场合优先用它，而不是先补短板。`,
+        resonance2: `在需要稳定发挥的场合，优先调用【${zodiacDim}】的成熟套路；把它当底盘，而不是唯一解法。`,
+        complement: `按场景切换：需要${verbOf(spectrum.top1)}时调用【${spectrum.top1}】，需要${verbOf(spectrum.top2)}时切到【${spectrum.top2}】。`,
+        anchor: `主通道已经清楚：把【${spectrum.top1}】留给${verbOf(spectrum.top1)}的决定性场合，不必对所有事情都用同一种方式。`,
+        tension: `在【${spectrum.weak}】相关的事务上主动设限，别用外部标签要求自己长期超配输出。`,
+        offset: `先以五维光谱为准做自我校准，把生肖与星座当作观察入口，而不是结论。`
+    };
+
+    // 口径说明：立春与春节不一致时才解释差异
+    const boundaryDiffers = !!(chunjieAnimal && chunjieAnimal !== lichunAnimal);
+    const boundaryLine = boundaryDiffers
+        ? `你的出生日期落在立春与春节之间：本报告年柱按立春换年（${yearBranch}${lichunAnimal}，对应${zodiacDim}），大众习惯按春节（${chunjieBranch}${chunjieAnimal}，对应${chunjieDim}）。口径切换只改变生肖这一列的标签，不改变五维光谱与其余结论——本报告以年柱口径为准。`
+        : `生肖同时按立春与春节口径核对，结果一致（${yearBranch}${lichunAnimal}），不存在换年边界争议。`;
+
+    const posterStatus = pattern === 'tension'
+        ? `补给：${spectrum.weak}`
+        : (consensusDim ? `共识：${consensusDim}` : '待校准');
+    const posterLine = `属${animal} · ${signName} · ${posterStatus}`;
+
+    return {
+        animal,
+        branch: yearBranch,
+        animalProfile,
+        zodiacDim,
+        lichunAnimal,
+        chunjieAnimal,
+        chunjieBranch,
+        chunjieDim,
+        boundaryDiffers,
+        boundaryLine,
+        signName,
+        signInfo,
+        signDim,
+        spectrum,
+        pattern,
+        patternLabel: patternLabels[pattern],
+        verdictTitle: verdictTitles[pattern],
+        body: bodies[pattern],
+        action: actions[pattern],
+        consensusDim,
+        posterLine
+    };
+}
+
+function renderTriangulationHTML(tri) {
+    if (!tri) return '';
+    const zodiacValue = tri.boundaryDiffers
+        ? `${tri.branch}${tri.lichunAnimal}（立春） / ${tri.chunjieBranch || ''}${tri.chunjieAnimal}（春节）`
+        : `${tri.branch}${tri.animal}`;
+    return `
+        <p class="tri-lead">三条不同来源的线索，被翻译成同一套五维行为语言之后再比对：生肖来自年柱地支，星座来自出生月日，五维光谱来自四柱五行加权。它们一致时说明结构表述稳定，不一致时说明你的行为在不同场景里有分化。</p>
+        <div class="tri-source-row">
+            <div class="tri-source">
+                <span class="tri-source-label">生肖 · 年柱（立春口径）</span>
+                <strong class="tri-source-value">${zodiacValue}</strong>
+                <span class="tri-source-dim">${tri.zodiacDim}</span>
+                <p class="tri-source-note">${tri.animalProfile.trait}：${tri.animalProfile.note}</p>
+            </div>
+            <div class="tri-source">
+                <span class="tri-source-label">星座 · 出生月日（太阳星座）</span>
+                <strong class="tri-source-value">${tri.signName}</strong>
+                <span class="tri-source-dim">${tri.signDim}</span>
+                <p class="tri-source-note">${tri.signInfo.trait}：${tri.signInfo.note}</p>
+            </div>
+            <div class="tri-source tri-source-spectrum">
+                <span class="tri-source-label">五维光谱 · 本机加权计算结果</span>
+                <strong class="tri-source-value">${tri.spectrum.top1}</strong>
+                <span class="tri-source-dim">首位维度</span>
+                <p class="tri-source-note">次位维度：${tri.spectrum.top2}；当前最需补给：${tri.spectrum.weak}。</p>
+            </div>
+        </div>
+        <div class="tri-verdict">
+            <span class="tri-verdict-label">三源比对结果 · ${tri.patternLabel}</span>
+            <span class="tri-verdict-title">${tri.verdictTitle}</span>
+            <p class="tri-explain">${tri.body}</p>
+            <p class="tri-action">→ ${tri.action}</p>
+        </div>
+        <p class="tri-boundary">${tri.boundaryLine}</p>
+        <p class="tri-boundary">口径说明：生肖取年柱地支，与八字年柱同源；星座仅按出生月日取太阳星座，不含出生时刻与上升星座；五维光谱由四柱五行力量加权得出。三者一致不构成预测，只说明当前结构在不同表述体系中稳定。</p>
+    `;
+}
+
+function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
             isDegraded: true,
@@ -2138,6 +2402,10 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const strongElemPlain = PLAIN_ELEMENT_MAP[parsedResult.strongestElement] || PLAIN_ELEMENT_MAP['木'];
     const weakElemPlain = PLAIN_ELEMENT_MAP[parsedResult.weakestElement] || PLAIN_ELEMENT_MAP['水'];
     const monthRhythm = MONTH_RHYTHM_MAP[parsedResult.monthBranch] || '敏锐推进力';
+
+    // 三源互证：生肖 × 星座 × 五维光谱（无星座数据时自动跳过，不阻断报告）
+    const triangulation = buildTriangulation(parsedResult, baziResult);
+    const triangulationHTML = renderTriangulationHTML(triangulation);
 
     // Extract scenario-specific situational questions and selections
     const activeScenarioConfig = SCENARIO_CALIBRATION_CONFIG[activeScenario] || SCENARIO_CALIBRATION_CONFIG.self;
@@ -2561,6 +2829,7 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         <p><strong>干支排盘结构：</strong> ${pillarsStr}</p>
         <p><strong>阶段运程依据：</strong> ${decadeEvidence}</p>
         <p><strong>现实情境校准输入：</strong> Q1=${sq1.tag} · Q2=${sq2.tag} · Q3=${sq3.tag}</p>
+        ${triangulation ? `<p><strong>三源比对口径：</strong> 生肖=${triangulation.branch}${triangulation.lichunAnimal}（年柱地支，立春换年${triangulation.boundaryDiffers ? `；春节口径为${triangulation.chunjieBranch || ''}${triangulation.chunjieAnimal}，两者不一致已在上方说明` : '；与春节口径一致'}）；星座=${triangulation.signName}（按公历出生月日的太阳星座，不含出生时刻与上升星座）；五维光谱=${triangulation.spectrum.top1} / ${triangulation.spectrum.top2}（由四柱五行力量加权）。比对结果：${triangulation.patternLabel}。</p>` : ''}
         <p><strong>底层计算片段：</strong></p>
         <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdoutSnippet}...</pre>
         <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
@@ -2577,6 +2846,8 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         topTenGodLabel: topTgInfo.label,
         situationalTags: [sq1.tag, sq2.tag, sq3.tag],
         energyBarsData,
+        triangulation,
+        triangulationHTML,
         decadeStageNote,
         summary30s,
         plainTerms,
@@ -2610,7 +2881,7 @@ function renderConsumerReport(baziResult, formState) {
     
     // Parse Bazi Result & Build Report Model
     const parsedResult = parseConsumerBaziResult(baziResult);
-    const reportModel = buildPersonalizedReportModel(parsedResult, formState);
+    const reportModel = buildPersonalizedReportModel(parsedResult, formState, baziResult);
     lastRenderedReportModel = reportModel;
 
     const userNameEl = document.getElementById('report-user-name');
@@ -2697,21 +2968,27 @@ function renderConsumerReport(baziResult, formState) {
 
         // Section DOM Reordering based on scenario
         const container = document.querySelector('#consumer-report-view .report-container');
+        // 三源互证卡片：数据不足时整卡隐藏，并从编号序列中剔除
+        const triangulationCard = document.getElementById('card-section-triangulation');
+        if (triangulationCard) {
+            triangulationCard.classList.toggle('hidden', !reportModel.triangulationHTML);
+        }
         const cardNodes = {
             personality: document.getElementById('card-section-personality'),
             energy: document.getElementById('card-section-energy'),
             career: document.getElementById('card-section-career'),
             relationship: document.getElementById('card-section-relationship'),
             action: document.getElementById('card-section-action'),
+            triangulation: document.getElementById('card-section-triangulation'),
             evidence: document.getElementById('card-section-evidence')
         };
         const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
 
         const sectionOrders = {
-            self: ['personality', 'energy', 'career', 'relationship', 'action', 'evidence'],
-            career: ['career', 'energy', 'personality', 'action', 'relationship', 'evidence'],
-            relationship: ['relationship', 'personality', 'energy', 'action', 'career', 'evidence'],
-            confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
+            self: ['personality', 'triangulation', 'energy', 'career', 'relationship', 'action', 'evidence'],
+            career: ['career', 'triangulation', 'energy', 'personality', 'action', 'relationship', 'evidence'],
+            relationship: ['relationship', 'triangulation', 'personality', 'energy', 'action', 'career', 'evidence'],
+            confusion: ['action', 'triangulation', 'personality', 'career', 'relationship', 'energy', 'evidence']
         };
 
         const focusCardMap = {
@@ -2729,6 +3006,7 @@ function renderConsumerReport(baziResult, formState) {
         targetOrder.forEach(key => {
             const card = cardNodes[key];
             if (!card) return;
+            if (card.classList.contains('hidden')) return;
 
             // Reorder in DOM
             if (container && bottomActions) {
@@ -2778,6 +3056,12 @@ function renderConsumerReport(baziResult, formState) {
 
         const adviceEl = document.getElementById('report-section-advice');
         if (adviceEl) adviceEl.innerHTML = reportModel.actionHTML;
+
+        // Fill Three-Source Cross-Check (生肖 × 星座 × 五维光谱)
+        const triangulationEl = document.getElementById('report-section-triangulation');
+        if (triangulationEl) {
+            triangulationEl.innerHTML = reportModel.triangulationHTML || '';
+        }
 
         // Fill Level 3 Folded Evidence
         const boundaryEl = document.getElementById('report-section-boundary');
@@ -2940,7 +3224,7 @@ function renderSharePosterCanvas(model) {
     ctx.restore();
 
     // 5. Core Archetype Hero Card (House Green #1E3932)
-    drawRoundedRect(ctx, 84, 284, W - 168, 198, 16);
+    drawRoundedRect(ctx, 84, 284, W - 168, 214, 16);
     ctx.fillStyle = '#1E3932';
     ctx.fill();
 
@@ -2950,7 +3234,7 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 42px ${fontSans}`;
-    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 388);
+    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 382);
 
     // Keyword Pills inside Hero Card (Gold Accents #cba258)
     const kws = [
@@ -2961,19 +3245,26 @@ function renderSharePosterCanvas(model) {
     kws.forEach(kw => {
         ctx.font = `700 22px ${fontSans}`;
         const padW = ctx.measureText(`★ ${kw}`).width + 36;
-        drawRoundedRect(ctx, kwX, 414, padW, 44, 22);
+        drawRoundedRect(ctx, kwX, 404, padW, 44, 22);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(203, 162, 88, 0.45)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.fillStyle = '#cba258';
-        ctx.fillText(`★ ${kw}`, kwX + 18, 444);
+        ctx.fillText(`★ ${kw}`, kwX + 18, 434);
         kwX += padW + 16;
     });
 
+    // 5b. Three-source cross-check line (生肖 × 星座 × 共识维度)
+    if (model.triangulation && model.triangulation.posterLine) {
+        ctx.fillStyle = '#dfc49d';
+        ctx.font = `600 20px ${fontSans}`;
+        ctx.fillText(model.triangulation.posterLine, 120, 484);
+    }
+
     // 6. 30-Second Core Observation Box (Pure White #ffffff)
-    drawRoundedRect(ctx, 84, 510, W - 168, 200, 14);
+    drawRoundedRect(ctx, 84, 526, W - 168, 200, 14);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.strokeStyle = '#edebe9';
@@ -2982,14 +3273,14 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#00754A';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText(model.summary30s?.badgeText || '⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
+    ctx.fillText(model.summary30s?.badgeText || '⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 570);
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
     ctx.font = `600 24px ${fontSans}`;
-    wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 600, W - 232, 38, 3);
+    wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 616, W - 232, 38, 3);
 
     // 7. 5-Dimension Behavioral Energy Spectrum (Pure White Surface #ffffff)
-    drawRoundedRect(ctx, 84, 736, W - 168, 290, 14);
+    drawRoundedRect(ctx, 84, 752, W - 168, 290, 14);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.strokeStyle = '#edebe9';
@@ -2998,11 +3289,11 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#006241';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText('📊 五维行为能量光谱分布', 116, 780);
+    ctx.fillText('📊 五维行为能量光谱分布', 116, 796);
 
     const bars = model.energyBarsData || [];
     bars.forEach((b, idx) => {
-        const rowY = 822 + idx * 38;
+        const rowY = 838 + idx * 38;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
         ctx.font = `700 22px ${fontSans}`;
         ctx.fillText(b.label, 116, rowY);
@@ -3045,33 +3336,34 @@ function renderSharePosterCanvas(model) {
     };
 
     drawInsightCard(
-        1050, 124,
+        1066, 124,
         '#d4e9e2', 'rgba(0, 117, 74, 0.3)', '#006241',
         model.summary30s?.labelAdv || '✦ 天生核心长板',
         model.summary30s?.topAdvantage || ''
     );
 
     drawInsightCard(
-        1192, 124,
+        1208, 124,
         '#FFF4F2', 'rgba(200, 32, 20, 0.3)', '#c82014',
         model.summary30s?.labelBurnout || '⚠ 现实精力黑洞（情境校准）',
         model.summary30s?.topBurnout || ''
     );
 
     drawInsightCard(
-        1334, 124,
+        1350, 124,
         '#faf6ee', '#dfc49d', '#cba258',
         model.summary30s?.labelAction || '🎯 未来 14 天微行动实验',
         model.summary30s?.topAction || ''
     );
 
-    // 9. Footer Signature
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    // 9. Footer Signature — right text drawn first, left text bounded by the剩余宽度
+    const leftFooter = '观澜 Lan.Destiny · 东方时间模型 × 行为情境校准';
+    const rightFooter = '本机计算 · 零隐私上传';
     ctx.font = `600 20px ${fontSans}`;
-    ctx.fillText('观澜 Lan.Destiny · 基于东方时间模型与行为情境校准的个人结构说明书', 84, 1496);
-    const rightFooter = '浏览器本机实时计算 · 零隐私上传';
     const rfW = ctx.measureText(rightFooter).width;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
     ctx.fillText(rightFooter, W - 84 - rfW, 1496);
+    ctx.fillText(leftFooter, 84, 1496, Math.max(120, W - 168 - rfW - 32));
 }
 
 function openSharePosterModal() {
@@ -3166,14 +3458,18 @@ function copyReportSummary() {
     const action = document.getElementById('summary-action')?.textContent || '';
     const keywordEls = document.querySelectorAll('#summary-keywords .summary-keyword-tag');
     const keywords = Array.from(keywordEls).map(el => el.textContent.trim()).join(' · ');
+    const triLine = (lastRenderedReportModel && lastRenderedReportModel.triangulation)
+        ? `✦ 三源互证：${lastRenderedReportModel.triangulation.posterLine}\n`
+        : '';
 
     const copyText = `【${name} 的个人结构说明书 · 核心洞察】\n` +
         `✦ 核心标签：${keywords || '自我探索'}\n` +
         `✦ 核心观察：${obs}\n` +
         `✦ 核心长板：${adv}\n` +
         `✦ 精力损耗：${burnout}\n` +
-        `✦ 建议减法：${action}\n\n` +
-        `—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
+        `✦ 建议减法：${action}\n` +
+        triLine +
+        `\n—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(copyText).then(() => {
@@ -3224,3 +3520,110 @@ document.addEventListener('click', (e) => {
         switchViewMode(VIEW_MODES.PROFESSIONAL);
     }
 });
+
+// ------------------------------------------------------------------
+// Zero-Input Quick Peek: 生肖 × 星座 behavioral preview (landing page)
+// Runs after every content map above is declared, so no TDZ hazards.
+// ------------------------------------------------------------------
+(function initQuickPeek() {
+    const zodiacRail = document.getElementById('quickpeek-zodiac-rail');
+    const signRail = document.getElementById('quickpeek-sign-rail');
+    if (!zodiacRail || !signRail) return;
+
+    const placeholder = document.getElementById('quickpeek-placeholder');
+    const lines = document.getElementById('quickpeek-lines');
+    const zodiacLabel = document.getElementById('qp-zodiac-label');
+    const zodiacValue = document.getElementById('qp-zodiac-value');
+    const signLabel = document.getElementById('qp-sign-label');
+    const signValue = document.getElementById('qp-sign-value');
+    const verdict = document.getElementById('qp-verdict');
+
+    const ANIMALS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+    const SIGNS = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座',
+        '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'];
+
+    const animalBranch = {};
+    Object.keys(ZODIAC_ANIMAL_BY_BRANCH).forEach(branch => {
+        animalBranch[ZODIAC_ANIMAL_BY_BRANCH[branch]] = branch;
+    });
+    const animalDim = animal => getDimByElement(ZODIAC_BRANCH_ELEMENT[animalBranch[animal]]);
+
+    const selection = { animal: null, sign: null };
+
+    const makeChip = (label, kind, value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'peek-chip';
+        btn.textContent = label;
+        btn.dataset.kind = kind;
+        btn.dataset.value = value;
+        btn.setAttribute('aria-pressed', 'false');
+        return btn;
+    };
+
+    ANIMALS.forEach(animal => zodiacRail.appendChild(makeChip(animal, 'zodiac', animal)));
+    SIGNS.forEach(sign => signRail.appendChild(makeChip(sign.replace('座', ''), 'sign', sign)));
+
+    const update = () => {
+        const { animal, sign } = selection;
+        if (!animal && !sign) {
+            if (placeholder) placeholder.classList.remove('hidden');
+            if (lines) lines.classList.add('hidden');
+            if (verdict) verdict.textContent = '';
+            return;
+        }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (lines) lines.classList.remove('hidden');
+
+        if (animal) {
+            const dim = animalDim(animal);
+            const profile = ZODIAC_PROFILE[animal];
+            if (zodiacLabel) zodiacLabel.textContent = `生肖 · ${animal}`;
+            if (zodiacValue) zodiacValue.textContent = `${dim} — ${profile.trait}`;
+        } else {
+            if (zodiacLabel) zodiacLabel.textContent = '生肖';
+            if (zodiacValue) zodiacValue.textContent = '尚未选择';
+        }
+
+        if (sign) {
+            const profile = SIGN_PROFILE[sign];
+            if (signLabel) signLabel.textContent = `星座 · ${sign}`;
+            if (signValue) signValue.textContent = `${profile.dim} — ${profile.trait}`;
+        } else {
+            if (signLabel) signLabel.textContent = '星座';
+            if (signValue) signValue.textContent = '尚未选择';
+        }
+
+        if (!verdict) return;
+        if (animal && sign) {
+            const zodiacDim = animalDim(animal);
+            const signDim = SIGN_PROFILE[sign].dim;
+            verdict.textContent = zodiacDim === signDim
+                ? `${zodiacDim} · 两条线索同向：生肖「${animal}」与${sign}都把这一维度放在首位。补齐生辰后，可以看到它在五维光谱里的真实权重，以及第三条线索是否同样指向这里。`
+                : `${zodiacDim} × ${signDim} · 两条线索方向不同：生肖「${animal}」指向【${zodiacDim}】，${sign}指向【${signDim}】。两套体系关注的行为面本就不同——补齐生辰，用五维光谱判断哪条是主通道、哪条是备用策略。`;
+        } else if (animal) {
+            verdict.textContent = `生肖「${animal}」在行为语言里对应【${animalDim(animal)}】。${ZODIAC_PROFILE[animal].note}再选一个星座，看两条线索是否同向。`;
+        } else {
+            verdict.textContent = `${sign}在行为语言里对应【${SIGN_PROFILE[sign].dim}】。${SIGN_PROFILE[sign].note}再选一个生肖，看两条线索是否同向。`;
+        }
+    };
+
+    const handleRailClick = (rail, kind) => {
+        rail.addEventListener('click', event => {
+            const chip = event.target.closest('.peek-chip');
+            if (!chip || !rail.contains(chip)) return;
+            const value = chip.dataset.value;
+            const next = selection[kind] === value ? null : value;
+            selection[kind] = next;
+
+            rail.querySelectorAll('.peek-chip').forEach(other => {
+                other.setAttribute('aria-pressed', other === chip && next ? 'true' : 'false');
+            });
+            update();
+        });
+    };
+
+    handleRailClick(zodiacRail, 'animal');
+    handleRailClick(signRail, 'sign');
+    update();
+})();

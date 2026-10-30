@@ -20,6 +20,7 @@
                 <span class="brand-en">Lan.Destiny</span>
             </div>
             <nav class="nav-links">
+                <a href="#quick-peek">先看速览</a>
                 <a href="#report-preview">了解报告</a>
                 <a href="#generation-process">如何生成</a>
                 <a href="#usage-boundary">使用边界</a>
@@ -68,7 +69,47 @@
                 </div>
             </section>
 
-            <!-- Section 2: 场景卡片 -->
+            <!-- Section 2: 零输入速览（生肖 × 星座，无需生辰） -->
+            <section id="quick-peek" class="consumer-quickpeek">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3 class="section-title">不填生辰，先看两条线索</h3>
+                        <p class="section-subtitle">生肖与星座是人人自带的两个坐标。选中它们，先看两套不同体系如何描述你的行为倾向；想看完整结构，再补生辰。</p>
+                    </div>
+                    <div class="quickpeek-panel">
+                        <div class="quickpeek-rails">
+                            <div class="quickpeek-group">
+                                <div class="quickpeek-label">我的生肖</div>
+                                <div class="chip-rail" id="quickpeek-zodiac-rail" role="group" aria-label="选择生肖"></div>
+                            </div>
+                            <div class="quickpeek-group">
+                                <div class="quickpeek-label">我的星座</div>
+                                <div class="chip-rail" id="quickpeek-sign-rail" role="group" aria-label="选择星座"></div>
+                            </div>
+                        </div>
+                        <div class="quickpeek-result" id="quickpeek-result" aria-live="polite">
+                            <p class="quickpeek-placeholder" id="quickpeek-placeholder">先选一个生肖或星座，这里会显示对应的行为倾向与五维维度。</p>
+                            <div id="quickpeek-lines" class="hidden">
+                                <p class="quickpeek-line">
+                                    <span class="quickpeek-line-label" id="qp-zodiac-label">生肖</span>
+                                    <span class="quickpeek-line-value" id="qp-zodiac-value"></span>
+                                </p>
+                                <p class="quickpeek-line">
+                                    <span class="quickpeek-line-label" id="qp-sign-label">星座</span>
+                                    <span class="quickpeek-line-value" id="qp-sign-value"></span>
+                                </p>
+                            </div>
+                            <p class="quickpeek-verdict" id="qp-verdict"></p>
+                            <div class="quickpeek-cta-row">
+                                <button class="btn-primary start-generation-btn" data-action="open-consumer-form">补齐生辰，看完整三源互证</button>
+                                <span class="quickpeek-cta-hint">约 1 分钟 · 浏览器本机计算 · 不上传资料</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: 场景卡片 -->
             <section class="consumer-scenarios">
                 <div class="section-container">
                     <div class="section-header">
@@ -113,6 +154,10 @@
                             <div class="showcase-item">
                                 <span class="showcase-dot">✦</span>
                                 <span class="showcase-text">核心性格倾向</span>
+                            </div>
+                            <div class="showcase-item">
+                                <span class="showcase-dot">✦</span>
+                                <span class="showcase-text">三源互证（生肖 × 星座 × 光谱）</span>
                             </div>
                             <div class="showcase-item">
                                 <span class="showcase-dot">✦</span>
@@ -173,6 +218,7 @@
                             <ul>
                                 <li>整理性格与行动倾向</li>
                                 <li>展示计算依据</li>
+                                <li>说明生肖、星座与五维光谱的一致与不一致</li>
                                 <li>在数据不足时减少输出</li>
                                 <li>提供温和、可实践的观察</li>
                             </ul>
@@ -188,7 +234,7 @@
                         </div>
                     </div>
                     <div class="boundary-disclaimer">
-                        本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、心理、投资、法律或其他重大人生决策依据。
+                        本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、心理、投资、法律或其他重大人生决策依据。其中生肖与星座为大众文化中的时间分类参照，用于构建观察视角，不构成因果推断。
                     </div>
                 </div>
             </section>
@@ -272,6 +318,15 @@
                             <h3>你的核心画像</h3>
                         </div>
                         <div class="card-content" id="report-section-personality"></div>
+                    </div>
+
+                    <!-- 02 三源互证：生肖 × 星座 × 五维光谱 -->
+                    <div class="report-card" id="card-section-triangulation">
+                        <div class="card-header">
+                            <span class="section-num">02</span>
+                            <h3>三源互证：生肖 × 星座 × 五维光谱</h3>
+                        </div>
+                        <div class="card-content" id="report-section-triangulation"></div>
                     </div>
 
                     <!-- 02 优势与精力模式 -->
