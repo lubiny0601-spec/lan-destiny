@@ -3778,3 +3778,11 @@ body {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+
+/* Boundary case shows two animal labels; keep them on one line so the
+   three source columns stay visually aligned */
+.report-card .tri-source-value.is-pair {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+}

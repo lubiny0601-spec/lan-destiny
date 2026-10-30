@@ -2351,7 +2351,7 @@ function renderTriangulationHTML(tri) {
         <div class="tri-source-row">
             <div class="tri-source">
                 <span class="tri-source-label">生肖 · 年柱（立春口径）</span>
-                <strong class="tri-source-value">${zodiacValue}</strong>
+                <strong class="tri-source-value${tri.boundaryDiffers ? ' is-pair' : ''}">${zodiacValue}</strong>
                 <span class="tri-source-dim">${tri.zodiacDim}</span>
                 <p class="tri-source-note">${tri.animalProfile.trait}：${tri.animalProfile.note}</p>
             </div>
