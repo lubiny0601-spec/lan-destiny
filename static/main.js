@@ -693,6 +693,47 @@ scenarioCards.forEach(card => {
     });
 });
 
+// 1b. 场景目录行（方向 A）：点行先试读，试读里的按钮直接进入表单
+const scenarioRows = document.querySelectorAll('.scenario-row');
+scenarioRows.forEach(row => {
+    const panel = document.getElementById(row.getAttribute('aria-controls'));
+    if (!panel) return;
+    row.addEventListener('click', () => {
+        const willOpen = row.getAttribute('aria-expanded') !== 'true';
+        scenarioRows.forEach(other => {
+            if (other === row) return;
+            other.setAttribute('aria-expanded', 'false');
+            const otherPanel = document.getElementById(other.getAttribute('aria-controls'));
+            if (otherPanel) otherPanel.dataset.open = 'false';
+        });
+        row.setAttribute('aria-expanded', String(willOpen));
+        panel.dataset.open = String(willOpen);
+    });
+});
+
+document.querySelectorAll('[data-start-scenario]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const scenario = btn.dataset.startScenario || 'self';
+        consumerFormShellState.scenario = scenario;
+        consumerFormShellState.step = 2;
+        renderConsumerFormShellState();
+        openConsumerFormShell(btn);
+    });
+});
+
+// 1c. 报告目录 ↔ 示例页（方向 A）
+const chapterNavBtns = document.querySelectorAll('.cd-item');
+const chapterPanels = document.querySelectorAll('.cd-panel');
+if (chapterNavBtns.length && chapterPanels.length) {
+    chapterNavBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = btn.dataset.chapter;
+            chapterNavBtns.forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+            chapterPanels.forEach(p => p.classList.toggle('is-active', p.dataset.chapter === idx));
+        });
+    });
+}
+
 // 2. Custom Notice for Start Generation
 const startBtns = document.querySelectorAll('.start-generation-btn');
 const consumerNotice = document.getElementById('consumer-notice');
