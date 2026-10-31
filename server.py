@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 import datetime
+import html as html_lib
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -14,25 +16,14 @@ app = FastAPI(title="观澜命理 · Lan.Destiny Server")
 # Mount frontend
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Robust PYTHON_PATH selection
-PYTHON_PATH = os.path.expandvars(r"%USERPROFILE%\AppData\Local\Programs\Python\Python312\python.exe")
+# Python interpreter used to run the命理 scripts: explicit env override wins,
+# otherwise reuse the interpreter that is already running this server.
+PYTHON_PATH = os.environ.get("BAZI_PYTHON") or sys.executable
 if not os.path.exists(PYTHON_PATH):
-    # Fallback to current running Python executable
     PYTHON_PATH = sys.executable
 
-# Skill directory with portable environment fallback
-DEFAULT_SKILL_DIR = os.path.expandvars(r"%USERPROFILE%\.claude\skills\bazi-mingli")
-FALLBACK_SKILL_DIR = r"C:\Users\杨鲁斌\.claude\skills\bazi-mingli"
-
-SKILL_DIR = os.environ.get("BAZI_SKILL_DIR")
-if not SKILL_DIR or not os.path.exists(SKILL_DIR):
-    if os.path.exists(DEFAULT_SKILL_DIR):
-        SKILL_DIR = DEFAULT_SKILL_DIR
-    elif os.path.exists(FALLBACK_SKILL_DIR):
-        SKILL_DIR = FALLBACK_SKILL_DIR
-    else:
-        SKILL_DIR = DEFAULT_SKILL_DIR
-
+# 命理脚本目录：环境变量 > ~/.claude/skills/bazi-mingli（不再写死任何用户名）
+SKILL_DIR = os.environ.get("BAZI_SKILL_DIR") or str(Path.home() / ".claude" / "skills" / "bazi-mingli")
 SCRIPTS_DIR = os.path.join(SKILL_DIR, "scripts")
 
 class CalcRequest(BaseModel):
@@ -174,7 +165,14 @@ def calculate(req: CalcRequest):
 
     script_path = os.path.join(SCRIPTS_DIR, script)
     if not os.path.exists(script_path):
-        raise HTTPException(status_code=500, detail=f"Script {script} not found in skill folder")
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"未找到命理脚本 {script}。专业工作台需要本地命理脚本目录："
+                f"当前为 {SKILL_DIR}；可用环境变量 BAZI_SKILL_DIR 指向你自己的 bazi-mingli 目录。"
+                f"消费者模式（个人说明书）不依赖该目录，可直接使用。"
+            )
+        )
 
     cmd = [PYTHON_PATH, "-X", "utf8", script_path] + args
     
@@ -191,55 +189,100 @@ def calculate(req: CalcRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Server error executing command: {str(e)}")
 
+@app.get("/api/health")
+def health():
+    """让前端能判断专业模式是否可用（消费者模式不需要它）。"""
+    return {
+        "ok": True,
+        "consumer_mode": "always-available",
+        "skill_dir": SKILL_DIR,
+        "scripts_found": os.path.isdir(SCRIPTS_DIR),
+        "pro_mode": os.path.isdir(SCRIPTS_DIR),
+        "python": PYTHON_PATH,
+    }
+
+
 @app.post("/api/export")
 def export_report(req: ExportRequest):
+    safe_title = html_lib.escape(req.title)
     full_html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>{req.title} - 观澜命理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{safe_title} · 观澜命理 Lan.Destiny</title>
     <style>
+        :root {{
+            --green: #006241;
+            --green-accent: #00754A;
+            --gold: #cba258;
+            --cream: #f2f0eb;
+            --ink: rgba(0, 0, 0, 0.87);
+            --soft: rgba(0, 0, 0, 0.58);
+            --hairline: rgba(0, 0, 0, 0.08);
+        }}
         body {{
-            background-color: #000000;
-            color: #FFFFFF;
-            font-family: 'Inter', sans-serif;
-            padding: 40px;
+            background-color: var(--cream);
+            color: var(--ink);
+            font-family: 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.75;
+            padding: 40px 20px;
         }}
         .report-content {{
-            max-width: 800px;
+            max-width: 820px;
             margin: 0 auto;
-            background-color: #0B0B0B;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 4px solid #EE0BA9;
-            box-shadow: 0 4px 20px rgba(238, 11, 169, 0.15);
+            background-color: #ffffff;
+            border: 1px solid var(--hairline);
+            border-top: 3px solid var(--green);
             border-radius: 12px;
-            padding: 30px;
+            padding: 36px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }}
         h1 {{
-            color: #EE0BA9;
-            border-bottom: 1px solid rgba(238, 11, 169, 0.2);
-            padding-bottom: 10px;
+            color: var(--green);
+            font-family: 'Songti SC', 'Noto Serif SC', Georgia, serif;
+            font-size: 1.6rem;
+            border-bottom: 1px solid var(--hairline);
+            padding-bottom: 12px;
+            margin-top: 0;
         }}
-        h2, h3, h4 {{
-            color: #FCC84E;
-        }}
+        h2, h3, h4 {{ color: var(--green-accent); }}
+        h2 {{ font-size: 1.15rem; }}
+        strong {{ color: var(--green); }}
         pre {{
-            background: #151515;
-            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid var(--hairline);
+            padding: 14px;
             border-radius: 8px;
             overflow-x: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
+            font-size: 0.86rem;
+            color: var(--soft);
+        }}
+        table {{ border-collapse: collapse; width: 100%; }}
+        th, td {{ border: 1px solid var(--hairline); padding: 8px 10px; font-size: 0.9rem; }}
+        .report-footer {{
+            margin-top: 28px;
+            padding-top: 14px;
+            border-top: 1px dashed rgba(0, 0, 0, 0.12);
+            font-size: 0.8rem;
+            color: var(--soft);
+        }}
+        @media print {{
+            body {{ background: #ffffff; padding: 0; }}
+            .report-content {{ border: none; box-shadow: none; padding: 0; }}
         }}
     </style>
 </head>
 <body>
     <div class="report-content">
         {req.html_content}
+        <div class="report-footer">观澜 Lan.Destiny · 本报告由本机浏览器与本地排盘脚本计算生成，仅作自我观察参考，不构成预测或重大决策依据。</div>
     </div>
 </body>
 </html>"""
-    
+
     headers = {
         "Content-Disposition": f"attachment; filename={urllib.parse.quote(req.title)}.html"
     }
