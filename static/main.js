@@ -3345,7 +3345,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     // --- 2. Energy Section (Plain Behavioral Dimension Names) ---
     const totalScore = Object.values(parsedResult.elementScores).reduce((a, b) => a + b, 0) || 10;
     const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
-    
+
     const strongestAdviceMap = {
         '木': '你的【生长开拓】维度充盈，新方向感知与生发规划力极强，宜将发散创意及时收敛为可交付成果',
         '火': '你的【表达感染】维度旺盛，号召力与推进爆发力突出，宜在高频输出后主动安排静心降噪时段',
@@ -3361,19 +3361,89 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         '水': '补充【洞察思辨】维度：保障深度睡眠与不被打扰的留白时间，让高负荷运转的大脑恢复敏锐直觉'
     };
 
-    const energyBarsData = Object.keys(parsedResult.elementScores).map(elem => {
+    const scoreEntries = Object.keys(parsedResult.elementScores).map(elem => {
         const score = parsedResult.elementScores[elem];
         const pct = Math.min(100, Math.max(8, Math.round((score / totalScore) * 100)));
         const plainDim = PLAIN_ELEMENT_MAP[elem] || { name: elem, color: '#315C4C' };
         return { elem, label: plainDim.name, score, pct, cls: elemClasses[elem] || 'fill-mu', color: plainDim.color };
     });
+    const rankedEntries = scoreEntries.slice().sort((a, b) => b.score - a.score);
+    const strongestEntry = rankedEntries[0];
+    const secondEntry = rankedEntries[1] || rankedEntries[0];
+    const weakestEntry = rankedEntries[rankedEntries.length - 1];
+    const entryOf = elem => scoreEntries.find(e => e.elem === elem) || strongestEntry;
+    const weakElemName = weakestEntry ? weakestEntry.label : weakElemPlain.name;
+
+    // C. 优势精力按场景重排：五维分数不动，只变「先看哪一维 / 怎么解读」
+    const energyFocusConfig = {
+        self: {
+            chip: '本次重点：长板与补偿',
+            focusElem: strongestEntry.elem,
+            lead: `先看长板：这个结构里最省力的两条通道是【${strongestEntry.label}】与【${secondEntry.label}】，而【${weakestEntry.label}】是最需要定向补的一维。下面按「长板优先」排列。`,
+            closing: `判断标准：这一周里，长板被用在自己身上（而不是替别人兜底）的次数 ≥ 3 次。`
+        },
+        career: {
+            chip: '本次重点：能变现的那一维',
+            focusElem: strongestEntry.elem,
+            lead: `职场上不必平均用力。最能「用力气换结果」的维度是【${strongestEntry.label}】，可以对外当战术标签讲；【${secondEntry.label}】是第二抓手；【${weakestEntry.label}】是后台补给，别指望它替你在前线顶。下面按「能不能换成结果」重排：交付力 → 承压 → 后劲。`,
+            closing: `判断标准：两周内有一次交付，是明确挂在你【${strongestEntry.label}】这个标签下发出去的。`
+        },
+        relationship: {
+            chip: '本次重点：对方最容易感知到的你',
+            focusElem: secondEntry.elem,
+            lead: `在关系里，对方最先感知到的往往不是你的最强项，而是【${secondEntry.label}】；【${strongestEntry.label}】是你能给出去的，【${weakestEntry.label}】是你需要对方接住的。`,
+            closing: `判断标准：这周有一次，你先说出自己的偏好，再问对方的意见（而不是先问「你想怎样」）。`
+        },
+        confusion: {
+            chip: '本次重点：最漏能的那一维',
+            focusElem: weakestEntry.elem,
+            lead: `先看漏能的那一维：【${weakestEntry.label}】。当下那种「没做错什么但很累」的感觉，多半是它在持续失血；补它的优先级高于继续加强【${strongestEntry.label}】。`,
+            closing: `判断标准：这一周里，与【${weakestEntry.label}】相关的消耗有没有减少一半。`
+        }
+    };
+    const energyFocus = energyFocusConfig[activeScenario] || energyFocusConfig.self;
+    // 每个场景给一个「按什么顺序看」的规则；五维始终全部保留，只是先后不同
+    const energyOrderRules = {
+        self: [energyFocus.focusElem],
+        career: [energyFocus.focusElem, '金', '土', '水', '木'],
+        relationship: [energyFocus.focusElem, strongestEntry.elem, weakestEntry.elem],
+        confusion: [energyFocus.focusElem]
+    };
+    const orderByPriority = priority => {
+        const seen = new Set();
+        const out = [];
+        priority.concat(rankedEntries.map(item => item.elem)).forEach(elem => {
+            if (seen.has(elem)) return;
+            seen.add(elem);
+            out.push(entryOf(elem));
+        });
+        return out;
+    };
+    const displayEntries = orderByPriority(energyOrderRules[activeScenario] || energyOrderRules.self);
+
+    // 海报与数据返回沿用同一套条带数据（顺序随场景，数值不变）
+    const energyBarsData = displayEntries.map(item => ({
+        elem: item.elem,
+        label: item.label,
+        score: item.score,
+        pct: item.pct,
+        cls: item.cls,
+        color: item.color,
+        isFocus: item.elem === energyFocus.focusElem
+    }));
 
     const energyHTML = `
-        <p>在你的五维行为能量光谱中，主导长板聚焦于 <strong>${strongElemPlain.name}</strong> 与 <strong>${topTgInfo.label}</strong>，次级协同维度为 <strong>${secondTgInfo.label}</strong>，当前最需定向滋养的维度为 <strong>${weakElemPlain.name}</strong>：</p>
+        <div class="energy-focus-note">
+            <span class="energy-focus-chip">${energyFocus.chip}</span>
+            <p>${energyFocus.lead}</p>
+        </div>
         <div class="energy-bar-list">
-            ${energyBarsData.map(item => `
-                <div class="energy-bar-item">
-                    <div class="energy-bar-label"><span>${item.label}</span><span>${item.score.toFixed(1)}</span></div>
+            ${displayEntries.map(item => `
+                <div class="energy-bar-item${item.elem === energyFocus.focusElem ? ' is-focus' : ''}">
+                    <div class="energy-bar-label">
+                        <span>${item.label}</span>
+                        <span>${item.score.toFixed(1)}</span>
+                    </div>
                     <div class="energy-bar-track">
                         <div class="energy-bar-fill ${item.cls}" style="width: ${item.pct}%;"></div>
                     </div>
@@ -3381,12 +3451,12 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
                 </div>
             `).join('')}
         </div>
-        <p>主导势能解读：${strongestAdviceMap[parsedResult.strongestElement] || ''}。</p>
+        <p>主导势能解读：${strongestAdviceMap[strongestEntry.elem] || ''}。</p>
         <div class="highlight-box">
-            <p><strong>定向充能指南（针对${weakElemPlain.name}）：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}。</p>
+            <p><strong>定向充能指南（针对${weakElemName}）：</strong> ${weakestAdviceMap[weakestEntry.elem] || ''}。</p>
         </div>
+        <p class="energy-focus-closing"><strong>这一版怎么用：</strong> ${energyFocus.closing}</p>
     `;
-
     // --- 3. Career Section Construction ---
     const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
     let careerHTML = `

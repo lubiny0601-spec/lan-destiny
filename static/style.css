@@ -4305,3 +4305,58 @@ body {
         width: 100%;
     }
 }
+
+/* C. 优势精力 · 场景化重排（五维事实不变，只变重点与解读） */
+.energy-focus-note {
+    background: var(--sb-green-light, #eef4f0);
+    border: 1px solid var(--sb-border-subtle);
+    border-left: 3px solid var(--sb-green);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.energy-focus-chip {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--sb-green);
+    background: var(--sb-white);
+    border: 1px solid var(--sb-border-subtle);
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+}
+
+.energy-focus-note p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.85;
+    color: var(--sb-text-black);
+}
+
+.energy-bar-item.is-focus {
+    background: rgba(0, 98, 65, 0.05);
+    border-left: 2px solid var(--sb-green);
+    border-radius: 6px;
+    padding: 6px 8px 6px 10px;
+    margin: 0 -8px;
+    gap: 10px;
+}
+
+.energy-bar-item.is-focus .energy-bar-label {
+    color: var(--sb-green);
+}
+
+.energy-focus-closing {
+    margin-top: -6px;
+    font-size: 0.9rem;
+    line-height: 1.85;
+    color: var(--sb-text-black-soft);
+}
+
+@media (max-width: 600px) {
+    .energy-bar-item.is-focus { padding: 6px; margin: 0 -6px; }
+    .energy-focus-mark { display: none; }
+}
