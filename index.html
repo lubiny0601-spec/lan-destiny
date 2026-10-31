@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="观澜命理 · Lan.Destiny 本地命理与占测系统。提供高颜值的八字排盘、紫微斗数安星、合婚对照及易数占卜分析。">
     <title>观澜命理 · Lan.Destiny</title>
-    <meta name="theme-color" content="#F7F5F0">
+    <meta name="theme-color" content="#F2F0EB">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f2f0eb'/%3E%3Ccircle cx='32' cy='30' r='15' fill='none' stroke='%23006241' stroke-width='4'/%3E%3Cpath d='M12 48c6-4 10-4 15 0s9 4 15 0 8-3 10-1' fill='none' stroke='%23cba258' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
     <!-- Offline-ready font stack -->
     <!-- Local system font stack used for fast loading -->
     <link rel="stylesheet" href="style.css">
@@ -20,6 +21,7 @@
                 <span class="brand-en">Lan.Destiny</span>
             </div>
             <nav class="nav-links">
+                <a href="#quick-peek">先看速览</a>
                 <a href="#report-preview">了解报告</a>
                 <a href="#generation-process">如何生成</a>
                 <a href="#usage-boundary">使用边界</a>
@@ -30,6 +32,7 @@
             <!-- Section 1: 首屏Hero (Double Column) -->
             <section class="consumer-hero">
                 <div class="hero-content">
+                    <div class="hero-spine" aria-hidden="true">壹 · 说明书</div>
                     <div class="hero-text-area">
                         <div class="hero-eyebrow">观澜 · Lan.Destiny</div>
                         <h2 class="hero-title">看见你的内在结构，<br>找到当下更清晰的方向</h2>
@@ -39,10 +42,12 @@
                             <button type="button" id="btn-quick-demo-report" class="btn-secondary">✨ 一键演示报告与海报</button>
                         </div>
                         <div class="hero-tips">
-                            约1分钟 · 浏览器本机实时计算 · 支持生成高清分享海报
+                            约 2 分钟 · 浏览器本机实时计算 · 支持生成高清分享海报
                         </div>
                     </div>
                     <div class="hero-visual-area">
+                        <div class="hero-tape" aria-hidden="true"></div>
+                        <div class="hero-seal" aria-hidden="true">观澜<br>标本</div>
                         <div class="report-preview-card" id="hero-preview-card" title="点击直接体验演示报告与分享海报" style="cursor: pointer;">
                             <div class="rpc-header">
                                 <span class="rpc-label">PERSONAL PROFILE</span>
@@ -68,38 +73,133 @@
                 </div>
             </section>
 
-            <!-- Section 2: 场景卡片 -->
+            <!-- Section 2: 零输入速览（生肖 × 星座，无需生辰） -->
+            <section id="quick-peek" class="consumer-quickpeek">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h3 class="section-title">不填生辰，先看两条线索</h3>
+                        <p class="section-subtitle">生肖与星座是人人自带的两个坐标。选中它们，先看两套不同体系如何描述你的行为倾向；想看完整结构，再补生辰。</p>
+                    </div>
+                    <div class="quickpeek-panel">
+                        <div class="quickpeek-rails">
+                            <div class="quickpeek-group">
+                                <div class="quickpeek-label">我的生肖</div>
+                                <div class="chip-rail" id="quickpeek-zodiac-rail" role="group" aria-label="选择生肖"></div>
+                            </div>
+                            <div class="quickpeek-group">
+                                <div class="quickpeek-label">我的星座</div>
+                                <div class="chip-rail" id="quickpeek-sign-rail" role="group" aria-label="选择星座"></div>
+                            </div>
+                        </div>
+                        <div class="quickpeek-result" id="quickpeek-result" aria-live="polite">
+                            <p class="quickpeek-placeholder" id="quickpeek-placeholder">先选一个生肖或星座，这里会显示对应的行为倾向与五维维度。</p>
+                            <div id="quickpeek-lines" class="hidden">
+                                <p class="quickpeek-line">
+                                    <span class="quickpeek-line-label" id="qp-zodiac-label">生肖</span>
+                                    <span class="quickpeek-line-value" id="qp-zodiac-value"></span>
+                                </p>
+                                <p class="quickpeek-line">
+                                    <span class="quickpeek-line-label" id="qp-sign-label">星座</span>
+                                    <span class="quickpeek-line-value" id="qp-sign-value"></span>
+                                </p>
+                            </div>
+                            <p class="quickpeek-verdict" id="qp-verdict"></p>
+                            <div class="quickpeek-cta-row">
+                                <button class="btn-primary start-generation-btn" data-action="open-consumer-form">补齐生辰，看完整三源互证</button>
+                                <span class="quickpeek-cta-hint">约 1 分钟 · 浏览器本机计算 · 不上传资料</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: 场景卡片 -->
             <section class="consumer-scenarios">
                 <div class="section-container">
                     <div class="section-header">
                         <h3 class="section-title">你此刻最想看清什么？</h3>
-                        <p class="section-subtitle">选择一个方向，我们会围绕该主题为你深度展开。</p>
+                        <p class="section-subtitle">四个方向，对应报告里不同的章节顺序。点开可以先读一页，再决定要不要补生辰。</p>
                     </div>
-                    <div class="scenario-cards">
-                        <button class="scenario-card" data-scenario="self">
-                            <div class="card-icon icon-water"></div>
-                            <h4>了解自己</h4>
-                            <p>看见优势、惯性与精力消耗点。</p>
-                            <div class="scenario-expectation">报告优先呈现：性格 · 优势 · 精力</div>
-                        </button>
-                        <button class="scenario-card" data-scenario="career">
-                            <div class="card-icon icon-stairs"></div>
-                            <h4>事业方向</h4>
-                            <p>理解工作节奏、协作方式与变化倾向。</p>
-                            <div class="scenario-expectation">报告优先呈现：工作 · 协作 · 变化</div>
-                        </button>
-                        <button class="scenario-card" data-scenario="relationship">
-                            <div class="card-icon icon-circles"></div>
-                            <h4>关系模式</h4>
-                            <p>观察表达方式、边界与内在需求。</p>
-                            <div class="scenario-expectation">报告优先呈现：表达 · 边界 · 需求</div>
-                        </button>
-                        <button class="scenario-card" data-scenario="confusion">
-                            <div class="card-icon icon-stars"></div>
-                            <h4>走出迷茫</h4>
-                            <p>整理此刻更值得优先关注的方向。</p>
-                            <div class="scenario-expectation">报告优先呈现：现状 · 选择 · 行动</div>
-                        </button>
+                    <div class="scenario-toc">
+                        <div class="scenario-row-wrap">
+                            <button class="scenario-row" type="button" data-scenario="self" aria-expanded="false" aria-controls="scenario-sample-self">
+                                <span class="sr-index" aria-hidden="true">壹</span>
+                                <span class="sr-main">
+                                    <span class="sr-name">了解自己</span>
+                                    <span class="sr-desc">看见优势、惯性与精力消耗点</span>
+                                </span>
+                                <span class="sr-tags"><span class="sr-tag">性格</span><span class="sr-tag">优势</span><span class="sr-tag">精力</span></span>
+                                <span class="sr-folio">第 1 章 <span aria-hidden="true">→</span></span>
+                            </button>
+                            <div class="scenario-sample" data-open="false" id="scenario-sample-self"><div>
+                                <div class="ss-card">
+                                    <p>你的能量偏向【秩序决断】与【洞察思辨】：最自然的工作方式是先把标准定清楚，再往前推。代价是面对失序时会持续消耗，而不是当场发作。</p>
+                                    <p>所以真正需要管理的不是「努力程度」，而是「被打断的次数」。</p>
+                                    <button class="btn-primary ss-go" type="button" data-start-scenario="self">补齐生辰，看完整说明书 →</button>
+                                    <p class="ss-note">试读片段 · 实际内容按你的四柱与情境问答生成</p>
+                                </div>
+                            </div></div>
+                        </div>
+
+                        <div class="scenario-row-wrap">
+                            <button class="scenario-row" type="button" data-scenario="career" aria-expanded="false" aria-controls="scenario-sample-career">
+                                <span class="sr-index" aria-hidden="true">贰</span>
+                                <span class="sr-main">
+                                    <span class="sr-name">事业方向</span>
+                                    <span class="sr-desc">理解工作节奏、协作解耦与变化倾向</span>
+                                </span>
+                                <span class="sr-tags"><span class="sr-tag">工作</span><span class="sr-tag">协作</span><span class="sr-tag">变化</span></span>
+                                <span class="sr-folio">第 5 章 <span aria-hidden="true">→</span></span>
+                            </button>
+                            <div class="scenario-sample" data-open="false" id="scenario-sample-career"><div>
+                                <div class="ss-card">
+                                    <p>在职场里，你更适合做「定规则的人」，而不是「救火的人」：先把边界与交付标准讲清楚，再谈速度。</p>
+                                    <p>内耗红线是「多线并行 + 频繁被打断」，它会把你的长板稀释成「什么都懂一点」。</p>
+                                    <button class="btn-primary ss-go" type="button" data-start-scenario="career">补齐生辰，看完整说明书 →</button>
+                                    <p class="ss-note">试读片段 · 实际内容按你的四柱与情境问答生成</p>
+                                </div>
+                            </div></div>
+                        </div>
+
+                        <div class="scenario-row-wrap">
+                            <button class="scenario-row" type="button" data-scenario="relationship" aria-expanded="false" aria-controls="scenario-sample-relationship">
+                                <span class="sr-index" aria-hidden="true">叁</span>
+                                <span class="sr-main">
+                                    <span class="sr-name">关系模式</span>
+                                    <span class="sr-desc">观察表达方式、边界与内在需求</span>
+                                </span>
+                                <span class="sr-tags"><span class="sr-tag">表达</span><span class="sr-tag">边界</span><span class="sr-tag">需求</span></span>
+                                <span class="sr-folio">第 6 章 <span aria-hidden="true">→</span></span>
+                            </button>
+                            <div class="scenario-sample" data-open="false" id="scenario-sample-relationship"><div>
+                                <div class="ss-card">
+                                    <p>你表达需求的方式偏间接：先照顾对方情绪，再说自己的诉求。边界被侵蚀时，你倾向沉默，而不是当场反驳。</p>
+                                    <p>可执行的调整：把「我觉得都行」换成一句具体的偏好，让对方有机会配合你。</p>
+                                    <button class="btn-primary ss-go" type="button" data-start-scenario="relationship">补齐生辰，看完整说明书 →</button>
+                                    <p class="ss-note">试读片段 · 实际内容按你的四柱与情境问答生成</p>
+                                </div>
+                            </div></div>
+                        </div>
+
+                        <div class="scenario-row-wrap">
+                            <button class="scenario-row" type="button" data-scenario="confusion" aria-expanded="false" aria-controls="scenario-sample-confusion">
+                                <span class="sr-index" aria-hidden="true">肆</span>
+                                <span class="sr-main">
+                                    <span class="sr-name">走出迷茫</span>
+                                    <span class="sr-desc">整理此刻更值得优先关注的方向</span>
+                                </span>
+                                <span class="sr-tags"><span class="sr-tag">现状</span><span class="sr-tag">选择</span><span class="sr-tag">行动</span></span>
+                                <span class="sr-folio">第 7 章 <span aria-hidden="true">→</span></span>
+                            </button>
+                            <div class="scenario-sample" data-open="false" id="scenario-sample-confusion"><div>
+                                <div class="ss-card">
+                                    <p>此刻的迷茫，多半来自「选项过多、验证太少」。先做一个两周内能验证的小实验，比继续收集信息有用。</p>
+                                    <p>判断标准：两周后你能不能说出「我知道了什么」，而不只是「我了解了更多」。</p>
+                                    <button class="btn-primary ss-go" type="button" data-start-scenario="confusion">补齐生辰，看完整说明书 →</button>
+                                    <p class="ss-note">试读片段 · 实际内容按你的四柱与情境问答生成</p>
+                                </div>
+                            </div></div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -108,36 +208,94 @@
             <section id="report-preview" class="consumer-preview">
                 <div class="section-container">
                     <h3 class="section-title">你将获得一份怎样的报告</h3>
-                    <div class="preview-showcase">
-                        <div class="showcase-content">
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">核心性格倾向</span>
+                    <div class="chapter-dir">
+                        <div class="cd-nav" role="tablist" aria-label="报告章节">
+                            <button class="cd-item" type="button" role="tab" aria-selected="true" data-chapter="0"><span class="cd-num">01</span><span class="cd-name">你的核心画像</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="1"><span class="cd-num">02</span><span class="cd-name">三源互证：生肖 × 星座 × 光谱</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="2"><span class="cd-num">03</span><span class="cd-name">年运与 90 天节奏</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="3"><span class="cd-num">04</span><span class="cd-name">优势与精力模式</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="4"><span class="cd-num">05</span><span class="cd-name">事业与工作方式</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="5"><span class="cd-num">06</span><span class="cd-name">关系中的自己</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="6"><span class="cd-num">07</span><span class="cd-name">未来 14 天行动实验</span></button>
+                            <button class="cd-item" type="button" role="tab" aria-selected="false" data-chapter="7"><span class="cd-num">✦</span><span class="cd-name">计算依据与使用边界</span></button>
+                        </div>
+
+                        <div class="cd-pages">
+                            <div class="cd-panel is-active" data-chapter="0" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">你的核心画像</h4><span class="cd-folio">01 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>你的核心驱动是「太阳感染型」，力量模式为「充沛破局型」，并带有初夏升腾般的敏锐推进力与「自主并肩驱动」特质。</p>
+                                    <p>这意味着：你习惯先行动再校准，善于在被看见的场景里输出最强；代价是容易把本可分工的事全部扛在自己身上。</p>
+                                </div>
+                                <div class="cd-data"><span>日主 <b>丙火</b></span><span>力量 <b>偏强</b></span><span>主导维度 <b>表达感染</b></span></div>
                             </div>
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">优势与精力模式</span>
+
+                            <div class="cd-panel" data-chapter="1" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">三源互证：生肖 × 星座 × 光谱</h4><span class="cd-folio">02 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>生肖「亥猪」指向洞察思辨，星座「金牛座」指向承载统筹，五维光谱的前两位正是这两条通道。</p>
+                                    <p>两条独立线索分别对应光谱的两条主通道，你的行为不是单一风格，而是双轨并行。</p>
+                                </div>
+                                <div class="cd-data"><span>生肖 <b>亥猪</b></span><span>星座 <b>金牛座</b></span><span>比对 <b>双轨互补</b></span></div>
                             </div>
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">工作与协作方式</span>
+
+                            <div class="cd-panel" data-chapter="2" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">年运与 90 天节奏</h4><span class="cd-folio">03 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>当前流年与日主构成的关系决定了这一年的主旋律：是输出窗口、结算窗口，还是补给窗口。</p>
+                                    <p>报告会把未来 90 天切成 3 个动作窗口，并指出关键决策更适合放在哪一段。</p>
+                                </div>
+                                <div class="cd-data"><span>流年 <b>按立春换年</b></span><span>流月 <b>按节气分月</b></span><span>窗口 <b>推进 / 补给 / 承压</b></span></div>
                             </div>
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">关系中的表达模式</span>
+
+                            <div class="cd-panel" data-chapter="3" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">优势与精力模式</h4><span class="cd-folio">04 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>五维光谱显示你的主导长板与最需补给的那一维：长板用来打开局面，短板决定你能撑多久。</p>
+                                    <p>充能与漏能都会被指出来——哪些场合让你回血，哪些事在悄悄稀释你的专注力。</p>
+                                </div>
+                                <div class="cd-data"><span>维度 <b>五维光谱</b></span><span>补给 <b>最弱维度</b></span><span>节奏 <b>充能 / 漏能</b></span></div>
                             </div>
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">当前行动提醒</span>
+
+                            <div class="cd-panel" data-chapter="4" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">事业与工作方式</h4><span class="cd-folio">05 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>报告会给出更推荐的战术定位：你适合做定规则的人、救火的人，还是把复杂讲清楚的人。</p>
+                                    <p>同时列出最应避开的内耗红线，以及建议的工作节奏。</p>
+                                </div>
+                                <div class="cd-data"><span>定位 <b>战术角色</b></span><span>红线 <b>内耗模式</b></span><span>节奏 <b>推进顺序</b></span></div>
                             </div>
-                            <div class="showcase-item">
-                                <span class="showcase-dot">✦</span>
-                                <span class="showcase-text">计算依据与报告边界</span>
+
+                            <div class="cd-panel" data-chapter="5" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">关系中的自己</h4><span class="cd-folio">06 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>你在亲密关系里的互动底色、表达习惯，以及边界是怎么被自己一步步让出去的。</p>
+                                    <p>配一段可以立刻用的沟通防爆指南，而不是要求你变成另一个人。</p>
+                                </div>
+                                <div class="cd-data"><span>表达 <b>直接 / 间接</b></span><span>边界 <b>守与让</b></span><span>盲点 <b>常见误区</b></span></div>
+                            </div>
+
+                            <div class="cd-panel" data-chapter="6" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">未来 14 天行动实验</h4><span class="cd-folio">07 / 08</span></div>
+                                <div class="cd-text">
+                                    <p>把结论变成 3 件 14 天内可验证的小事，每件都写清判断标准，避免「好像有点道理」就结束。</p>
+                                    <p>实验失败也算结果：它会告诉你哪条假设不成立。</p>
+                                </div>
+                                <div class="cd-data"><span>实验数 <b>3 件</b></span><span>周期 <b>14 天</b></span><span>标准 <b>可验证</b></span></div>
+                            </div>
+
+                            <div class="cd-panel" data-chapter="7" role="tabpanel">
+                                <div class="cd-head"><h4 class="cd-title">计算依据与使用边界</h4><span class="cd-folio">✦</span></div>
+                                <div class="cd-text">
+                                    <p>推演模式、时间口径（真太阳时如何校准）、干支排盘结构、流年流月口径，全部可查。</p>
+                                    <p>同时写明这份报告的边界：只做结构化观察，不预测疾病、寿命，也不替你决定重大选择。</p>
+                                </div>
+                                <div class="cd-data"><span>引擎 <b>浏览器本机</b></span><span>口径 <b>可追溯</b></span><span>数据 <b>零上传</b></span></div>
                             </div>
                         </div>
                     </div>
                     <div class="preview-disclaimer">
-                        我们只展示当前能够稳定识别的内容，资料不足时会主动减少结论。
+                        本页为示例片段 · 实际结论按你的生辰与情境问答生成，只展示当前能够稳定识别的内容。
                     </div>
                 </div>
             </section>
@@ -145,19 +303,22 @@
             <!-- Section 4: 生成流程 -->
             <section id="generation-process" class="consumer-process">
                 <div class="section-container">
-                    <h3 class="section-title">三分钟，完成一份关于自己的说明书</h3>
+                    <h3 class="section-title">从选择到报告，约 2 分钟</h3>
                     <div class="process-timeline">
                         <div class="process-step">
-                            <div class="step-num">01</div>
+                            <div class="step-num">壹</div>
                             <h4>选择关注方向</h4>
+                            <span class="step-desc">四个场景选其一</span>
                         </div>
                         <div class="process-step">
-                            <div class="step-num">02</div>
+                            <div class="step-num">贰</div>
                             <h4>填写必要资料</h4>
+                            <span class="step-desc">生辰 · 出生地 · 3 道情境题</span>
                         </div>
                         <div class="process-step">
-                            <div class="step-num">03</div>
+                            <div class="step-num">叁</div>
                             <h4>生成个人报告</h4>
+                            <span class="step-desc">本机计算，可存可分享</span>
                         </div>
                     </div>
                 </div>
@@ -173,6 +334,7 @@
                             <ul>
                                 <li>整理性格与行动倾向</li>
                                 <li>展示计算依据</li>
+                                <li>说明生肖、星座与五维光谱的一致与不一致</li>
                                 <li>在数据不足时减少输出</li>
                                 <li>提供温和、可实践的观察</li>
                             </ul>
@@ -188,7 +350,7 @@
                         </div>
                     </div>
                     <div class="boundary-disclaimer">
-                        本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、心理、投资、法律或其他重大人生决策依据。
+                        本产品内容基于传统文化模型生成，仅用于文化体验与自我观察参考，不作为医疗、心理、投资、法律或其他重大人生决策依据。其中生肖与星座为大众文化中的时间分类参照，用于构建观察视角，不构成因果推断。
                     </div>
                 </div>
             </section>
@@ -274,7 +436,25 @@
                         <div class="card-content" id="report-section-personality"></div>
                     </div>
 
-                    <!-- 02 优势与精力模式 -->
+                    <!-- 02 三源互证：生肖 × 星座 × 五维光谱 -->
+                    <div class="report-card" id="card-section-triangulation">
+                        <div class="card-header">
+                            <span class="section-num">02</span>
+                            <h3>三源互证：生肖 × 星座 × 五维光谱</h3>
+                        </div>
+                        <div class="card-content" id="report-section-triangulation"></div>
+                    </div>
+
+                    <!-- 03 年运与 90 天节奏 -->
+                    <div class="report-card" id="card-section-rhythm">
+                        <div class="card-header">
+                            <span class="section-num">03</span>
+                            <h3>年运与 90 天节奏：流年 × 流月 × 行动窗口</h3>
+                        </div>
+                        <div class="card-content" id="report-section-rhythm"></div>
+                    </div>
+
+                    <!-- 03 优势与精力模式 -->
                     <div class="report-card" id="card-section-energy">
                         <div class="card-header">
                             <span class="section-num">02</span>
@@ -524,24 +704,57 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-row two-cols">
+                                    <div class="form-group">
+                                        <label for="consumer-time-precision">时间准确度</label>
+                                        <div class="select-wrapper">
+                                            <select id="consumer-time-precision" class="form-select">
+                                                <option value="exact">精确到分钟（推荐）</option>
+                                                <option value="hour" selected>知道大概时辰</option>
+                                                <option value="unknown">不清楚出生时间</option>
+                                            </select>
+                                        </div>
+                                        <div class="field-hint">精确到分钟并选择出生地，时柱会按真太阳时校准</div>
+                                    </div>
+
+                                    <!-- 精确到分钟：时 / 分 -->
+                                    <div class="form-row two-cols hidden" id="clock-row">
                                         <div class="form-group">
-                                            <label for="consumer-birth-hour">出生时辰</label>
+                                            <label for="consumer-birth-hour24">出生时（0-23）</label>
                                             <div class="select-wrapper">
-                                                <select id="consumer-birth-hour" class="form-select"></select>
+                                                <select id="consumer-birth-hour24" class="form-select"></select>
                                             </div>
                                         </div>
                                         <div class="form-group">
-                                            <label for="consumer-time-precision">时间准确度</label>
+                                            <label for="consumer-birth-minute">出生分（0-59）</label>
                                             <div class="select-wrapper">
-                                                <select id="consumer-time-precision" class="form-select">
-                                                    <option value="exact">知道精准时分</option>
-                                                    <option value="hour" selected>知道大概时辰</option>
-                                                    <option value="unknown">不清楚出生时间</option>
-                                                </select>
+                                                <select id="consumer-birth-minute" class="form-select"></select>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- 大概时辰：两小时一段 -->
+                                    <div class="form-group" id="shichen-row">
+                                        <label for="consumer-birth-hour">出生时辰</label>
+                                        <div class="select-wrapper">
+                                            <select id="consumer-birth-hour" class="form-select"></select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row two-cols">
+                                        <div class="form-group">
+                                            <label for="consumer-birth-city">出生地（真太阳时校准）</label>
+                                            <input type="search" id="consumer-birth-city-search" class="form-input city-search-input" placeholder="搜索城市：如 成都 / 喀什 / 台北" autocomplete="off">
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-city" class="form-select"></select>
+                                            </div>
+                                            <div class="field-hint">共 <span id="consumer-birth-city-count">—</span> 个城市；找不到就直接填经度</div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="consumer-birth-lng">经度（东经，可选覆盖）</label>
+                                            <input type="number" id="consumer-birth-lng" class="form-input" min="73" max="135" step="0.1" placeholder="留空则使用出生地">
+                                        </div>
+                                    </div>
+                                    <div class="true-solar-preview" id="true-solar-preview">未启用真太阳时校准（按北京时间）</div>
 
                                     <!-- 3 Behavioral Situational Calibration Questions (动态情境校准题) -->
                                     <div class="situational-calibration-block">
@@ -631,7 +844,7 @@
             <div class="warning-steps">
                 <h3>如何解决该问题？</h3>
                 <ol>
-                    <li>请进入你的项目文件夹 <code>d:\飞书绝活大会</code>。</li>
+                    <li>请进入你克隆或交接过来的项目文件夹（内含 <code>server.py</code> 与 <code>run.bat</code>）。</li>
                     <li>双击运行 <strong><code>run.bat</code></strong> 启动本地服务器。</li>
                     <li>启动后，请在浏览器中访问 <strong><a href="http://127.0.0.1:8000" target="_blank">http://127.0.0.1:8000</a></strong>。</li>
                 </ol>

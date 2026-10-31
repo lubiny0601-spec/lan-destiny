@@ -693,6 +693,47 @@ scenarioCards.forEach(card => {
     });
 });
 
+// 1b. 场景目录行（方向 A）：点行先试读，试读里的按钮直接进入表单
+const scenarioRows = document.querySelectorAll('.scenario-row');
+scenarioRows.forEach(row => {
+    const panel = document.getElementById(row.getAttribute('aria-controls'));
+    if (!panel) return;
+    row.addEventListener('click', () => {
+        const willOpen = row.getAttribute('aria-expanded') !== 'true';
+        scenarioRows.forEach(other => {
+            if (other === row) return;
+            other.setAttribute('aria-expanded', 'false');
+            const otherPanel = document.getElementById(other.getAttribute('aria-controls'));
+            if (otherPanel) otherPanel.dataset.open = 'false';
+        });
+        row.setAttribute('aria-expanded', String(willOpen));
+        panel.dataset.open = String(willOpen);
+    });
+});
+
+document.querySelectorAll('[data-start-scenario]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const scenario = btn.dataset.startScenario || 'self';
+        consumerFormShellState.scenario = scenario;
+        consumerFormShellState.step = 2;
+        renderConsumerFormShellState();
+        openConsumerFormShell(btn);
+    });
+});
+
+// 1c. 报告目录 ↔ 示例页（方向 A）
+const chapterNavBtns = document.querySelectorAll('.cd-item');
+const chapterPanels = document.querySelectorAll('.cd-panel');
+if (chapterNavBtns.length && chapterPanels.length) {
+    chapterNavBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = btn.dataset.chapter;
+            chapterNavBtns.forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+            chapterPanels.forEach(p => p.classList.toggle('is-active', p.dataset.chapter === idx));
+        });
+    });
+}
+
 // 2. Custom Notice for Start Generation
 const startBtns = document.querySelectorAll('.start-generation-btn');
 const consumerNotice = document.getElementById('consumer-notice');
@@ -726,11 +767,69 @@ const consumerFormShellState = {
     birthMonth: 5,
     birthDay: 15,
     birthHour: 12,
-    timePrecision: 'hour'
+    birthMinute: 0,
+    timePrecision: 'hour',
+    birthLng: null,
+    birthPlaceName: null
 };
 
 // Initialize Date Select options
 let dateSelectsPopulated = false;
+// 出生地经度表（按省级行政区归组，城市取市中心近似经度，误差 <0.3°，对时辰判定无影响）
+// 格式：省: 城市 经度 | 城市 经度
+const CITY_GROUPS_RAW = `
+北京: 北京 116.41
+天津: 天津 117.20
+河北: 石家庄 114.51 | 唐山 118.18 | 秦皇岛 119.60 | 邯郸 114.49 | 邢台 114.50 | 保定 115.48 | 张家口 114.89 | 承德 117.94 | 沧州 116.86 | 廊坊 116.70 | 衡水 115.67 | 定州 114.99 | 辛集 115.22
+山西: 太原 112.55 | 大同 113.30 | 阳泉 113.58 | 长治 113.11 | 晋城 112.85 | 朔州 112.43 | 晋中 112.75 | 运城 111.00 | 忻州 112.73 | 临汾 111.52 | 吕梁 111.14
+内蒙古: 呼和浩特 111.75 | 包头 109.84 | 乌海 106.79 | 赤峰 118.89 | 通辽 122.24 | 鄂尔多斯 109.78 | 呼伦贝尔 119.77 | 巴彦淖尔 107.42 | 乌兰察布 113.13 | 锡林浩特 116.09 | 阿拉善左旗 105.67
+辽宁: 沈阳 123.43 | 大连 121.61 | 鞍山 122.99 | 抚顺 123.96 | 本溪 123.77 | 丹东 124.35 | 锦州 121.13 | 营口 122.24 | 阜新 121.67 | 辽阳 123.18 | 盘锦 122.07 | 铁岭 123.84 | 朝阳 120.45 | 葫芦岛 120.84
+吉林: 长春 125.32 | 吉林 126.55 | 四平 124.35 | 辽源 125.14 | 通化 125.94 | 白山 126.42 | 松原 124.82 | 白城 122.84 | 延吉 129.51
+黑龙江: 哈尔滨 126.53 | 齐齐哈尔 123.92 | 鸡西 130.97 | 鹤岗 130.28 | 双鸭山 131.16 | 大庆 125.10 | 伊春 128.84 | 佳木斯 130.32 | 七台河 131.00 | 牡丹江 129.62 | 黑河 127.48 | 绥化 126.99 | 加格达奇 124.12
+上海: 上海 121.47
+江苏: 南京 118.80 | 无锡 120.30 | 徐州 117.18 | 常州 119.95 | 苏州 120.59 | 南通 120.89 | 连云港 119.22 | 淮安 119.02 | 盐城 120.16 | 扬州 119.41 | 镇江 119.45 | 泰州 119.92 | 宿迁 118.28
+浙江: 杭州 120.16 | 宁波 121.55 | 温州 120.70 | 嘉兴 120.76 | 湖州 120.09 | 绍兴 120.58 | 金华 119.65 | 衢州 118.87 | 舟山 122.21 | 台州 121.42 | 丽水 119.92
+安徽: 合肥 117.23 | 芜湖 118.38 | 蚌埠 117.36 | 淮南 117.00 | 马鞍山 118.51 | 淮北 116.80 | 铜陵 117.81 | 安庆 117.05 | 黄山 118.34 | 滁州 118.32 | 阜阳 115.81 | 宿州 116.98 | 六安 116.51 | 亳州 115.78 | 池州 117.49 | 宣城 118.76
+福建: 福州 119.30 | 厦门 118.09 | 莆田 119.01 | 三明 117.64 | 泉州 118.68 | 漳州 117.65 | 南平 118.18 | 龙岩 117.02 | 宁德 119.55
+江西: 南昌 115.86 | 景德镇 117.18 | 萍乡 113.85 | 九江 115.99 | 新余 114.92 | 鹰潭 117.07 | 赣州 114.94 | 吉安 114.99 | 宜春 114.42 | 抚州 116.36 | 上饶 117.97
+山东: 济南 117.12 | 青岛 120.38 | 淄博 118.05 | 枣庄 117.32 | 东营 118.67 | 烟台 121.39 | 潍坊 119.16 | 济宁 116.59 | 泰安 117.09 | 威海 122.12 | 日照 119.53 | 临沂 118.35 | 德州 116.36 | 聊城 115.98 | 滨州 118.02 | 菏泽 115.48
+河南: 郑州 113.63 | 开封 114.31 | 洛阳 112.45 | 平顶山 113.19 | 安阳 114.39 | 鹤壁 114.30 | 新乡 113.88 | 焦作 113.24 | 濮阳 115.03 | 许昌 113.85 | 漯河 114.02 | 三门峡 111.20 | 南阳 112.53 | 商丘 115.65 | 信阳 114.09 | 周口 114.65 | 驻马店 114.02 | 济源 112.60
+湖北: 武汉 114.31 | 黄石 115.04 | 十堰 110.79 | 宜昌 111.29 | 襄阳 112.14 | 鄂州 114.89 | 荆门 112.20 | 孝感 113.92 | 荆州 112.24 | 黄冈 114.87 | 咸宁 114.32 | 随州 113.37 | 恩施 109.49 | 仙桃 113.45
+湖南: 长沙 112.94 | 株洲 113.13 | 湘潭 112.94 | 衡阳 112.57 | 邵阳 111.47 | 岳阳 113.13 | 常德 111.70 | 张家界 110.48 | 益阳 112.36 | 郴州 113.01 | 永州 111.61 | 怀化 110.00 | 娄底 112.00 | 吉首 109.74
+广东: 广州 113.26 | 深圳 114.06 | 珠海 113.58 | 汕头 116.68 | 佛山 113.12 | 韶关 113.60 | 湛江 110.36 | 肇庆 112.47 | 江门 113.09 | 茂名 110.93 | 惠州 114.42 | 梅州 116.12 | 汕尾 115.36 | 河源 114.70 | 阳江 111.98 | 清远 113.05 | 东莞 113.75 | 中山 113.39 | 潮州 116.63 | 揭阳 116.37 | 云浮 112.04
+广西: 南宁 108.37 | 柳州 109.42 | 桂林 110.29 | 梧州 111.28 | 北海 109.12 | 防城港 108.35 | 钦州 108.62 | 贵港 109.60 | 玉林 110.15 | 百色 106.62 | 贺州 111.55 | 河池 108.06 | 来宾 109.23 | 崇左 107.36
+海南: 海口 110.20 | 三亚 109.51 | 儋州 109.58 | 琼海 110.47 | 文昌 110.72 | 五指山 109.52
+重庆: 重庆 106.55
+四川: 成都 104.07 | 自贡 104.78 | 攀枝花 101.72 | 泸州 105.44 | 德阳 104.40 | 绵阳 104.68 | 广元 105.84 | 遂宁 105.59 | 内江 105.06 | 乐山 103.76 | 南充 106.11 | 眉山 103.85 | 宜宾 104.63 | 广安 106.63 | 达州 107.50 | 雅安 103.00 | 巴中 106.75 | 资阳 104.63 | 西昌 102.27 | 康定 101.96 | 马尔康 102.22
+贵州: 贵阳 106.63 | 六盘水 104.85 | 遵义 106.93 | 安顺 105.95 | 毕节 105.29 | 铜仁 109.19 | 凯里 107.98 | 都匀 107.52 | 兴义 104.90
+云南: 昆明 102.83 | 曲靖 103.80 | 玉溪 102.54 | 保山 99.17 | 昭通 103.72 | 丽江 100.23 | 普洱 100.97 | 临沧 100.09 | 大理 100.23 | 景洪 100.80 | 楚雄 101.55 | 蒙自 103.38 | 文山 104.24 | 芒市 98.58
+西藏: 拉萨 91.14 | 日喀则 88.88 | 昌都 97.17 | 林芝 94.36 | 山南 91.77 | 那曲 92.05 | 狮泉河 80.10
+陕西: 西安 108.94 | 铜川 108.95 | 宝鸡 107.14 | 咸阳 108.71 | 渭南 109.51 | 延安 109.49 | 汉中 107.03 | 榆林 109.73 | 安康 109.03 | 商洛 109.94
+甘肃: 兰州 103.83 | 嘉峪关 98.29 | 金昌 102.19 | 白银 104.14 | 天水 105.72 | 武威 102.64 | 张掖 100.45 | 平凉 106.67 | 酒泉 98.51 | 庆阳 107.64 | 定西 104.63 | 陇南 104.93 | 合作 102.91
+青海: 西宁 101.78 | 海东 102.10 | 格尔木 94.90 | 德令哈 97.37
+宁夏: 银川 106.23 | 石嘴山 106.38 | 吴忠 106.20 | 固原 106.28 | 中卫 105.19
+新疆: 乌鲁木齐 87.62 | 克拉玛依 84.89 | 吐鲁番 89.19 | 哈密 93.51 | 昌吉 87.30 | 库尔勒 86.15 | 阿克苏 80.26 | 喀什 75.99 | 和田 79.92 | 伊宁 81.32 | 石河子 86.08 | 塔城 82.98 | 阿勒泰 88.14 | 阿图什 76.17 | 博乐 82.07 | 奎屯 84.90
+香港: 香港 114.17
+澳门: 澳门 113.54
+台湾: 台北 121.57 | 高雄 120.31 | 台中 120.68 | 台南 120.21 | 新竹 120.97 | 花莲 121.60`;
+
+function parseCityGroups(raw) {
+    return raw.trim().split('\n').map(line => {
+        const idx = line.indexOf(':');
+        if (idx < 0) return null;
+        const province = line.slice(0, idx).trim();
+        const cities = line.slice(idx + 1).split('|').map(item => {
+            const parts = item.trim().split(/\s+/);
+            const lng = parseFloat(parts[1]);
+            return parts[0] && Number.isFinite(lng) ? { name: parts[0], lng } : null;
+        }).filter(Boolean);
+        return cities.length ? { province, cities } : null;
+    }).filter(Boolean);
+}
+
+const CITY_GROUPS = parseCityGroups(CITY_GROUPS_RAW);
+const CITY_LONGITUDES = CITY_GROUPS.reduce((acc, group) => acc.concat(group.cities), []);
+
 function populateBirthDateSelects() {
     if (dateSelectsPopulated) return;
     
@@ -742,7 +841,8 @@ function populateBirthDateSelects() {
     if (!yearSelect || !monthSelect || !daySelect || !hourSelect) return;
     
     yearSelect.innerHTML = '';
-    for (let y = 2026; y >= 1940; y--) {
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 1940; y--) {
         const opt = document.createElement('option');
         opt.value = y;
         opt.textContent = `${y}年`;
@@ -822,23 +922,181 @@ function populateBirthDateSelects() {
     });
 
     const precisionSelect = document.getElementById('consumer-time-precision');
-    if (precisionSelect) {
-        hourSelect.addEventListener('change', () => {
-            if (parseInt(hourSelect.value, 10) === -1) {
-                precisionSelect.value = 'unknown';
-            } else if (precisionSelect.value === 'unknown') {
-                precisionSelect.value = 'hour';
-            }
+    const hour24Select = document.getElementById('consumer-birth-hour24');
+    const minuteSelect = document.getElementById('consumer-birth-minute');
+    const citySelect = document.getElementById('consumer-birth-city');
+    const citySearchInput = document.getElementById('consumer-birth-city-search');
+    const lngInput = document.getElementById('consumer-birth-lng');
+    const previewEl = document.getElementById('true-solar-preview');
+    const clockRow = document.getElementById('clock-row');
+    const shichenRow = document.getElementById('shichen-row');
+
+    // --- 精确到分钟：时 / 分 ---
+    if (hour24Select) {
+        hour24Select.innerHTML = '';
+        for (let h = 0; h < 24; h++) {
+            const opt = document.createElement('option');
+            opt.value = String(h);
+            opt.textContent = `${pad2(h)} 时`;
+            hour24Select.appendChild(opt);
+        }
+        hour24Select.value = '9';
+    }
+    if (minuteSelect) {
+        minuteSelect.innerHTML = '';
+        for (let m = 0; m < 60; m++) {
+            const opt = document.createElement('option');
+            opt.value = String(m);
+            opt.textContent = `${pad2(m)} 分`;
+            minuteSelect.appendChild(opt);
+        }
+        minuteSelect.value = '0';
+    }
+
+    // --- 出生地经度（真太阳时校准，按省份归组 + 关键词过滤）---
+    const buildCityOptions = (keyword) => {
+        if (!citySelect) return;
+        const current = citySelect.value;
+        const kw = (keyword || '').trim();
+        citySelect.innerHTML = '';
+        const noneOpt = document.createElement('option');
+        noneOpt.value = '';
+        noneOpt.textContent = '不校准（按北京时间）';
+        citySelect.appendChild(noneOpt);
+
+        let matched = 0;
+        CITY_GROUPS.forEach(group => {
+            const provinceHit = kw && group.province.indexOf(kw) >= 0;
+            const cities = kw && !provinceHit
+                ? group.cities.filter(city => city.name.indexOf(kw) >= 0)
+                : group.cities;
+            if (!cities.length) return;
+            const og = document.createElement('optgroup');
+            og.label = group.province;
+            cities.forEach(city => {
+                const opt = document.createElement('option');
+                opt.value = String(city.lng);
+                opt.textContent = `${city.name}（${city.lng.toFixed(1)}°E）`;
+                og.appendChild(opt);
+                matched += 1;
+            });
+            citySelect.appendChild(og);
         });
-        precisionSelect.addEventListener('change', () => {
-            if (precisionSelect.value === 'unknown') {
-                hourSelect.value = '-1';
-            } else if (parseInt(hourSelect.value, 10) === -1) {
-                hourSelect.value = '11';
-            }
+
+        if (matched === 0) {
+            const empty = document.createElement('option');
+            empty.value = '';
+            empty.textContent = `没有匹配「${kw}」的城市：请在右侧直接填经度`;
+            citySelect.appendChild(empty);
+        }
+        if (current && Array.prototype.some.call(citySelect.options, o => o.value === current)) {
+            citySelect.value = current;
+        } else {
+            citySelect.value = '';
+        }
+        citySelect.dataset.matched = String(matched);
+    };
+
+    buildCityOptions('');
+    const cityCountEl = document.getElementById('consumer-birth-city-count');
+    if (cityCountEl) cityCountEl.textContent = String(CITY_LONGITUDES.length);
+    if (citySearchInput) {
+        citySearchInput.addEventListener('input', () => {
+            buildCityOptions(citySearchInput.value);
+            computeTrueSolarPreview();
         });
     }
-    
+
+    const readLng = () => {
+        if (lngInput) {
+            const manual = parseFloat(lngInput.value);
+            if (Number.isFinite(manual) && manual >= 73 && manual <= 135) return manual;
+        }
+        if (citySelect && citySelect.value) {
+            const fromCity = parseFloat(citySelect.value);
+            if (Number.isFinite(fromCity)) return fromCity;
+        }
+        return NaN;
+    };
+
+    const computeTrueSolarPreview = () => {
+        if (!previewEl) return;
+        const precision = precisionSelect ? precisionSelect.value : 'hour';
+        if (precision === 'unknown') {
+            previewEl.textContent = '时间未知：按三柱模式生成，不做真太阳时校准。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+        const lng = readLng();
+        if (precision !== 'exact') {
+            previewEl.textContent = '大概时辰模式不启用真太阳时校准：两小时窗口内无法确定偏移方向。想看校准后的时柱，请选择「精确到分钟」。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+        if (!Number.isFinite(lng)) {
+            previewEl.textContent = '未启用真太阳时校准（按北京时间 120°E）。选择出生地后，时柱会按当地真太阳时排定。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+
+        let hour;
+        let minute;
+        if (precision === 'exact') {
+            hour = parseInt(hour24Select && hour24Select.value, 10);
+            minute = parseInt(minuteSelect && minuteSelect.value, 10) || 0;
+        } else {
+            hour = parseInt(hourSelect.value, 10);
+            minute = 0;
+            if (!(hour >= 0)) {
+                previewEl.textContent = '请选择一个时辰后再校准。';
+                previewEl.classList.remove('is-active');
+                return;
+            }
+        }
+        if (!Number.isFinite(hour)) return;
+
+        let y = parseInt(yearSelect.value, 10);
+        let mo = parseInt(monthSelect.value, 10);
+        let d = parseInt(daySelect.value, 10);
+        const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
+        if (calendarRadio && calendarRadio.value === 'lunar') {
+            const converted = convertLunarToSolarInBrowser(y, mo, d);
+            y = converted.year;
+            mo = converted.month;
+            d = converted.day;
+        }
+
+        const eot = equationOfTime(mo, d);
+        const offset = Math.round((lng - 120) * 4 + eot);
+        const shifted = new Date(Date.UTC(y, mo - 1, d, hour, minute) + offset * 60000);
+        const dayShift = Math.round((Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) - Date.UTC(y, mo - 1, d)) / 86400000);
+        previewEl.textContent = `真太阳时 ${pad2(shifted.getUTCHours())}:${pad2(shifted.getUTCMinutes())}（时差 ${offset >= 0 ? '+' : ''}${offset} 分钟 = 经度 ${lng.toFixed(1)}°E + 均时差 ${eot >= 0 ? '+' : ''}${eot.toFixed(1)} 分${dayShift !== 0 ? '，已跨日' : ''}）`;
+        previewEl.classList.add('is-active');
+    };
+
+    const syncPrecisionUI = () => {
+        const precision = precisionSelect ? precisionSelect.value : 'hour';
+        if (clockRow) clockRow.classList.toggle('hidden', precision !== 'exact');
+        if (shichenRow) shichenRow.classList.toggle('hidden', precision === 'exact');
+        if (precision === 'unknown' && hourSelect) hourSelect.value = '-1';
+        if (precision !== 'unknown' && hourSelect && parseInt(hourSelect.value, 10) === -1) hourSelect.value = '11';
+        computeTrueSolarPreview();
+    };
+
+    if (hourSelect) {
+        hourSelect.addEventListener('change', () => {
+            if (parseInt(hourSelect.value, 10) === -1 && precisionSelect) precisionSelect.value = 'unknown';
+            syncPrecisionUI();
+        });
+    }
+    [yearSelect, monthSelect, daySelect, hour24Select, minuteSelect, citySelect, lngInput, precisionSelect]
+        .forEach(el => {
+            if (!el) return;
+            el.addEventListener('change', syncPrecisionUI);
+            el.addEventListener('input', syncPrecisionUI);
+        });
+    syncPrecisionUI();
+
     dateSelectsPopulated = true;
 }
 
@@ -1292,6 +1550,22 @@ function getTenGodName(dayStemIdx, targetStemIdx) {
     return samePolarity ? '偏印' : '正印';
 }
 
+// ------------------------------------------------------------------
+// True Solar Time helpers (经度修正 + 均时差)
+// ------------------------------------------------------------------
+function pad2(n) {
+    return String(n).padStart(2, '0');
+}
+
+// 常见出生地经度（东经），用于真太阳时校准；可按需扩充
+
+// 均时差（分钟），NOAA 常用近似式，精度约 ±30 秒
+function equationOfTime(month, day) {
+    const n = dayOfYear(month, day);
+    const b = (2 * Math.PI * (n - 81)) / 364;
+    return 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+}
+
 function calculateBaziInBrowser(payload) {
     const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -1316,7 +1590,8 @@ function calculateBaziInBrowser(payload) {
     const rawMonth = parseInt(payload.month, 10) || 5;
     const rawDay = parseInt(payload.day, 10) || 15;
     const isHourKnown = payload.hour !== null && payload.hour !== undefined && parseInt(payload.hour, 10) >= 0;
-    const hourVal = isHourKnown ? parseInt(payload.hour, 10) : null;
+    let hourVal = isHourKnown ? parseInt(payload.hour, 10) : null;
+    let minuteVal = isHourKnown ? (parseInt(payload.minute, 10) || 0) : null;
     const gender = payload.gender === 'female' ? 'female' : 'male';
 
     let solar = { year: rawYear, month: rawMonth, day: rawDay };
@@ -1324,9 +1599,43 @@ function calculateBaziInBrowser(payload) {
         solar = convertLunarToSolarInBrowser(rawYear, rawMonth, rawDay);
     }
 
-    const sYear = solar.year;
-    const sMonth = solar.month;
-    const sDay = solar.day;
+    // 出生地钟表时间换算后的公历（星座与春节口径以此为准）
+    const birthSolar = { year: solar.year, month: solar.month, day: solar.day };
+    let sYear = solar.year;
+    let sMonth = solar.month;
+    let sDay = solar.day;
+
+    // --- 真太阳时校准：经度差 × 4 分钟 + 均时差，可能跨越日界 ---
+    const lngRaw = (payload.lng === null || payload.lng === undefined) ? NaN : parseFloat(payload.lng);
+    const useTrueSolar = isHourKnown && Number.isFinite(lngRaw);
+    let trueSolar = null;
+    if (useTrueSolar) {
+        const eotMinutes = equationOfTime(sMonth, sDay);
+        const offsetMinutes = Math.round((lngRaw - 120) * 4 + eotMinutes);
+        const baseMs = Date.UTC(sYear, sMonth - 1, sDay, hourVal, minuteVal);
+        const shifted = new Date(baseMs + offsetMinutes * 60000);
+        const cYear = shifted.getUTCFullYear();
+        const cMonth = shifted.getUTCMonth() + 1;
+        const cDay = shifted.getUTCDate();
+        const cHour = shifted.getUTCHours();
+        const cMinute = shifted.getUTCMinutes();
+        const dayShift = Math.round((Date.UTC(cYear, cMonth - 1, cDay) - Date.UTC(sYear, sMonth - 1, sDay)) / 86400000);
+        trueSolar = {
+            lng: Math.round(lngRaw * 100) / 100,
+            placeName: payload.birthPlaceName || null,
+            eotMinutes: Math.round(eotMinutes * 10) / 10,
+            offsetMinutes,
+            clock: `${pad2(hourVal)}:${pad2(minuteVal)}`,
+            correctedClock: `${pad2(cHour)}:${pad2(cMinute)}`,
+            correctedDate: `${cYear}-${pad2(cMonth)}-${pad2(cDay)}`,
+            dayShift
+        };
+        sYear = cYear;
+        sMonth = cMonth;
+        sDay = cDay;
+        hourVal = cHour;
+        minuteVal = cMinute;
+    }
 
     // 12 Major Solar Terms (节) C-values for 20th/21st century (Jan 小寒 to Dec 大雪)
     const JIE_C_20 = [6.11, 4.6295, 6.3826, 5.59, 5.988, 6.5, 7.928, 8.35, 8.44, 9.098, 8.218, 7.9];
@@ -1457,6 +1766,9 @@ function calculateBaziInBrowser(payload) {
     const stdout = [
         `════════════════════ 观澜浏览器本机排盘引擎 ════════════════════`,
         headerMode,
+        `【时间口径】${trueSolar
+            ? `真太阳时 ${trueSolar.correctedDate} ${trueSolar.correctedClock}（经度${trueSolar.lng}°E，时差${trueSolar.offsetMinutes >= 0 ? '+' : ''}${trueSolar.offsetMinutes}分，均时差${trueSolar.eotMinutes >= 0 ? '+' : ''}${trueSolar.eotMinutes}分${trueSolar.dayShift !== 0 ? '，跨日' : ''}）`
+            : `北京时间（按 120°E 标准时，未做经度校准）`}`,
         `【日主】${dStem}${dmElem}，生于 ${mBranch}（${BRANCH_ELEM[mBranch]}） 月令`,
         `【五行力量】（天干1 / 藏干本气1·中气0.5·余气0.2 / 月支司令×2）`,
         `  木:${elemScores['木'].toFixed(1)}  火:${elemScores['火'].toFixed(1)}  土:${elemScores['土'].toFixed(1)}  金:${elemScores['金'].toFixed(1)}  水:${elemScores['水'].toFixed(1)}`,
@@ -1471,7 +1783,20 @@ function calculateBaziInBrowser(payload) {
         stdout,
         engine: 'browser-local-v2',
         calculatedAt: new Date().toISOString(),
-        payload
+        payload,
+        // Structured mirrors of what the stdout protocol above already reports.
+        // The consumer report still parses stdout; these fields only feed the
+        // three-source cross-check so it never has to re-derive solar dates.
+        solar: birthSolar,
+        chartSolar: { year: sYear, month: sMonth, day: sDay },
+        birthClock: {
+            hour: isHourKnown ? parseInt(payload.hour, 10) : null,
+            minute: isHourKnown ? (parseInt(payload.minute, 10) || 0) : null
+        },
+        trueSolar,
+        yearPillar: `${yStem}${yBranch}`,
+        monthPillar: `${mStem}${mBranch}`,
+        isHourKnown
     };
 }
 window.calculateBaziInBrowser = calculateBaziInBrowser;
@@ -1488,6 +1813,10 @@ if (btnSubmitConsumerForm) {
         const monthSelect = document.getElementById('consumer-birth-month');
         const daySelect = document.getElementById('consumer-birth-day');
         const hourSelect = document.getElementById('consumer-birth-hour');
+        const hour24Select = document.getElementById('consumer-birth-hour24');
+        const minuteSelect = document.getElementById('consumer-birth-minute');
+        const citySelect = document.getElementById('consumer-birth-city');
+        const lngInput = document.getElementById('consumer-birth-lng');
         const precisionSelect = document.getElementById('consumer-time-precision');
 
         const sq1Radio = document.querySelector('input[name="situational_q1"]:checked');
@@ -1506,16 +1835,53 @@ if (btnSubmitConsumerForm) {
             q3: sq3Radio ? sq3Radio.value : 'subtract'
         };
         
-        const rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 11;
         const precisionVal = precisionSelect ? precisionSelect.value : 'hour';
+        let birthHour = -1;
+        let birthMinute = 0;
 
-        if (rawHour === -1 || precisionVal === 'unknown') {
-            consumerFormShellState.birthHour = -1;
-            consumerFormShellState.timePrecision = 'unknown';
-        } else {
-            consumerFormShellState.birthHour = rawHour;
-            consumerFormShellState.timePrecision = precisionVal;
+        if (precisionVal === 'exact') {
+            const h24 = hour24Select ? parseInt(hour24Select.value, 10) : NaN;
+            const mm = minuteSelect ? parseInt(minuteSelect.value, 10) : NaN;
+            if (!Number.isFinite(h24) || h24 < 0 || h24 > 23 || !Number.isFinite(mm) || mm < 0 || mm > 59) {
+                showConsumerFormError('请选择 0-23 时与 0-59 分后再生成报告。');
+                return;
+            }
+            birthHour = h24;
+            birthMinute = mm;
+        } else if (precisionVal === 'hour') {
+            const rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 11;
+            if (rawHour >= 0) {
+                birthHour = rawHour;
+                birthMinute = 0;
+            }
         }
+
+        consumerFormShellState.birthHour = birthHour;
+        consumerFormShellState.birthMinute = birthMinute;
+        consumerFormShellState.timePrecision = birthHour < 0 ? 'unknown' : precisionVal;
+
+        // 出生地经度：手动输入优先，其次出生地下拉
+        const manualLng = lngInput && lngInput.value !== '' ? parseFloat(lngInput.value) : NaN;
+        let birthLng = null;
+        let birthPlaceName = null;
+        const manualLngValid = Number.isFinite(manualLng) && manualLng >= 73 && manualLng <= 135;
+        if (lngInput && lngInput.value !== '' && !manualLngValid) {
+            showConsumerFormError('经度需在 73–135°E 之间；留空表示使用出生地或不做校准。');
+            return;
+        }
+        if (manualLngValid) {
+            birthLng = manualLng;
+            birthPlaceName = '手动经度';
+        } else if (citySelect && citySelect.value) {
+            const cityLng = parseFloat(citySelect.value);
+            if (Number.isFinite(cityLng)) {
+                birthLng = cityLng;
+                const selectedOpt = citySelect.options[citySelect.selectedIndex];
+                birthPlaceName = selectedOpt ? selectedOpt.textContent.replace(/（.*$/, '') : null;
+            }
+        }
+        consumerFormShellState.birthLng = birthLng;
+        consumerFormShellState.birthPlaceName = birthPlaceName;
 
         // Validate date boundaries defensively
         const maxValidDays = (consumerFormShellState.calendarType === 'lunar') ? 30 : new Date(consumerFormShellState.birthYear, consumerFormShellState.birthMonth, 0).getDate();
@@ -1527,6 +1893,8 @@ if (btnSubmitConsumerForm) {
         if (daySelect) daySelect.classList.remove('is-error');
 
         const isHourKnown = consumerFormShellState.birthHour >= 0 && consumerFormShellState.timePrecision !== 'unknown';
+        // 真太阳时只在精确到分钟时启用：时辰模式是两小时窗口，校准会产生歧义
+        const applyTrueSolar = isHourKnown && consumerFormShellState.timePrecision === 'exact';
         const calcPayload = {
             module: 'bazi',
             gender: consumerFormShellState.gender,
@@ -1535,7 +1903,9 @@ if (btnSubmitConsumerForm) {
             month: consumerFormShellState.birthMonth,
             day: consumerFormShellState.birthDay,
             hour: isHourKnown ? consumerFormShellState.birthHour : null,
-            minute: isHourKnown ? 0 : null
+            minute: isHourKnown ? consumerFormShellState.birthMinute : null,
+            lng: applyTrueSolar ? birthLng : null,
+            birthPlaceName: applyTrueSolar ? birthPlaceName : null
         };
 
         btnSubmitConsumerForm.disabled = true;
@@ -1900,7 +2270,7 @@ function parseConsumerBaziResult(baziResult) {
         });
     }
     if (decades.length > 0) {
-        const targetYear = 2026;
+        const targetYear = new Date().getFullYear();
         const active = decades.find(d => targetYear >= d.startYear && targetYear <= d.endYear) || decades[0];
         rawResult.currentDecade = active;
     }
@@ -2115,7 +2485,777 @@ const MONTH_RHYTHM_MAP = {
 };
 
 // 2. Layer 2 Model Building Function (Multidimensional + Situational Calibration)
-function buildPersonalizedReportModel(parsedResult, formState) {
+// ------------------------------------------------------------------
+// Three-Source Cross-Check Engine: 年柱生肖 × 太阳星座 × 五维行为光谱
+// ------------------------------------------------------------------
+// 生肖的维度不由动物性格硬编，而是取年支五行（与五维光谱同源），
+// 动物只提供表述质感；星座取西方四元素 × 三模式的可辩护映射。
+const ZODIAC_ANIMAL_BY_BRANCH = {
+    '子': '鼠', '丑': '牛', '寅': '虎', '卯': '兔', '辰': '龙', '巳': '蛇',
+    '午': '马', '未': '羊', '申': '猴', '酉': '鸡', '戌': '狗', '亥': '猪'
+};
+const ZODIAC_BRANCH_ELEMENT = {
+    '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+    '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水'
+};
+const ZODIAC_PROFILE = {
+    '鼠': { trait: '环境嗅探与资源调度', note: '先摸清地形与人心，再决定出手时机；擅长在有限条件里找到可走的缝隙。' },
+    '牛': { trait: '稳定承重与长期耕作', note: '靠持续投入累积信任，不擅长频繁切换赛道，但交付质量稳定。' },
+    '虎': { trait: '向外开路与主导推进', note: '习惯先行动再修正，对新方向敏感，但需要主动收敛战线。' },
+    '兔': { trait: '敏感感知与柔性生长', note: '靠关系与氛围生长，不喜欢硬碰硬的推进方式，遇冲突倾向绕行。' },
+    '龙': { trait: '整合资源与搭建框架', note: '擅长把分散的人与事组织成结构，对失序的容忍度偏低。' },
+    '蛇': { trait: '冷静表达与精准说服', note: '话不多但句句到位，靠判断力而不是音量建立影响力。' },
+    '马': { trait: '高速输出与现场感染力', note: '在行动与表达中获取能量，长期停滞反而容易焦躁。' },
+    '羊': { trait: '共情承接与关系维护', note: '愿意为他人留出空间，需警惕把承接变成无限度的承担。' },
+    '猴': { trait: '快速判断与规则拆解', note: '在复杂局面里找最短路径，代价是对慢节奏容易失去耐心。' },
+    '鸡': { trait: '标准意识与细节裁决', note: '对质量与边界敏感，适合做守门人角色，需注意表达的温度。' },
+    '狗': { trait: '责任守约与风险预警', note: '先想最坏情况再做承诺，忠诚度高，但不易快速信任新关系。' },
+    '猪': { trait: '宽厚吸收与直觉判断', note: '以包容换取信息，直觉准，却在决策前容易反复权衡。' }
+};
+
+const SIGN_BOUNDARY_DOY = [
+    [1, 20, '水瓶座'], [2, 19, '双鱼座'], [3, 21, '白羊座'], [4, 20, '金牛座'],
+    [5, 21, '双子座'], [6, 22, '巨蟹座'], [7, 23, '狮子座'], [8, 23, '处女座'],
+    [9, 23, '天秤座'], [10, 24, '天蝎座'], [11, 23, '射手座'], [12, 22, '摩羯座']
+];
+const SIGN_PROFILE = {
+    '白羊座': { element: '火', mode: '基本', dim: '表达感染', trait: '先发行动力', note: '以速度和直接表达打开局面，容易在开局阶段占优。' },
+    '金牛座': { element: '土', mode: '固定', dim: '承载统筹', trait: '稳定累积与质感坚持', note: '靠持续投入建立安全感，对突变与不确定的耐受度偏低。' },
+    '双子座': { element: '风', mode: '变动', dim: '洞察思辨', trait: '信息串联与快速理解', note: '靠不断获取新信息保持活力，深度需要主动补足。' },
+    '巨蟹座': { element: '水', mode: '基本', dim: '承载统筹', trait: '情绪承接与安全守护', note: '以照顾他人建立连接，需分清共情与过度负责。' },
+    '狮子座': { element: '火', mode: '固定', dim: '表达感染', trait: '中心表达与气场驱动', note: '在被人看见时输出最强，需警惕为维持形象而硬撑。' },
+    '处女座': { element: '土', mode: '变动', dim: '秩序决断', trait: '标准校准与流程优化', note: '通过发现问题体现价值，容易把自我要求变成对他人的挑剔。' },
+    '天秤座': { element: '风', mode: '基本', dim: '表达感染', trait: '关系协调与平衡表达', note: '擅长在多方之间找共识，代价是决策时容易延迟表态。' },
+    '天蝎座': { element: '水', mode: '固定', dim: '洞察思辨', trait: '深度洞察与专注穿透', note: '一旦认定就投入极深，需注意把洞察用于理解而非防御。' },
+    '射手座': { element: '火', mode: '变动', dim: '生长开拓', trait: '向外扩展与意义追寻', note: '靠新目标与新场景获得动力，落地执行需要外部结构支撑。' },
+    '摩羯座': { element: '土', mode: '基本', dim: '秩序决断', trait: '长期规划与责任担当', note: '以结构化方式推进目标，容易忽略过程中的情绪信号。' },
+    '水瓶座': { element: '风', mode: '固定', dim: '洞察思辨', trait: '系统视角与独立思考', note: '习惯跳出既有框架看问题，落地时需补足对他人的解释。' },
+    '双鱼座': { element: '水', mode: '变动', dim: '生长开拓', trait: '想象扩散与共感吸收', note: '以感受力理解世界，边界感需要主动建立。' }
+};
+
+function dayOfYear(month, day) {
+    const cumulative = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    return cumulative[month - 1] + day;
+}
+
+function getSolarSignName(month, day) {
+    const target = dayOfYear(month, day);
+    let name = '摩羯座'; // 1/1 – 1/19 仍属摩羯
+    SIGN_BOUNDARY_DOY.forEach(([m, d, n]) => {
+        if (target >= dayOfYear(m, d)) name = n;
+    });
+    return name;
+}
+
+function getDimByElement(elem) {
+    return (PLAIN_ELEMENT_MAP[elem] || PLAIN_ELEMENT_MAP['水']).name;
+}
+
+// 三源比对：把三条线索归到同一套五维语言后再比较
+// A. 场景化比对：三源的映射不变，只换「拿这三条证据回答哪个问题」
+const WORK_DIMS = ['表达感染', '秩序决断', '承载统筹'];
+const RELATION_DIMS = ['表达感染', '承载统筹', '洞察思辨'];
+
+function buildTriScenarioFocus(input) {
+    const { scenario, zodiacDim, signDim, spectrum, pattern, animal, signName } = input;
+    const sources = [
+        { key: '生肖', dim: zodiacDim },
+        { key: '星座', dim: signDim },
+        { key: '光谱首位', dim: spectrum.top1 },
+        { key: '光谱次位', dim: spectrum.top2 }
+    ];
+    const hitsIn = dims => sources.filter(s => dims.includes(s.dim));
+    const tally = list => list.reduce((acc, s) => { acc[s.dim] = (acc[s.dim] || 0) + 1; return acc; }, {});
+    const topOf = t => Object.keys(t).sort((a, b) => t[b] - t[a])[0] || null;
+    const quote = dims => dims.map(d => `【${d}】`).join('、');
+    const weak = spectrum.weak;
+
+    if (scenario === 'career') {
+        const hits = hitsIn(WORK_DIMS);
+        const t = tally(hits);
+        const best = topOf(t);
+        const bestCount = best ? t[best] : 0;
+        const others = Object.keys(t).filter(d => d !== best);
+        let reading;
+        if (!hits.length) {
+            reading = `三源里没有一条落在工作向的三条通道（${WORK_DIMS.join('、')}）——你的长板更偏「研判与开局」（${quote([spectrum.top1, spectrum.top2])}）。这类结构更适合当发起者、幕僚或判断者，被要求立刻收口执行时会格外耗电。`;
+        } else if (bestCount >= 2) {
+            reading = `三源里有 ${bestCount} 条落在【${best}】：这是你在工作上的立身通道，可以直接写进自我介绍与项目分工。${others.length ? `其余工作向维度（${others.map(d => `【${d}】`).join('')}）只有零星支持，适合当辅助，不宜当作对外主标签。` : ''}`;
+        } else {
+            reading = `工作向的通道被分散命中（${hits.map(s => `${s.key}→【${s.dim}】`).join('，')}），没有一条拿到两条以上支持：你不是单点型选手，而是在「对外表达」与「稳住基本盘」之间切换。选岗位时先看这个岗位更需要哪一条，再谈补短板——短板不该决定你的定位。`;
+        }
+        return { question: '工作上该靠哪条通道立身', focusDim: best || spectrum.top1, reading };
+    }
+
+    if (scenario === 'relationship') {
+        const hits = hitsIn(RELATION_DIMS);
+        const t = tally(hits);
+        const best = topOf(t);
+        const bestCount = best ? t[best] : 0;
+        const covered = Object.keys(t).length;
+        const weakInRelation = RELATION_DIMS.includes(weak);
+        let reading;
+        if (covered >= 3) {
+            reading = `关系向的三条通道全部被命中（${Object.keys(t).map(d => `【${d}】`).join('')}）：你能读懂、能接住、也能直接说出口。真正的风险不是能力缺口，而是${weakInRelation ? `【${weak}】在光谱里同时最弱——你想照顾所有人，但电量最低的恰恰是这一维，于是「懂事」本身变成消耗` : `你在高压下会先收回表达，让对方误以为你不在意`}。`;
+        } else if (bestCount >= 2) {
+            reading = `对方最容易感知到的，是【${best}】（三源里有 ${bestCount} 条落在它上面）。这一维既是你给出去的，也是别人给你贴标签的地方；关系里的边界问题通常也发生在这里。`;
+        } else {
+            reading = `关系向的证据比较分散（${hits.map(s => `${s.key}→【${s.dim}】`).join('，') || '无'}）：不同关系里你会呈现出不同的样子，与其找「真实的我」，不如观察哪一种关系让你回血。`;
+        }
+        return { question: '对方最先感知到的你，三源怎么说', focusDim: best || spectrum.top1, reading };
+    }
+
+    if (scenario === 'confusion') {
+        const pointing = sources.filter(s => s.dim === weak);
+        const reading = pointing.length
+            ? `三源里有 ${pointing.length} 条（${pointing.map(s => s.key).join('、')}）把【${weak}】放在显眼位置，而它正好是光谱里最弱的一维：当下那种「没做错什么但很累」，不是你不够努力，而是你在用一条低电量的通道长期硬撑。先把承诺减半，比继续加强【${spectrum.top1}】更有用。`
+            : `三源没有一条指向【${weak}】，说明当前的漏能更像环境与节奏的结果，而不是结构缺陷：先调节奏（减少并行、明确边界），不必急着否定自己。`;
+        return { question: '当下的卡点，三源能解释吗', focusDim: weak, reading };
+    }
+
+    const selfReadings = {
+        resonance3: `三源全部指向【${spectrum.top1}】：你对自己「是什么风格」的判断，和外部体系读到的结果一致，这份自我描述是自洽的。`,
+        resonance2: `生肖与星座都把【${zodiacDim}】放在首位，光谱首位是【${spectrum.top1}】——交叉体系给出的标签与你的实际输出基本吻合，自洽度较高。`,
+        complement: `两条独立线索各自落在光谱的两条主通道上（${quote([spectrum.top1, spectrum.top2])}）：你的自我描述天生是双轨的，只讲其中一条就会失真。`,
+        anchor: `主通道【${spectrum.top1}】在三源里被重复识别，另一条线索描述的是次级策略。自洽，但要注意别把次级策略当成主线来要求自己。`,
+        tension: `三源出现了「期待与电量」的错位：${zodiacDim === weak ? `生肖「${animal}」` : signName}把【${weak}】放在首位，而它恰是光谱里最弱的一维。自我描述里最该修正的假设是「我应该一直擅长这一维」——那不是能力问题，而是电量问题。`,
+        offset: `三源各指一处（【${zodiacDim}】/【${signDim}】/【${spectrum.top1}】）：你的自我描述会随场景切换，这不算矛盾，但意味着很难用一个词概括自己。`
+    };
+    return {
+        question: '这套自我描述自洽吗',
+        focusDim: input.consensusDim || spectrum.top1,
+        reading: selfReadings[pattern] || selfReadings.offset
+    };
+}
+
+function buildTriangulation(parsedResult, baziResult, scenario) {
+    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
+
+    const solar = (baziResult && baziResult.solar) || null;
+    const yearPillar = (baziResult && baziResult.yearPillar) || (parsedResult.fourPillars && parsedResult.fourPillars.year) || '';
+    if (!solar || yearPillar.length !== 2) return null;
+
+    const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const yearBranch = yearPillar[1];
+    if (!ZODIAC_ANIMAL_BY_BRANCH[yearBranch]) return null;
+
+    // 立春口径：直接取年柱地支（引擎已按立春换年）
+    const lichunAnimal = ZODIAC_ANIMAL_BY_BRANCH[yearBranch];
+
+    // 春节口径：大众习惯。春节在 1/2 月，出生早于春节则沿用上一干支年
+    let chunjie = null;
+    try {
+        chunjie = convertLunarToSolarInBrowser(solar.year, 1, 1);
+    } catch (e) {
+        chunjie = null;
+    }
+    let chunjieAnimal = null;
+    let chunjieDim = null;
+    let chunjieBranch = null;
+    if (chunjie) {
+        const beforeSpringFestival = (solar.month < chunjie.month) ||
+            (solar.month === chunjie.month && solar.day < chunjie.day);
+        const chunjieYear = beforeSpringFestival ? solar.year - 1 : solar.year;
+        chunjieBranch = BRANCHES[((chunjieYear - 4) % 12 + 12) % 12];
+        chunjieAnimal = ZODIAC_ANIMAL_BY_BRANCH[chunjieBranch];
+        chunjieDim = getDimByElement(ZODIAC_BRANCH_ELEMENT[chunjieBranch]);
+    }
+
+    const signName = getSolarSignName(solar.month, solar.day);
+    const signInfo = SIGN_PROFILE[signName] || SIGN_PROFILE['摩羯座'];
+
+    const zodiacDim = getDimByElement(ZODIAC_BRANCH_ELEMENT[yearBranch]);
+    const signDim = signInfo.dim;
+
+    // 五维排序：首位 / 次位 / 最需补给
+    const sortedElems = Object.keys(parsedResult.elementScores || {})
+        .sort((a, b) => (parsedResult.elementScores[b] || 0) - (parsedResult.elementScores[a] || 0));
+    const topElem = sortedElems[0] || '水';
+    const secondElem = sortedElems[1] || '土';
+    const weakElem = sortedElems[sortedElems.length - 1] || '水';
+    const spectrum = {
+        top1: getDimByElement(topElem),
+        top2: getDimByElement(secondElem),
+        weak: getDimByElement(weakElem),
+        top1Elem: topElem,
+        top2Elem: secondElem,
+        weakElem: weakElem
+    };
+    const topDims = [spectrum.top1, spectrum.top2];
+
+    // 归并模式（优先级从强到弱）
+    let pattern = 'offset';
+    if (zodiacDim === signDim && zodiacDim === spectrum.top1) pattern = 'resonance3';
+    else if (zodiacDim === signDim) pattern = 'resonance2';
+    else if (topDims.includes(zodiacDim) && topDims.includes(signDim)) pattern = 'complement';
+    else if (zodiacDim === spectrum.top1 || signDim === spectrum.top1) pattern = 'anchor';
+    else if (zodiacDim === spectrum.weak || signDim === spectrum.weak) pattern = 'tension';
+
+    const animal = lichunAnimal;
+    const animalProfile = ZODIAC_PROFILE[animal] || ZODIAC_PROFILE['猪'];
+
+    let consensusDim = null;
+    if (pattern === 'resonance3' || pattern === 'resonance2') consensusDim = zodiacDim;
+    else if (pattern === 'complement' || pattern === 'anchor') consensusDim = spectrum.top1;
+
+    const patternLabels = {
+        resonance3: '三方共振',
+        resonance2: '两源同向',
+        complement: '双轨互补',
+        anchor: '一源锚定',
+        tension: '期待与电量错位',
+        offset: '视角分化'
+    };
+
+    const verdictTitles = {
+        resonance3: `${spectrum.top1} · 三条线索落在同一处`,
+        resonance2: `${zodiacDim} · 交叉体系的一致信号`,
+        complement: `${spectrum.top1} × ${spectrum.top2} · 双通道并行`,
+        anchor: `${spectrum.top1} · 主通道在传统表述里同样被识别`,
+        tension: `${spectrum.weak} · 外部标签高于内部余量`,
+        offset: `结构分化 · 标签只描述了一部分你`
+    };
+
+    const bodies = {
+        resonance3: `生肖「${animal}」、${signName}与五维光谱的首位，都落在【${spectrum.top1}】。三条来源不同、算法不同的线索指向同一处，说明这个维度在你的结构里不是偶然偏好，而是稳定的主通道。`,
+        resonance2: `生肖「${animal}」与${signName}都把【${zodiacDim}】放在首位，这是跨体系的一致信号：进入陌生场景时，你会先调用这套行为。五维光谱显示你的首位是【${spectrum.top1}】、次位是【${spectrum.top2}】——若【${zodiacDim}】正好在其中，它承担主力输出；否则它更像一个可靠的备用策略。`,
+        complement: `生肖「${animal}」指向【${zodiacDim}】，${signName}指向【${signDim}】，而五维光谱的前两位正是【${spectrum.top1}】与【${spectrum.top2}】。两条独立线索分别对应光谱的两条主通道，说明你的行为不是单一风格，而是双轨并行。`,
+        anchor: `五维光谱的首位是【${spectrum.top1}】，生肖与星座中有一条正好落在这里，另一条指向【${zodiacDim === spectrum.top1 ? signDim : zodiacDim}】。这说明你的主通道在另一套传统表述里同样被识别到，剩下那条线索描述的是你的次级策略，而不是主线。`,
+        tension: `你的五维光谱里最需要补给的维度是【${spectrum.weak}】，而${zodiacDim === spectrum.weak ? `生肖「${animal}」` : signName}恰好把它放在首位。这不是矛盾，而是外部标签与内部电量的错位：你可能在这个维度上被他人期待，却未必有足够余量长期输出。`,
+        offset: `三条线索没有落在同一处：生肖「${animal}」指向【${zodiacDim}】，${signName}指向【${signDim}】，五维光谱的首位是【${spectrum.top1}】。这通常说明你的行为在不同关系与场景里分化明显——单一标签只能描述一部分你。`
+    };
+
+    const dimensionVerbs = {
+        '生长开拓': '开新局、探方向',
+        '表达感染': '开场、推动、号召',
+        '承载统筹': '承接、整合、稳住基本盘',
+        '秩序决断': '定标准、做取舍、收口',
+        '洞察思辨': '研判、拆解、做长线判断'
+    };
+    const verbOf = dim => dimensionVerbs[dim] || '推进';
+
+    const actions = {
+        resonance3: `把【${spectrum.top1}】当成默认武器：在需要${verbOf(spectrum.top1)}的场合优先用它，而不是先补短板。`,
+        resonance2: `在需要稳定发挥的场合，优先调用【${zodiacDim}】的成熟套路；把它当底盘，而不是唯一解法。`,
+        complement: `按场景切换：需要${verbOf(spectrum.top1)}时调用【${spectrum.top1}】，需要${verbOf(spectrum.top2)}时切到【${spectrum.top2}】。`,
+        anchor: `主通道已经清楚：把【${spectrum.top1}】留给${verbOf(spectrum.top1)}的决定性场合，不必对所有事情都用同一种方式。`,
+        tension: `在【${spectrum.weak}】相关的事务上主动设限，别用外部标签要求自己长期超配输出。`,
+        offset: `先以五维光谱为准做自我校准，把生肖与星座当作观察入口，而不是结论。`
+    };
+
+    // 口径说明：立春与春节不一致时才解释差异
+    const boundaryDiffers = !!(chunjieAnimal && chunjieAnimal !== lichunAnimal);
+    const boundaryLine = boundaryDiffers
+        ? `你的出生日期落在立春与春节之间：本报告年柱按立春换年（${yearBranch}${lichunAnimal}，对应${zodiacDim}），大众习惯按春节（${chunjieBranch}${chunjieAnimal}，对应${chunjieDim}）。口径切换只改变生肖这一列的标签，不改变五维光谱与其余结论——本报告以年柱口径为准。`
+        : `生肖同时按立春与春节口径核对，结果一致（${yearBranch}${lichunAnimal}），不存在换年边界争议。`;
+
+    const triFocus = buildTriScenarioFocus({
+        scenario: scenario || 'self',
+        zodiacDim,
+        signDim,
+        spectrum,
+        pattern,
+        consensusDim,
+        animal,
+        signName
+    });
+
+    const posterStatus = pattern === 'tension'
+        ? `补给：${spectrum.weak}`
+        : (consensusDim ? `共识：${consensusDim}` : '待校准');
+    const posterLine = `属${animal} · ${signName} · ${posterStatus}`;
+
+    return {
+        animal,
+        branch: yearBranch,
+        animalProfile,
+        zodiacDim,
+        lichunAnimal,
+        chunjieAnimal,
+        chunjieBranch,
+        chunjieDim,
+        boundaryDiffers,
+        boundaryLine,
+        signName,
+        signInfo,
+        signDim,
+        spectrum,
+        pattern,
+        patternLabel: patternLabels[pattern],
+        verdictTitle: verdictTitles[pattern],
+        body: bodies[pattern],
+        action: actions[pattern],
+        consensusDim,
+        triFocus,
+        focusQuestion: triFocus.question,
+        scenarioReading: triFocus.reading,
+        focusDim: triFocus.focusDim,
+        posterLine
+    };
+}
+
+function renderTriangulationHTML(tri) {
+    if (!tri) return '';
+    const zodiacValue = tri.boundaryDiffers
+        ? `${tri.branch}${tri.lichunAnimal}（立春） / ${tri.chunjieBranch || ''}${tri.chunjieAnimal}（春节）`
+        : `${tri.branch}${tri.animal}`;
+    return `
+        <p class="tri-lead">三条不同来源的线索，被翻译成同一套五维行为语言之后再比对：生肖来自年柱地支，星座来自出生月日，五维光谱来自四柱五行加权。它们一致时说明结构表述稳定，不一致时说明你的行为在不同场景里有分化。</p>
+        <div class="tri-source-row">
+            <div class="tri-source${tri.focusDim === tri.zodiacDim ? ' is-focus' : ''}">
+                <span class="tri-source-label">生肖 · 年柱（立春口径）</span>
+                <strong class="tri-source-value${tri.boundaryDiffers ? ' is-pair' : ''}">${zodiacValue}</strong>
+                <span class="tri-source-dim">${tri.zodiacDim}</span>
+                <p class="tri-source-note">${tri.animalProfile.trait}：${tri.animalProfile.note}</p>
+            </div>
+            <div class="tri-source${tri.focusDim === tri.signDim ? ' is-focus' : ''}">
+                <span class="tri-source-label">星座 · 出生月日（太阳星座）</span>
+                <strong class="tri-source-value">${tri.signName}</strong>
+                <span class="tri-source-dim">${tri.signDim}</span>
+                <p class="tri-source-note">${tri.signInfo.trait}：${tri.signInfo.note}</p>
+            </div>
+            <div class="tri-source tri-source-spectrum${tri.focusDim === tri.spectrum.top1 ? ' is-focus' : ''}">
+                <span class="tri-source-label">五维光谱 · 本机加权计算结果</span>
+                <strong class="tri-source-value">${tri.spectrum.top1}</strong>
+                <span class="tri-source-dim">首位维度</span>
+                <p class="tri-source-note">次位维度：${tri.spectrum.top2}；当前最需补给：${tri.spectrum.weak}。</p>
+            </div>
+        </div>
+        <div class="tri-verdict">
+            <span class="tri-focus-chip">本次比对重点：${tri.focusQuestion || '三条线索是否一致'}</span>
+            <span class="tri-verdict-label">三源比对结果 · ${tri.patternLabel}</span>
+            <span class="tri-verdict-title">${tri.verdictTitle}</span>
+            <p class="tri-explain">${tri.body}</p>
+            <p class="tri-scenario-reading">${tri.scenarioReading || ''}</p>
+            <p class="tri-action">→ ${tri.action}</p>
+        </div>
+        <p class="tri-boundary">${tri.boundaryLine}</p>
+        <p class="tri-boundary">口径说明：生肖取年柱地支，与八字年柱同源；星座仅按出生月日取太阳星座，不含出生时刻与上升星座；五维光谱由四柱五行力量加权得出。三者一致不构成预测，只说明当前结构在不同表述体系中稳定。</p>
+    `;
+}
+
+// ------------------------------------------------------------------
+// 年运 / 月运 / 90 天行动窗口
+// 全部由流年流月干支与日主的五行关系推导，不使用吉凶断语；
+// 节气日采用与排盘引擎相同的近似公式（±1 天）。
+// ------------------------------------------------------------------
+const SOLAR_TERM_C_20 = [6.11, 4.6295, 6.3826, 5.59, 5.988, 6.5, 7.928, 8.35, 8.44, 9.098, 8.218, 7.9];
+const SOLAR_TERM_C_21 = [5.4055, 3.87, 5.63, 4.81, 5.52, 5.678, 7.108, 7.5, 7.646, 8.318, 7.438, 7.18];
+const LIUYUE_BRANCH_ORDER = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+const BRANCH_CLASH = {
+    '子': '午', '午': '子', '丑': '未', '未': '丑', '寅': '申', '申': '寅',
+    '卯': '酉', '酉': '卯', '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳'
+};
+const BRANCH_HE = {
+    '子': '丑', '丑': '子', '寅': '亥', '亥': '寅', '卯': '戌', '戌': '卯',
+    '辰': '酉', '酉': '辰', '巳': '申', '申': '巳', '午': '未', '未': '午'
+};
+const ELEMENT_CYCLE = ['木', '火', '土', '金', '水'];
+
+// 十神分组对应的节奏语义（与报告既有 TEN_GOD_BEHAVIOR_MAP 口径一致）
+const GROUP_RHYTHM = {
+    '比劫': { type: '推进', plain: '同气', window: '自立与结盟窗口', action: '启动自主项目或找到同频伙伴，把分工讲清楚', risk: '单打独斗与抢功内耗' },
+    '印': { type: '补给', plain: '生扶', window: '沉淀与补给窗口', action: '学习复盘、补齐短板、减少对外承诺', risk: '过度准备导致交付拖延' },
+    '食伤': { type: '推进', plain: '输出', window: '输出与表达窗口', action: '推进需要被看见的工作：汇报、内容、对外方案', risk: '说得多做得少、情绪化表达' },
+    '财': { type: '推进', plain: '价值', window: '落地与结算窗口', action: '把想法变成可交付成果：谈条件、定价、结项', risk: '只算收益不算精力' },
+    '官杀': { type: '承压', plain: '压力', window: '立规与承压窗口', action: '对接权责、走流程、处理必须完成的硬任务', risk: '把外部压力全接成自我苛责' }
+};
+
+function getJieDayOfMonth(solarYear, month1to12) {
+    const y2 = solarYear % 100;
+    const arr = solarYear >= 2000 ? SOLAR_TERM_C_21 : SOLAR_TERM_C_20;
+    const c = arr[month1to12 - 1];
+    return Math.floor(y2 * 0.2422 + c) - Math.floor((y2 - 1) / 4);
+}
+
+function getGanzhiYearOf(date) {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const lichun = getJieDayOfMonth(y, 2);
+    const beforeLichun = (m === 1) || (m === 2 && d < lichun);
+    return beforeLichun ? y - 1 : y;
+}
+
+function getYearPillarOf(ganzhiYear) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const stemIdx = ((ganzhiYear - 4) % 10 + 10) % 10;
+    const branchIdx = ((ganzhiYear - 4) % 12 + 12) % 12;
+    return {
+        ganzhiYear,
+        stemIdx,
+        branchIdx,
+        stem: STEMS[stemIdx],
+        branch: BRANCHES[branchIdx],
+        label: `${STEMS[stemIdx]}${BRANCHES[branchIdx]}`
+    };
+}
+
+function getMonthSegmentStart(date) {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const jie = getJieDayOfMonth(y, m);
+    if (d >= jie) return new Date(y, m - 1, jie);
+    let py = y;
+    let pm = m - 1;
+    if (pm === 0) { pm = 12; py = y - 1; }
+    return new Date(py, pm - 1, getJieDayOfMonth(py, pm));
+}
+
+function getNextSegmentStart(start) {
+    let y = start.getFullYear();
+    let m = start.getMonth() + 1;
+    let nm = m + 1;
+    let ny = y;
+    if (nm > 12) { nm = 1; ny = y + 1; }
+    return new Date(ny, nm - 1, getJieDayOfMonth(ny, nm));
+}
+
+function getGroupRelation(dmElem, otherElem) {
+    const a = ELEMENT_CYCLE.indexOf(dmElem);
+    const b = ELEMENT_CYCLE.indexOf(otherElem);
+    if (a < 0 || b < 0) return '比劫';
+    if (a === b) return '比劫';
+    if ((b + 1) % 5 === a) return '印';
+    if ((a + 1) % 5 === b) return '食伤';
+    if ((a + 2) % 5 === b) return '财';
+    return '官杀';
+}
+
+function getMonthPillarOf(ganzhiYearStemIdx, mIdx) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const stemIdx = ((ganzhiYearStemIdx % 5) * 2 + 2 + mIdx) % 10;
+    const branch = LIUYUE_BRANCH_ORDER[mIdx];
+    return { stemIdx, stem: STEMS[stemIdx], branch, label: `${STEMS[stemIdx]}${branch}` };
+}
+
+function formatRange(start, end) {
+    const endDay = new Date(end.getTime() - 86400000);
+    return `${start.getMonth() + 1}/${start.getDate()} – ${endDay.getMonth() + 1}/${endDay.getDate()}`;
+}
+
+function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
+    const today = now ? new Date(now) : new Date();
+    const dmElem = (parsedResult.dayMaster && parsedResult.dayMaster.element) || '火';
+    const dayBranch = parsedResult.fourPillars && parsedResult.fourPillars.day
+        ? parsedResult.fourPillars.day[1]
+        : null;
+    const yearBranch = (baziResult && baziResult.yearPillar ? baziResult.yearPillar[1] : null) ||
+        (parsedResult.fourPillars && parsedResult.fourPillars.year ? parsedResult.fourPillars.year[1] : null);
+
+    const sortedElems = Object.keys(parsedResult.elementScores || {})
+        .sort((a, b) => (parsedResult.elementScores[b] || 0) - (parsedResult.elementScores[a] || 0));
+    const top1 = getDimByElement(sortedElems[0] || '水');
+    const weak = getDimByElement(sortedElems[sortedElems.length - 1] || '水');
+
+    const ganzhiYear = getGanzhiYearOf(today);
+    const yearPillar = getYearPillarOf(ganzhiYear);
+    const nextYearPillar = getYearPillarOf(ganzhiYear + 1);
+    const BRANCH_ELEM = ZODIAC_BRANCH_ELEMENT;
+    const yearGroup = getGroupRelation(dmElem, BRANCH_ELEM[yearPillar.branch]);
+    const nextYearGroup = getGroupRelation(dmElem, BRANCH_ELEM[nextYearPillar.branch]);
+    const yearDim = getDimByElement(BRANCH_ELEM[yearPillar.branch]);
+    const nextYearDim = getDimByElement(BRANCH_ELEM[nextYearPillar.branch]);
+
+    const dimensionStance = (dim) => {
+        if (dim === top1) return { tag: '放大', note: '与你的光谱首位重叠：优势被放大，但容易过载，需要主动设限' };
+        if (dim === weak) return { tag: '补课', note: '落在你最需要补给的维度：适合补短板，而不是继续加码长板' };
+        return { tag: '常规', note: '处于你光谱的中间地带：按既有节奏推进即可' };
+    };
+
+    const yearStance = dimensionStance(yearDim);
+    const decadeGroup = parsedResult.currentDecade
+        ? (() => {
+            const primary = parsedResult.currentDecade.primaryTenGod || '';
+            if (/比肩|劫财/.test(primary)) return '比劫';
+            if (/正印|偏印/.test(primary)) return '印';
+            if (/食神|伤官/.test(primary)) return '食伤';
+            if (/正财|偏财/.test(primary)) return '财';
+            if (/正官|七杀/.test(primary)) return '官杀';
+            return null;
+        })()
+        : null;
+
+    const year = {
+        label: yearPillar.label,
+        stem: yearPillar.stem,
+        branch: yearPillar.branch,
+        group: yearGroup,
+        groupLabel: (TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态推进',
+        dim: yearDim,
+        stance: yearStance,
+        startText: `立春 ${ganzhiYear}-02-${pad2(getJieDayOfMonth(ganzhiYear, 2))} 起`,
+        narrative: `本流年为 ${yearPillar.label} 年，与你的日主构成【${GROUP_RHYTHM[yearGroup].plain}】关系（${(TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态'}）：年度主维度是【${yearDim}】，${yearStance.note}。${GROUP_RHYTHM[yearGroup].window}是这一年的主旋律，需要留意的是${GROUP_RHYTHM[yearGroup].risk}。`,
+        doText: GROUP_RHYTHM[yearGroup].action,
+        dontText: GROUP_RHYTHM[yearGroup].risk,
+        decadeEcho: decadeGroup && decadeGroup === yearGroup
+            ? `与大运主十神同气（${GROUP_RHYTHM[yearGroup].window}），本年度主题会被放大一倍。`
+            : ''
+    };
+
+    const nextYear = {
+        label: nextYearPillar.label,
+        group: nextYearGroup,
+        groupLabel: (TEN_GOD_BEHAVIOR_MAP[nextYearGroup] || {}).label || '稳态推进',
+        dim: nextYearDim,
+        stance: dimensionStance(nextYearDim),
+        startText: `立春 ${ganzhiYear + 1}-02-${pad2(getJieDayOfMonth(ganzhiYear + 1, 2))} 起`
+    };
+
+    // 流月：从当前所在节气月开始，取 6 个
+    const segments = [];
+    let cursor = getMonthSegmentStart(today);
+    for (let i = 0; i < 6; i++) {
+        const start = cursor;
+        const end = getNextSegmentStart(start);
+        const segGanzhiYear = getGanzhiYearOf(start);
+        const segYearPillar = getYearPillarOf(segGanzhiYear);
+        const mIdx = (start.getMonth() + 1 + 10) % 12; // start 一定在节之后，用引擎的同一规则
+        const pillar = getMonthPillarOf(segYearPillar.stemIdx, mIdx);
+        const branchElem = BRANCH_ELEM[pillar.branch];
+        const group = getGroupRelation(dmElem, branchElem);
+        const rhythm = GROUP_RHYTHM[group];
+        const clashDay = !!(dayBranch && BRANCH_CLASH[pillar.branch] === dayBranch);
+        const heDay = !!(dayBranch && BRANCH_HE[pillar.branch] === dayBranch);
+        const clashYear = !!(yearBranch && BRANCH_CLASH[pillar.branch] === yearBranch);
+
+        segments.push({
+            start,
+            end,
+            rangeText: formatRange(start, end),
+            pillar,
+            label: pillar.label,
+            branch: pillar.branch,
+            dim: getDimByElement(branchElem),
+            group,
+            groupPlain: rhythm.plain,
+            groupLabel: (TEN_GOD_BEHAVIOR_MAP[group] || {}).label || '稳态推进',
+            rhythmType: rhythm.type,
+            window: rhythm.window,
+            action: rhythm.action,
+            risk: rhythm.risk,
+            clashDay,
+            heDay,
+            clashYear,
+            tone: MONTH_RHYTHM_MAP[pillar.branch] || '',
+            note: clashDay
+                ? '本月冲你的日支：外部节奏容易打断既定安排，重承诺放到月内后段'
+                : (heDay
+                    ? '本月合你的日支：协作与沟通相对顺滑，适合把需要配合的事推进去'
+                    : (clashYear ? '本月冲你的年支：与外部环境存在张力，先稳住基本盘' : ''))
+        });
+        cursor = end;
+    }
+
+    // 90 天窗口：按流月切成 3 个动作窗口（首个含当前月剩余部分）
+    const horizon = new Date(today.getTime() + 90 * 86400000);
+    const windows = segments
+        .filter(seg => seg.start < horizon)
+        .slice(0, 3)
+        .map(seg => ({
+            rangeText: seg.rangeText,
+            label: seg.label,
+            group: seg.group,
+            groupPlain: seg.groupPlain,
+            window: seg.window,
+            action: seg.action,
+            type: seg.rhythmType,
+            dim: seg.dim,
+            clashDay: seg.clashDay,
+            start: seg.start
+        }));
+    const bestWindow = windows.find(w => w.type === '推进' && !w.clashDay) || windows[0] || null;
+    const pushCount = windows.filter(w => w.type === '推进').length;
+    const supplyCount = windows.filter(w => w.type === '补给').length;
+    const pressureCount = windows.filter(w => w.type === '承压').length;
+
+    const summary90 = windows.length
+        ? `未来 90 天按流月切成 ${windows.length} 个动作窗口（首个窗口含本月剩余部分）：推进型 ${pushCount} 个、补给型 ${supplyCount} 个、承压型 ${pressureCount} 个。${bestWindow ? `建议把关键决策放在 ${bestWindow.rangeText}（${bestWindow.window}），其余窗口用来收口与补课。` : ''}`
+        : '未来 90 天内没有可用的流月窗口。';
+
+    const scenarioFocus = buildRhythmScenarioFocus(scenario, windows);
+
+    return {
+        scenario: scenario || 'self',
+        focus: scenarioFocus,
+        nowText: `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`,
+        year,
+        nextYear,
+        months: segments,
+        windows,
+        summary90,
+        bestWindow,
+        evidence: `流年按立春换年（节气日为近似值 ±1 天）；流月按节气月划分；十神分组由流年/流月地支五行与日主「${dmElem}」的生克关系推导（同=比劫、生我=印、我生=食伤、我克=财、克我=官杀）；冲合仅比对日支/年支。`
+    };
+}
+
+// B. 年运 / 90 天窗口按场景选「主窗口」：事实不动，只决定展开哪一段、怎么解读。
+function buildRhythmScenarioFocus(scenario, windows) {
+    const list = windows || [];
+    const s = scenario || 'self';
+    const find = type => list.find(w => w.type === type) || null;
+    const pushWin = list.find(w => w.type === '推进' && !w.clashDay) || find('推进');
+    const supplyWin = find('补给');
+    const pressureWin = find('承压');
+    const firstWin = list[0] || null;
+    const typeLabel = w => (w.type === '承压' ? '承压窗口' : (w.type === '补给' ? '补给窗口' : '推进窗口'));
+
+    if (!list.length) {
+        return {
+            mode: 'triple',
+            chip: '本次重点：完整三段节奏',
+            lead: '未来 90 天内没有可用的流月窗口，这一段暂时不做展开。'
+        };
+    }
+
+    if (s === 'career') {
+        const primary = pushWin || firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合发起与交付',
+            lead: '事业方向只看一件事：接下来哪一段适合发起、谈判、交付。下面把这一段展开，另外两段压成一行备查——它们不是不重要，只是这一版不占用你的注意力。',
+            primary,
+            summary: `最优发起段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '把要对外发起的事（提案、谈判、发布、要资源）集中放进这一段，别摊到全月。',
+            dontText: pressureWin
+                ? `关键动作尽量避开 ${pressureWin.rangeText}（承压窗口）：那一段适合走流程、接硬任务，不适合谈条件。`
+                : '另外两段更适合收口与补课，别把发起动作均匀摊开。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：适合走流程、接硬任务，不适合谈条件）'
+        };
+    }
+
+    if (s === 'relationship') {
+        const primary = supplyWin || firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合把话说开',
+            lead: '关系模式只看一件事：哪一段适合把话说开、谈边界。补给窗口通常比推进窗口更适合谈感受，承压窗口最不适合谈敏感话题。',
+            primary,
+            summary: `最适合沟通的一段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '把需要沟通的事（边界、期待、分工）放到这一段谈：先讲自己的感受，再讲具体诉求。',
+            dontText: pressureWin
+                ? `如果对话只能落在 ${pressureWin.rangeText}（承压窗口），只谈事实与安排，别在那一段谈感受。`
+                : '其余两段更适合处理事务性沟通，别在推进最猛的时候谈边界。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：适合处理事务，不适合谈感受与边界）'
+        };
+    }
+
+    if (s === 'confusion') {
+        const primary = firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合做最小验证',
+            lead: '走出迷茫只看一件事：接下来哪一段适合做 1 个两周内能验证的假设，而不是继续收集信息。下面这一段就是最早可用的窗口。',
+            primary,
+            summary: `最早可用的验证段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '选 1 个两周内能拿到结果的假设，用这一段做完；判断标准要在开始之前写下来。',
+            dontText: '别在这段同时开第二个实验——多线并行本身就是这一版要防的漏能。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：先别开新实验，用来走完已经在手上的事）'
+        };
+    }
+
+    return {
+        mode: 'triple',
+        chip: '本次重点：完整三段节奏',
+        lead: '流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的日主是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。这一段全部展开，你先看全貌，再决定把关键动作放在哪一段。'
+    };
+}
+
+function renderRhythmHTML(rhythm) {
+    if (!rhythm) return '';
+
+    const windowCard = (w, isPrimary) => `
+        <div class="rhythm-window ${w.type === '承压' ? 'is-pressure' : (w.type === '补给' ? 'is-supply' : 'is-push')}${isPrimary ? ' is-primary' : ''}">
+            ${isPrimary ? '<span class="rhythm-window-badge">本次重点窗口</span>' : ''}
+            <span class="rhythm-window-range">${w.rangeText}</span>
+            <span class="rhythm-window-title">${w.label} · ${w.window}</span>
+            <p class="rhythm-window-action">${w.action}</p>
+            ${w.clashDay ? '<p class="rhythm-window-note">⚠ 冲日支：避免在本窗口启动长期承诺</p>' : ''}
+            ${isPrimary && rhythm.focus && rhythm.focus.doText ? `<p class="rhythm-window-rule rhythm-window-rule-do">✔ 这一段该做：${rhythm.focus.doText}</p>` : ''}
+            ${isPrimary && rhythm.focus && rhythm.focus.dontText ? `<p class="rhythm-window-rule rhythm-window-rule-dont">✖ 这一段避开：${rhythm.focus.dontText}</p>` : ''}
+        </div>
+    `;
+
+    const windowCards = rhythm.windows.map(w => windowCard(w, false)).join('');
+
+    const focus = rhythm.focus || buildRhythmScenarioFocus(rhythm.scenario, rhythm.windows);
+    const primaryRange = focus.primary ? focus.primary.rangeText : '';
+    const folded = rhythm.windows.filter(w => !focus.primary || w.rangeText !== primaryRange);
+    const foldedRows = folded.map(w => `
+        <div class="rhythm-window-folded">
+            <span class="rhythm-window-folded-range">${w.rangeText}</span>
+            <span class="rhythm-window-folded-title">${w.label} · ${w.window}</span>
+            <span class="rhythm-tag rhythm-tag-folded">${w.type === '承压' ? '承压' : (w.type === '补给' ? '补给' : '推进')}</span>
+        </div>
+    `).join('');
+
+    const windowsBlockHTML = focus.mode === 'triple'
+        ? `<div class="rhythm-focus-note is-compact"><span class="rhythm-focus-chip">${focus.chip}</span></div>
+           <p class="rhythm-windows-summary">${rhythm.summary90}</p>
+           <div class="rhythm-window-grid">${windowCards}</div>`
+        : `<div class="rhythm-focus-note">
+                <span class="rhythm-focus-chip">${focus.chip}</span>
+                <p>${focus.summary || ''}</p>
+           </div>
+           <div class="rhythm-window-grid is-focus">${windowCard(focus.primary, true)}</div>
+           <div class="rhythm-window-folded-head">${focus.foldedNote || `另外 ${folded.length} 段本版不展开（仅列时间与节奏类型）：`}</div>
+           <div class="rhythm-window-folded-list">${foldedRows}</div>
+           <p class="rhythm-windows-summary rhythm-windows-summary-compact">${rhythm.summary90}</p>`;
+
+    const monthRows = rhythm.months.map(m => `
+        <div class="rhythm-month-row">
+            <span class="rhythm-month-range">${m.rangeText}</span>
+            <span class="rhythm-month-pillar">${m.label}</span>
+            <span class="rhythm-month-group">${m.groupPlain}</span>
+            <span class="rhythm-month-dim">${m.dim}</span>
+            <span class="rhythm-month-advice">${m.note || m.action}</span>
+        </div>
+    `).join('');
+
+    return `
+        <p class="rhythm-lead">${focus.lead}</p>
+        <div class="rhythm-year-row">
+            <div class="rhythm-year-card rhythm-year-current">
+                <span class="rhythm-year-label">当前流年 · ${rhythm.year.startText}</span>
+                <strong class="rhythm-year-value">${rhythm.year.label} 年</strong>
+                <span class="rhythm-year-tags">
+                    <span class="rhythm-tag">${rhythm.year.groupLabel}</span>
+                    <span class="rhythm-tag rhythm-tag-dim">${rhythm.year.dim}</span>
+                    <span class="rhythm-tag rhythm-tag-stance">${rhythm.year.stance.tag}</span>
+                </span>
+                <p class="rhythm-year-text">${rhythm.year.narrative}${rhythm.year.decadeEcho ? ' ' + rhythm.year.decadeEcho : ''}</p>
+                <p class="rhythm-year-rule">✔ 今年该做：${rhythm.year.doText}</p>
+                <p class="rhythm-year-rule rhythm-year-rule-warn">✖ 需要避开：${rhythm.year.dontText}</p>
+            </div>
+            <div class="rhythm-year-card rhythm-year-next">
+                <span class="rhythm-year-label">下一个流年 · ${rhythm.nextYear.startText}</span>
+                <strong class="rhythm-year-value">${rhythm.nextYear.label} 年</strong>
+                <span class="rhythm-year-tags">
+                    <span class="rhythm-tag">${rhythm.nextYear.groupLabel}</span>
+                    <span class="rhythm-tag rhythm-tag-dim">${rhythm.nextYear.dim}</span>
+                    <span class="rhythm-tag rhythm-tag-stance">${rhythm.nextYear.stance.tag}</span>
+                </span>
+                <p class="rhythm-year-text">下一年与你的日主构成【${GROUP_RHYTHM[rhythm.nextYear.group].plain}】关系（${rhythm.nextYear.groupLabel}），主维度【${rhythm.nextYear.dim}】。${rhythm.nextYear.stance.note}。可以提前把需要长期投入的事排到这一年的前段。</p>
+            </div>
+        </div>
+        <div class="rhythm-months">
+            <div class="rhythm-months-header">
+                <span>日期（节气月）</span><span>流月</span><span>关系</span><span>维度</span><span>节奏提示</span>
+            </div>
+            ${monthRows}
+        </div>
+        <div class="rhythm-windows-block">
+            <div class="rhythm-windows-title">未来 90 天行动窗口</div>
+            ${windowsBlockHTML}
+        </div>
+        <p class="rhythm-boundary">口径说明：${rhythm.evidence} 当前以本机日期 ${rhythm.nowText} 计算；窗口划分只说明节奏类型，不构成吉凶判断。</p>
+    `;
+}
+window.buildRhythmModel = buildRhythmModel;
+
+function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
             isDegraded: true,
@@ -2138,6 +3278,14 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     const strongElemPlain = PLAIN_ELEMENT_MAP[parsedResult.strongestElement] || PLAIN_ELEMENT_MAP['木'];
     const weakElemPlain = PLAIN_ELEMENT_MAP[parsedResult.weakestElement] || PLAIN_ELEMENT_MAP['水'];
     const monthRhythm = MONTH_RHYTHM_MAP[parsedResult.monthBranch] || '敏锐推进力';
+
+    // 三源互证：生肖 × 星座 × 五维光谱（无星座数据时自动跳过，不阻断报告）
+    const triangulation = buildTriangulation(parsedResult, baziResult, activeScenario);
+    const triangulationHTML = renderTriangulationHTML(triangulation);
+
+    // 年运 / 月运 / 90 天窗口（流年流月干支推导，与三源互证同源）
+    const rhythm = buildRhythmModel(parsedResult, baziResult, undefined, activeScenario);
+    const rhythmHTML = renderRhythmHTML(rhythm);
 
     // Extract scenario-specific situational questions and selections
     const activeScenarioConfig = SCENARIO_CALIBRATION_CONFIG[activeScenario] || SCENARIO_CALIBRATION_CONFIG.self;
@@ -2394,7 +3542,7 @@ function buildPersonalizedReportModel(parsedResult, formState) {
     // --- 2. Energy Section (Plain Behavioral Dimension Names) ---
     const totalScore = Object.values(parsedResult.elementScores).reduce((a, b) => a + b, 0) || 10;
     const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
-    
+
     const strongestAdviceMap = {
         '木': '你的【生长开拓】维度充盈，新方向感知与生发规划力极强，宜将发散创意及时收敛为可交付成果',
         '火': '你的【表达感染】维度旺盛，号召力与推进爆发力突出，宜在高频输出后主动安排静心降噪时段',
@@ -2410,19 +3558,89 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         '水': '补充【洞察思辨】维度：保障深度睡眠与不被打扰的留白时间，让高负荷运转的大脑恢复敏锐直觉'
     };
 
-    const energyBarsData = Object.keys(parsedResult.elementScores).map(elem => {
+    const scoreEntries = Object.keys(parsedResult.elementScores).map(elem => {
         const score = parsedResult.elementScores[elem];
         const pct = Math.min(100, Math.max(8, Math.round((score / totalScore) * 100)));
         const plainDim = PLAIN_ELEMENT_MAP[elem] || { name: elem, color: '#315C4C' };
         return { elem, label: plainDim.name, score, pct, cls: elemClasses[elem] || 'fill-mu', color: plainDim.color };
     });
+    const rankedEntries = scoreEntries.slice().sort((a, b) => b.score - a.score);
+    const strongestEntry = rankedEntries[0];
+    const secondEntry = rankedEntries[1] || rankedEntries[0];
+    const weakestEntry = rankedEntries[rankedEntries.length - 1];
+    const entryOf = elem => scoreEntries.find(e => e.elem === elem) || strongestEntry;
+    const weakElemName = weakestEntry ? weakestEntry.label : weakElemPlain.name;
+
+    // C. 优势精力按场景重排：五维分数不动，只变「先看哪一维 / 怎么解读」
+    const energyFocusConfig = {
+        self: {
+            chip: '本次重点：长板与补偿',
+            focusElem: strongestEntry.elem,
+            lead: `先看长板：这个结构里最省力的两条通道是【${strongestEntry.label}】与【${secondEntry.label}】，而【${weakestEntry.label}】是最需要定向补的一维。下面按「长板优先」排列。`,
+            closing: `判断标准：这一周里，长板被用在自己身上（而不是替别人兜底）的次数 ≥ 3 次。`
+        },
+        career: {
+            chip: '本次重点：能变现的那一维',
+            focusElem: strongestEntry.elem,
+            lead: `职场上不必平均用力。最能「用力气换结果」的维度是【${strongestEntry.label}】，可以对外当战术标签讲；【${secondEntry.label}】是第二抓手；【${weakestEntry.label}】是后台补给，别指望它替你在前线顶。下面按「能不能换成结果」重排：交付力 → 承压 → 后劲。`,
+            closing: `判断标准：两周内有一次交付，是明确挂在你【${strongestEntry.label}】这个标签下发出去的。`
+        },
+        relationship: {
+            chip: '本次重点：对方最容易感知到的你',
+            focusElem: secondEntry.elem,
+            lead: `在关系里，对方最先感知到的往往不是你的最强项，而是【${secondEntry.label}】；【${strongestEntry.label}】是你能给出去的，【${weakestEntry.label}】是你需要对方接住的。`,
+            closing: `判断标准：这周有一次，你先说出自己的偏好，再问对方的意见（而不是先问「你想怎样」）。`
+        },
+        confusion: {
+            chip: '本次重点：最漏能的那一维',
+            focusElem: weakestEntry.elem,
+            lead: `先看漏能的那一维：【${weakestEntry.label}】。当下那种「没做错什么但很累」的感觉，多半是它在持续失血；补它的优先级高于继续加强【${strongestEntry.label}】。`,
+            closing: `判断标准：这一周里，与【${weakestEntry.label}】相关的消耗有没有减少一半。`
+        }
+    };
+    const energyFocus = energyFocusConfig[activeScenario] || energyFocusConfig.self;
+    // 每个场景给一个「按什么顺序看」的规则；五维始终全部保留，只是先后不同
+    const energyOrderRules = {
+        self: [energyFocus.focusElem],
+        career: [energyFocus.focusElem, '金', '土', '水', '木'],
+        relationship: [energyFocus.focusElem, strongestEntry.elem, weakestEntry.elem],
+        confusion: [energyFocus.focusElem]
+    };
+    const orderByPriority = priority => {
+        const seen = new Set();
+        const out = [];
+        priority.concat(rankedEntries.map(item => item.elem)).forEach(elem => {
+            if (seen.has(elem)) return;
+            seen.add(elem);
+            out.push(entryOf(elem));
+        });
+        return out;
+    };
+    const displayEntries = orderByPriority(energyOrderRules[activeScenario] || energyOrderRules.self);
+
+    // 海报与数据返回沿用同一套条带数据（顺序随场景，数值不变）
+    const energyBarsData = displayEntries.map(item => ({
+        elem: item.elem,
+        label: item.label,
+        score: item.score,
+        pct: item.pct,
+        cls: item.cls,
+        color: item.color,
+        isFocus: item.elem === energyFocus.focusElem
+    }));
 
     const energyHTML = `
-        <p>在你的五维行为能量光谱中，主导长板聚焦于 <strong>${strongElemPlain.name}</strong> 与 <strong>${topTgInfo.label}</strong>，次级协同维度为 <strong>${secondTgInfo.label}</strong>，当前最需定向滋养的维度为 <strong>${weakElemPlain.name}</strong>：</p>
+        <div class="energy-focus-note">
+            <span class="energy-focus-chip">${energyFocus.chip}</span>
+            <p>${energyFocus.lead}</p>
+        </div>
         <div class="energy-bar-list">
-            ${energyBarsData.map(item => `
-                <div class="energy-bar-item">
-                    <div class="energy-bar-label"><span>${item.label}</span><span>${item.score.toFixed(1)}</span></div>
+            ${displayEntries.map(item => `
+                <div class="energy-bar-item${item.elem === energyFocus.focusElem ? ' is-focus' : ''}">
+                    <div class="energy-bar-label">
+                        <span>${item.label}</span>
+                        <span>${item.score.toFixed(1)}</span>
+                    </div>
                     <div class="energy-bar-track">
                         <div class="energy-bar-fill ${item.cls}" style="width: ${item.pct}%;"></div>
                     </div>
@@ -2430,12 +3648,12 @@ function buildPersonalizedReportModel(parsedResult, formState) {
                 </div>
             `).join('')}
         </div>
-        <p>主导势能解读：${strongestAdviceMap[parsedResult.strongestElement] || ''}。</p>
+        <p>主导势能解读：${strongestAdviceMap[strongestEntry.elem] || ''}。</p>
         <div class="highlight-box">
-            <p><strong>定向充能指南（针对${weakElemPlain.name}）：</strong> ${weakestAdviceMap[parsedResult.weakestElement] || ''}。</p>
+            <p><strong>定向充能指南（针对${weakElemName}）：</strong> ${weakestAdviceMap[weakestEntry.elem] || ''}。</p>
         </div>
+        <p class="energy-focus-closing"><strong>这一版怎么用：</strong> ${energyFocus.closing}</p>
     `;
-
     // --- 3. Career Section Construction ---
     const careerElemAdvice = ELEMENT_CAREER_RULES[dm.element] || ELEMENT_CAREER_RULES['火'];
     let careerHTML = `
@@ -2472,6 +3690,32 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         `;
     }
 
+    else if (activeScenario === 'relationship') {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🤝 工作关系里的边界（这一版只看协作，不看岗位定位）</h5>
+                <p>你的协作偏好是【${topTgInfo.label}】。在需要长期配合的场景里，真正吃亏的不是能力，而是把「配合」当成了「关系」：${sq2.drainFocus}。</p>
+                <p><strong>两周可验证：</strong>挑一次本该由对方完成的环节，不代劳、只给标准（验收口径写在前面），看交付是否仍然成立。</p>
+            </div>
+        `;
+    } else if (activeScenario === 'confusion') {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🧭 下一步的最小职涯验证（先别换赛道）</h5>
+                <p>在没验证之前，换岗位往往只是把同一套消耗带到新环境：你当前的内耗来源是「${sq2.drainFocus}」，它和岗位名字关系不大，和协作方式关系更大。</p>
+                <p><strong>两周实验：</strong>在当前岗位上主动改一条协作规则（谁定标准、谁验收），记录交付质量与耗电量的变化，再决定要不要动方向。</p>
+            </div>
+        `;
+    } else {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🔋 工作里的耗电点（自检用）</h5>
+                <p>结构上你最省力的打法是【${strongElemPlain.name}】；最耗电的往往不是难题，而是${sq2.drainFocus}。</p>
+                <p><strong>自检：</strong>回想最近一周，哪一类任务让你「做完比没做更累」——那是这一维在报警，而不是你不够努力。</p>
+            </div>
+        `;
+    }
+
     // --- 4. Relationship Section Construction ---
     const relationYinYangText = ELEMENT_RELATION_RULES[dm.yinYang] || ELEMENT_RELATION_RULES['阳'];
     const relationBoundary = RELATION_BOUNDARY_MAP[parsedResult.strength] || RELATION_BOUNDARY_MAP['均势'];
@@ -2500,6 +3744,32 @@ function buildPersonalizedReportModel(parsedResult, formState) {
             <div class="reflection-card">
                 <h5>❓ 关系深度自我觉察提问</h5>
                 <p>${RELATION_REFLECTION_MAP[stem] || '试着在下一次沟通中，先倾听对方的感受，再表达你的需求。'}</p>
+            </div>
+        `;
+    }
+
+    else if (activeScenario === 'career') {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>💼 工作关系里的沟通成本（把这一章用于协作场景）</h5>
+                <p>在工作关系里，你的表达底色仍是【${strongElemPlain.name}】：${relationYinYangText}</p>
+                <p><strong>最容易吃亏的一次：</strong>把对方的情绪当成你的交付责任。两周可验证：完整说出一次「这件事我帮不了」，并给出替代方案。</p>
+            </div>
+        `;
+    } else if (activeScenario === 'confusion') {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>🪫 关系里的耗电点（当下最该减少的消耗）</h5>
+                <p>你最需要补给的是【${weakElemPlain.name}】，而在关系里，这一维常以「${relationBoundary.vulnerability}」的方式被透支。</p>
+                <p><strong>两周实验：</strong>把一次「不想去但会去」的邀约改成「这次不去」，只说明安排、不解释理由，观察关系是否真的受损。</p>
+            </div>
+        `;
+    } else {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>🧩 你在关系里的默认脚本（自检用）</h5>
+                <p>${relationYinYangText}</p>
+                <p><strong>自检：</strong>这套脚本在早年通常是有效的（它帮你维持了关系），现在可能只是惯性——区分「我还想这样」和「我只会这样」。</p>
             </div>
         `;
     }
@@ -2555,12 +3825,33 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         ? `当前大运（${parsedResult.luckDirection}）：${decade.pillar}（${decade.startAge}-${decade.endAge}岁，${decade.startYear}年起，主十神：${decade.tenGods.join('/')}）`
         : `大运排盘：${parsedResult.luckDirection}（因未提供出生时辰，省略起运岁数与时柱推演结论）`;
 
+    const trueSolarInfo = (baziResult && baziResult.trueSolar) || null;
+    const clockStr = isTimeKnown
+        ? (formState.timePrecision === 'exact'
+            ? `${pad2(formState.birthHour)}:${pad2(formState.birthMinute || 0)}（北京时间）`
+            : `${formState.birthHour}时（两小时时辰的代表时刻）`)
+        : '未提供';
+    const lngOffset = trueSolarInfo ? (trueSolarInfo.lng - 120) * 4 : null;
+    const timeEvidence = !isTimeKnown
+        ? '未提供出生时间：按三柱模式推演，不做时间校准。'
+        : (trueSolarInfo
+            ? `出生时间 ${clockStr}；出生地 ${trueSolarInfo.placeName || '手动经度'}（${trueSolarInfo.lng}°E）；经度差 ${lngOffset >= 0 ? '+' : ''}${lngOffset.toFixed(1)} 分 + 均时差 ${trueSolarInfo.eotMinutes >= 0 ? '+' : ''}${trueSolarInfo.eotMinutes} 分 = ${trueSolarInfo.offsetMinutes >= 0 ? '+' : ''}${trueSolarInfo.offsetMinutes} 分 → 真太阳时 ${trueSolarInfo.correctedDate} ${trueSolarInfo.correctedClock}${trueSolarInfo.dayShift !== 0 ? `（跨日 ${trueSolarInfo.dayShift > 0 ? '+' : ''}${trueSolarInfo.dayShift} 天）` : ''}`
+            : (formState.timePrecision === 'exact'
+                ? `${clockStr}；未做经度校准（按 120°E 标准时）。选择出生地即可按真太阳时排定时柱。`
+                : `${clockStr}；大概时辰模式下不启用真太阳时校准（两小时窗口内偏移方向不确定），按 120°E 标准时判定时辰。`));
+    const lateZiNote = (isTimeKnown && (formState.birthHour >= 23 ||
+        (trueSolarInfo && parseInt(trueSolarInfo.correctedClock.slice(0, 2), 10) >= 23)))
+        ? '；子时跨日采用 00:00 换日柱（晚子时）口径' : '';
+
     const evidenceHTML = `
         <p><strong>推演模式：</strong> ${modeLabel}（本机浏览器实时引擎）</p>
+        <p><strong>时间口径：</strong> ${timeEvidence}${lateZiNote}</p>
         <p><strong>传统模型映射关系：</strong> 核心驱动「${traitInfo.title}」对应日主 <strong>${traitInfo.name}</strong>（生于${parsedResult.monthBranch}月令）；力量模式「${strengthInfo.plainTitle}」对应旺衰量化参考 <strong>${parsedResult.strength}</strong>；主导行为通道「${topTgInfo.label} / ${secondTgInfo.label}」对应十神能量分组 <strong>${topTgKey}(${parsedResult.tenGodScores[topTgKey]?.toFixed(1) || '0.0'}) / ${secondTgKey}(${parsedResult.tenGodScores[secondTgKey]?.toFixed(1) || '0.0'})</strong>。</p>
         <p><strong>干支排盘结构：</strong> ${pillarsStr}</p>
         <p><strong>阶段运程依据：</strong> ${decadeEvidence}</p>
         <p><strong>现实情境校准输入：</strong> Q1=${sq1.tag} · Q2=${sq2.tag} · Q3=${sq3.tag}</p>
+        ${triangulation ? `<p><strong>三源比对口径：</strong> 生肖=${triangulation.branch}${triangulation.lichunAnimal}（年柱地支，立春换年${triangulation.boundaryDiffers ? `；春节口径为${triangulation.chunjieBranch || ''}${triangulation.chunjieAnimal}，两者不一致已在上方说明` : '；与春节口径一致'}）；星座=${triangulation.signName}（按公历出生月日的太阳星座，不含出生时刻与上升星座）；五维光谱=${triangulation.spectrum.top1} / ${triangulation.spectrum.top2}（由四柱五行力量加权）。比对结果：${triangulation.patternLabel}。</p>` : ''}
+        ${rhythm ? `<p><strong>流年流月口径：</strong> ${rhythm.evidence} 本报告以本机日期 ${rhythm.nowText} 计算；当前流年 ${rhythm.year.label}、下一个流年 ${rhythm.nextYear.label}。</p>` : ''}
         <p><strong>底层计算片段：</strong></p>
         <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdoutSnippet}...</pre>
         <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
@@ -2577,6 +3868,10 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         topTenGodLabel: topTgInfo.label,
         situationalTags: [sq1.tag, sq2.tag, sq3.tag],
         energyBarsData,
+        triangulation,
+        triangulationHTML,
+        rhythm,
+        rhythmHTML,
         decadeStageNote,
         summary30s,
         plainTerms,
@@ -2584,7 +3879,9 @@ function buildPersonalizedReportModel(parsedResult, formState) {
         userHeader: {
             nickname: formState.nickname || '阿澜',
             genderText: `性别：${formState.gender === 'female' ? '女' : '男'}`,
-            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${isTimeKnown && formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定（三柱模式）'}`,
+            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${isTimeKnown && formState.birthHour >= 0
+                ? (formState.timePrecision === 'exact' ? `${pad2(formState.birthHour)}:${pad2(formState.birthMinute || 0)}` : `${formState.birthHour}时`)
+                : '时辰未定（三柱模式）'}`,
             calendarText: `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`,
             scenarioLabel: `本次关注：${scenarioNames[activeScenario] || '了解自己'}`,
             scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
@@ -2610,7 +3907,7 @@ function renderConsumerReport(baziResult, formState) {
     
     // Parse Bazi Result & Build Report Model
     const parsedResult = parseConsumerBaziResult(baziResult);
-    const reportModel = buildPersonalizedReportModel(parsedResult, formState);
+    const reportModel = buildPersonalizedReportModel(parsedResult, formState, baziResult);
     lastRenderedReportModel = reportModel;
 
     const userNameEl = document.getElementById('report-user-name');
@@ -2697,21 +3994,32 @@ function renderConsumerReport(baziResult, formState) {
 
         // Section DOM Reordering based on scenario
         const container = document.querySelector('#consumer-report-view .report-container');
+        // 三源互证 / 年运节奏卡片：数据不足时整卡隐藏，并从编号序列中剔除
+        const triangulationCard = document.getElementById('card-section-triangulation');
+        if (triangulationCard) {
+            triangulationCard.classList.toggle('hidden', !reportModel.triangulationHTML);
+        }
+        const rhythmCard = document.getElementById('card-section-rhythm');
+        if (rhythmCard) {
+            rhythmCard.classList.toggle('hidden', !reportModel.rhythmHTML);
+        }
         const cardNodes = {
             personality: document.getElementById('card-section-personality'),
             energy: document.getElementById('card-section-energy'),
             career: document.getElementById('card-section-career'),
             relationship: document.getElementById('card-section-relationship'),
             action: document.getElementById('card-section-action'),
+            triangulation: document.getElementById('card-section-triangulation'),
+            rhythm: document.getElementById('card-section-rhythm'),
             evidence: document.getElementById('card-section-evidence')
         };
         const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
 
         const sectionOrders = {
-            self: ['personality', 'energy', 'career', 'relationship', 'action', 'evidence'],
-            career: ['career', 'energy', 'personality', 'action', 'relationship', 'evidence'],
-            relationship: ['relationship', 'personality', 'energy', 'action', 'career', 'evidence'],
-            confusion: ['action', 'personality', 'career', 'relationship', 'energy', 'evidence']
+            self: ['personality', 'triangulation', 'rhythm', 'energy', 'career', 'relationship', 'action', 'evidence'],
+            career: ['career', 'rhythm', 'triangulation', 'energy', 'personality', 'action', 'relationship', 'evidence'],
+            relationship: ['relationship', 'triangulation', 'energy', 'personality', 'action', 'career', 'rhythm', 'evidence'],
+            confusion: ['action', 'rhythm', 'personality', 'triangulation', 'career', 'relationship', 'energy', 'evidence']
         };
 
         const focusCardMap = {
@@ -2729,6 +4037,7 @@ function renderConsumerReport(baziResult, formState) {
         targetOrder.forEach(key => {
             const card = cardNodes[key];
             if (!card) return;
+            if (card.classList.contains('hidden')) return;
 
             // Reorder in DOM
             if (container && bottomActions) {
@@ -2778,6 +4087,18 @@ function renderConsumerReport(baziResult, formState) {
 
         const adviceEl = document.getElementById('report-section-advice');
         if (adviceEl) adviceEl.innerHTML = reportModel.actionHTML;
+
+        // Fill Three-Source Cross-Check (生肖 × 星座 × 五维光谱)
+        const triangulationEl = document.getElementById('report-section-triangulation');
+        if (triangulationEl) {
+            triangulationEl.innerHTML = reportModel.triangulationHTML || '';
+        }
+
+        // Fill Rhythm (年运 / 月运 / 90 天窗口)
+        const rhythmEl = document.getElementById('report-section-rhythm');
+        if (rhythmEl) {
+            rhythmEl.innerHTML = reportModel.rhythmHTML || '';
+        }
 
         // Fill Level 3 Folded Evidence
         const boundaryEl = document.getElementById('report-section-boundary');
@@ -2940,7 +4261,7 @@ function renderSharePosterCanvas(model) {
     ctx.restore();
 
     // 5. Core Archetype Hero Card (House Green #1E3932)
-    drawRoundedRect(ctx, 84, 284, W - 168, 198, 16);
+    drawRoundedRect(ctx, 84, 284, W - 168, 214, 16);
     ctx.fillStyle = '#1E3932';
     ctx.fill();
 
@@ -2950,7 +4271,7 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 42px ${fontSans}`;
-    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 388);
+    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 382);
 
     // Keyword Pills inside Hero Card (Gold Accents #cba258)
     const kws = [
@@ -2961,19 +4282,26 @@ function renderSharePosterCanvas(model) {
     kws.forEach(kw => {
         ctx.font = `700 22px ${fontSans}`;
         const padW = ctx.measureText(`★ ${kw}`).width + 36;
-        drawRoundedRect(ctx, kwX, 414, padW, 44, 22);
+        drawRoundedRect(ctx, kwX, 404, padW, 44, 22);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(203, 162, 88, 0.45)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.fillStyle = '#cba258';
-        ctx.fillText(`★ ${kw}`, kwX + 18, 444);
+        ctx.fillText(`★ ${kw}`, kwX + 18, 434);
         kwX += padW + 16;
     });
 
+    // 5b. Three-source cross-check line (生肖 × 星座 × 共识维度)
+    if (model.triangulation && model.triangulation.posterLine) {
+        ctx.fillStyle = '#dfc49d';
+        ctx.font = `600 20px ${fontSans}`;
+        ctx.fillText(model.triangulation.posterLine, 120, 484);
+    }
+
     // 6. 30-Second Core Observation Box (Pure White #ffffff)
-    drawRoundedRect(ctx, 84, 510, W - 168, 200, 14);
+    drawRoundedRect(ctx, 84, 526, W - 168, 200, 14);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.strokeStyle = '#edebe9';
@@ -2982,14 +4310,14 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#00754A';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText(model.summary30s?.badgeText || '⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 554);
+    ctx.fillText(model.summary30s?.badgeText || '⚡ 30秒核心观察（先天结构 × 现实情境校准）', 116, 570);
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
     ctx.font = `600 24px ${fontSans}`;
-    wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 600, W - 232, 38, 3);
+    wrapCanvasText(ctx, model.summary30s?.coreObservation || '', 116, 616, W - 232, 38, 3);
 
     // 7. 5-Dimension Behavioral Energy Spectrum (Pure White Surface #ffffff)
-    drawRoundedRect(ctx, 84, 736, W - 168, 290, 14);
+    drawRoundedRect(ctx, 84, 752, W - 168, 290, 14);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.strokeStyle = '#edebe9';
@@ -2998,11 +4326,11 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#006241';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText('📊 五维行为能量光谱分布', 116, 780);
+    ctx.fillText('📊 五维行为能量光谱分布', 116, 796);
 
     const bars = model.energyBarsData || [];
     bars.forEach((b, idx) => {
-        const rowY = 822 + idx * 38;
+        const rowY = 838 + idx * 38;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.87)';
         ctx.font = `700 22px ${fontSans}`;
         ctx.fillText(b.label, 116, rowY);
@@ -3045,33 +4373,34 @@ function renderSharePosterCanvas(model) {
     };
 
     drawInsightCard(
-        1050, 124,
+        1066, 124,
         '#d4e9e2', 'rgba(0, 117, 74, 0.3)', '#006241',
         model.summary30s?.labelAdv || '✦ 天生核心长板',
         model.summary30s?.topAdvantage || ''
     );
 
     drawInsightCard(
-        1192, 124,
+        1208, 124,
         '#FFF4F2', 'rgba(200, 32, 20, 0.3)', '#c82014',
         model.summary30s?.labelBurnout || '⚠ 现实精力黑洞（情境校准）',
         model.summary30s?.topBurnout || ''
     );
 
     drawInsightCard(
-        1334, 124,
+        1350, 124,
         '#faf6ee', '#dfc49d', '#cba258',
         model.summary30s?.labelAction || '🎯 未来 14 天微行动实验',
         model.summary30s?.topAction || ''
     );
 
-    // 9. Footer Signature
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    // 9. Footer Signature — right text drawn first, left text bounded by the剩余宽度
+    const leftFooter = '观澜 Lan.Destiny · 东方时间模型 × 行为情境校准';
+    const rightFooter = '本机计算 · 零隐私上传';
     ctx.font = `600 20px ${fontSans}`;
-    ctx.fillText('观澜 Lan.Destiny · 基于东方时间模型与行为情境校准的个人结构说明书', 84, 1496);
-    const rightFooter = '浏览器本机实时计算 · 零隐私上传';
     const rfW = ctx.measureText(rightFooter).width;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
     ctx.fillText(rightFooter, W - 84 - rfW, 1496);
+    ctx.fillText(leftFooter, 84, 1496, Math.max(120, W - 168 - rfW - 32));
 }
 
 function openSharePosterModal() {
@@ -3114,7 +4443,10 @@ function runQuickDemoReport(openPosterImmediately = false) {
     consumerFormShellState.birthMonth = 5;
     consumerFormShellState.birthDay = 15;
     consumerFormShellState.birthHour = 9;
-    consumerFormShellState.timePrecision = 'hour';
+    consumerFormShellState.birthMinute = 30;
+    consumerFormShellState.timePrecision = 'exact';
+    consumerFormShellState.birthLng = 104.0665;      // 成都
+    consumerFormShellState.birthPlaceName = '成都';
     consumerFormShellState.situationalAnswers = {
         q1: 'push',
         q2: 'overload',
@@ -3129,7 +4461,9 @@ function runQuickDemoReport(openPosterImmediately = false) {
         month: 5,
         day: 15,
         hour: 9,
-        minute: 0
+        minute: 30,
+        lng: 104.0665,
+        birthPlaceName: '成都'
     };
     const baziRes = calculateBaziInBrowser(demoPayload);
     consumerFormShellState.baziResult = baziRes;
@@ -3166,14 +4500,18 @@ function copyReportSummary() {
     const action = document.getElementById('summary-action')?.textContent || '';
     const keywordEls = document.querySelectorAll('#summary-keywords .summary-keyword-tag');
     const keywords = Array.from(keywordEls).map(el => el.textContent.trim()).join(' · ');
+    const triLine = (lastRenderedReportModel && lastRenderedReportModel.triangulation)
+        ? `✦ 三源互证：${lastRenderedReportModel.triangulation.posterLine}\n`
+        : '';
 
     const copyText = `【${name} 的个人结构说明书 · 核心洞察】\n` +
         `✦ 核心标签：${keywords || '自我探索'}\n` +
         `✦ 核心观察：${obs}\n` +
         `✦ 核心长板：${adv}\n` +
         `✦ 精力损耗：${burnout}\n` +
-        `✦ 建议减法：${action}\n\n` +
-        `—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
+        `✦ 建议减法：${action}\n` +
+        triLine +
+        `\n—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(copyText).then(() => {
@@ -3224,3 +4562,110 @@ document.addEventListener('click', (e) => {
         switchViewMode(VIEW_MODES.PROFESSIONAL);
     }
 });
+
+// ------------------------------------------------------------------
+// Zero-Input Quick Peek: 生肖 × 星座 behavioral preview (landing page)
+// Runs after every content map above is declared, so no TDZ hazards.
+// ------------------------------------------------------------------
+(function initQuickPeek() {
+    const zodiacRail = document.getElementById('quickpeek-zodiac-rail');
+    const signRail = document.getElementById('quickpeek-sign-rail');
+    if (!zodiacRail || !signRail) return;
+
+    const placeholder = document.getElementById('quickpeek-placeholder');
+    const lines = document.getElementById('quickpeek-lines');
+    const zodiacLabel = document.getElementById('qp-zodiac-label');
+    const zodiacValue = document.getElementById('qp-zodiac-value');
+    const signLabel = document.getElementById('qp-sign-label');
+    const signValue = document.getElementById('qp-sign-value');
+    const verdict = document.getElementById('qp-verdict');
+
+    const ANIMALS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+    const SIGNS = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座',
+        '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'];
+
+    const animalBranch = {};
+    Object.keys(ZODIAC_ANIMAL_BY_BRANCH).forEach(branch => {
+        animalBranch[ZODIAC_ANIMAL_BY_BRANCH[branch]] = branch;
+    });
+    const animalDim = animal => getDimByElement(ZODIAC_BRANCH_ELEMENT[animalBranch[animal]]);
+
+    const selection = { animal: null, sign: null };
+
+    const makeChip = (label, kind, value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'peek-chip';
+        btn.textContent = label;
+        btn.dataset.kind = kind;
+        btn.dataset.value = value;
+        btn.setAttribute('aria-pressed', 'false');
+        return btn;
+    };
+
+    ANIMALS.forEach(animal => zodiacRail.appendChild(makeChip(animal, 'zodiac', animal)));
+    SIGNS.forEach(sign => signRail.appendChild(makeChip(sign.replace('座', ''), 'sign', sign)));
+
+    const update = () => {
+        const { animal, sign } = selection;
+        if (!animal && !sign) {
+            if (placeholder) placeholder.classList.remove('hidden');
+            if (lines) lines.classList.add('hidden');
+            if (verdict) verdict.textContent = '';
+            return;
+        }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (lines) lines.classList.remove('hidden');
+
+        if (animal) {
+            const dim = animalDim(animal);
+            const profile = ZODIAC_PROFILE[animal];
+            if (zodiacLabel) zodiacLabel.textContent = `生肖 · ${animal}`;
+            if (zodiacValue) zodiacValue.textContent = `${dim} — ${profile.trait}`;
+        } else {
+            if (zodiacLabel) zodiacLabel.textContent = '生肖';
+            if (zodiacValue) zodiacValue.textContent = '尚未选择';
+        }
+
+        if (sign) {
+            const profile = SIGN_PROFILE[sign];
+            if (signLabel) signLabel.textContent = `星座 · ${sign}`;
+            if (signValue) signValue.textContent = `${profile.dim} — ${profile.trait}`;
+        } else {
+            if (signLabel) signLabel.textContent = '星座';
+            if (signValue) signValue.textContent = '尚未选择';
+        }
+
+        if (!verdict) return;
+        if (animal && sign) {
+            const zodiacDim = animalDim(animal);
+            const signDim = SIGN_PROFILE[sign].dim;
+            verdict.textContent = zodiacDim === signDim
+                ? `${zodiacDim} · 两条线索同向：生肖「${animal}」与${sign}都把这一维度放在首位。补齐生辰后，可以看到它在五维光谱里的真实权重，以及第三条线索是否同样指向这里。`
+                : `${zodiacDim} × ${signDim} · 两条线索方向不同：生肖「${animal}」指向【${zodiacDim}】，${sign}指向【${signDim}】。两套体系关注的行为面本就不同——补齐生辰，用五维光谱判断哪条是主通道、哪条是备用策略。`;
+        } else if (animal) {
+            verdict.textContent = `生肖「${animal}」在行为语言里对应【${animalDim(animal)}】。${ZODIAC_PROFILE[animal].note}再选一个星座，看两条线索是否同向。`;
+        } else {
+            verdict.textContent = `${sign}在行为语言里对应【${SIGN_PROFILE[sign].dim}】。${SIGN_PROFILE[sign].note}再选一个生肖，看两条线索是否同向。`;
+        }
+    };
+
+    const handleRailClick = (rail, kind) => {
+        rail.addEventListener('click', event => {
+            const chip = event.target.closest('.peek-chip');
+            if (!chip || !rail.contains(chip)) return;
+            const value = chip.dataset.value;
+            const next = selection[kind] === value ? null : value;
+            selection[kind] = next;
+
+            rail.querySelectorAll('.peek-chip').forEach(other => {
+                other.setAttribute('aria-pressed', other === chip && next ? 'true' : 'false');
+            });
+            update();
+        });
+    };
+
+    handleRailClick(zodiacRail, 'animal');
+    handleRailClick(signRail, 'sign');
+    update();
+})();
