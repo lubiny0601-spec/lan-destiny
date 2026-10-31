@@ -726,7 +726,10 @@ const consumerFormShellState = {
     birthMonth: 5,
     birthDay: 15,
     birthHour: 12,
-    timePrecision: 'hour'
+    birthMinute: 0,
+    timePrecision: 'hour',
+    birthLng: null,
+    birthPlaceName: null
 };
 
 // Initialize Date Select options
@@ -823,23 +826,142 @@ function populateBirthDateSelects() {
     });
 
     const precisionSelect = document.getElementById('consumer-time-precision');
-    if (precisionSelect) {
-        hourSelect.addEventListener('change', () => {
-            if (parseInt(hourSelect.value, 10) === -1) {
-                precisionSelect.value = 'unknown';
-            } else if (precisionSelect.value === 'unknown') {
-                precisionSelect.value = 'hour';
-            }
+    const hour24Select = document.getElementById('consumer-birth-hour24');
+    const minuteSelect = document.getElementById('consumer-birth-minute');
+    const citySelect = document.getElementById('consumer-birth-city');
+    const lngInput = document.getElementById('consumer-birth-lng');
+    const previewEl = document.getElementById('true-solar-preview');
+    const clockRow = document.getElementById('clock-row');
+    const shichenRow = document.getElementById('shichen-row');
+
+    // --- 精确到分钟：时 / 分 ---
+    if (hour24Select) {
+        hour24Select.innerHTML = '';
+        for (let h = 0; h < 24; h++) {
+            const opt = document.createElement('option');
+            opt.value = String(h);
+            opt.textContent = `${pad2(h)} 时`;
+            hour24Select.appendChild(opt);
+        }
+        hour24Select.value = '9';
+    }
+    if (minuteSelect) {
+        minuteSelect.innerHTML = '';
+        for (let m = 0; m < 60; m++) {
+            const opt = document.createElement('option');
+            opt.value = String(m);
+            opt.textContent = `${pad2(m)} 分`;
+            minuteSelect.appendChild(opt);
+        }
+        minuteSelect.value = '0';
+    }
+
+    // --- 出生地经度（真太阳时校准）---
+    if (citySelect) {
+        citySelect.innerHTML = '';
+        const noneOpt = document.createElement('option');
+        noneOpt.value = '';
+        noneOpt.textContent = '不知道 / 不校准（按北京时间）';
+        citySelect.appendChild(noneOpt);
+        CITY_LONGITUDES.forEach(city => {
+            const opt = document.createElement('option');
+            opt.value = String(city.lng);
+            opt.textContent = `${city.name}（${city.lng.toFixed(1)}°E）`;
+            citySelect.appendChild(opt);
         });
-        precisionSelect.addEventListener('change', () => {
-            if (precisionSelect.value === 'unknown') {
-                hourSelect.value = '-1';
-            } else if (parseInt(hourSelect.value, 10) === -1) {
-                hourSelect.value = '11';
+        citySelect.value = '';
+    }
+
+    const readLng = () => {
+        if (lngInput) {
+            const manual = parseFloat(lngInput.value);
+            if (Number.isFinite(manual) && manual >= 73 && manual <= 135) return manual;
+        }
+        if (citySelect && citySelect.value) {
+            const fromCity = parseFloat(citySelect.value);
+            if (Number.isFinite(fromCity)) return fromCity;
+        }
+        return NaN;
+    };
+
+    const computeTrueSolarPreview = () => {
+        if (!previewEl) return;
+        const precision = precisionSelect ? precisionSelect.value : 'hour';
+        if (precision === 'unknown') {
+            previewEl.textContent = '时间未知：按三柱模式生成，不做真太阳时校准。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+        const lng = readLng();
+        if (precision !== 'exact') {
+            previewEl.textContent = '大概时辰模式不启用真太阳时校准：两小时窗口内无法确定偏移方向。想看校准后的时柱，请选择「精确到分钟」。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+        if (!Number.isFinite(lng)) {
+            previewEl.textContent = '未启用真太阳时校准（按北京时间 120°E）。选择出生地后，时柱会按当地真太阳时排定。';
+            previewEl.classList.remove('is-active');
+            return;
+        }
+
+        let hour;
+        let minute;
+        if (precision === 'exact') {
+            hour = parseInt(hour24Select && hour24Select.value, 10);
+            minute = parseInt(minuteSelect && minuteSelect.value, 10) || 0;
+        } else {
+            hour = parseInt(hourSelect.value, 10);
+            minute = 0;
+            if (!(hour >= 0)) {
+                previewEl.textContent = '请选择一个时辰后再校准。';
+                previewEl.classList.remove('is-active');
+                return;
             }
+        }
+        if (!Number.isFinite(hour)) return;
+
+        let y = parseInt(yearSelect.value, 10);
+        let mo = parseInt(monthSelect.value, 10);
+        let d = parseInt(daySelect.value, 10);
+        const calendarRadio = document.querySelector('input[name="consumer_calendar"]:checked');
+        if (calendarRadio && calendarRadio.value === 'lunar') {
+            const converted = convertLunarToSolarInBrowser(y, mo, d);
+            y = converted.year;
+            mo = converted.month;
+            d = converted.day;
+        }
+
+        const eot = equationOfTime(mo, d);
+        const offset = Math.round((lng - 120) * 4 + eot);
+        const shifted = new Date(Date.UTC(y, mo - 1, d, hour, minute) + offset * 60000);
+        const dayShift = Math.round((Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) - Date.UTC(y, mo - 1, d)) / 86400000);
+        previewEl.textContent = `真太阳时 ${pad2(shifted.getUTCHours())}:${pad2(shifted.getUTCMinutes())}（时差 ${offset >= 0 ? '+' : ''}${offset} 分钟 = 经度 ${lng.toFixed(1)}°E + 均时差 ${eot >= 0 ? '+' : ''}${eot.toFixed(1)} 分${dayShift !== 0 ? '，已跨日' : ''}）`;
+        previewEl.classList.add('is-active');
+    };
+
+    const syncPrecisionUI = () => {
+        const precision = precisionSelect ? precisionSelect.value : 'hour';
+        if (clockRow) clockRow.classList.toggle('hidden', precision !== 'exact');
+        if (shichenRow) shichenRow.classList.toggle('hidden', precision === 'exact');
+        if (precision === 'unknown' && hourSelect) hourSelect.value = '-1';
+        if (precision !== 'unknown' && hourSelect && parseInt(hourSelect.value, 10) === -1) hourSelect.value = '11';
+        computeTrueSolarPreview();
+    };
+
+    if (hourSelect) {
+        hourSelect.addEventListener('change', () => {
+            if (parseInt(hourSelect.value, 10) === -1 && precisionSelect) precisionSelect.value = 'unknown';
+            syncPrecisionUI();
         });
     }
-    
+    [yearSelect, monthSelect, daySelect, hour24Select, minuteSelect, citySelect, lngInput, precisionSelect]
+        .forEach(el => {
+            if (!el) return;
+            el.addEventListener('change', syncPrecisionUI);
+            el.addEventListener('input', syncPrecisionUI);
+        });
+    syncPrecisionUI();
+
     dateSelectsPopulated = true;
 }
 
@@ -1293,6 +1415,37 @@ function getTenGodName(dayStemIdx, targetStemIdx) {
     return samePolarity ? '偏印' : '正印';
 }
 
+// ------------------------------------------------------------------
+// True Solar Time helpers (经度修正 + 均时差)
+// ------------------------------------------------------------------
+function pad2(n) {
+    return String(n).padStart(2, '0');
+}
+
+// 常见出生地经度（东经），用于真太阳时校准；可按需扩充
+const CITY_LONGITUDES = [
+    { name: '北京', lng: 116.4074 }, { name: '天津', lng: 117.2008 }, { name: '上海', lng: 121.4737 },
+    { name: '重庆', lng: 106.5516 }, { name: '广州', lng: 113.2644 }, { name: '深圳', lng: 114.0579 },
+    { name: '杭州', lng: 120.1551 }, { name: '南京', lng: 118.7969 }, { name: '武汉', lng: 114.3055 },
+    { name: '成都', lng: 104.0665 }, { name: '西安', lng: 108.9398 }, { name: '沈阳', lng: 123.4315 },
+    { name: '长春', lng: 125.3235 }, { name: '哈尔滨', lng: 126.5349 }, { name: '济南', lng: 117.1205 },
+    { name: '郑州', lng: 113.6253 }, { name: '石家庄', lng: 114.5149 }, { name: '太原', lng: 112.5489 },
+    { name: '呼和浩特', lng: 111.7492 }, { name: '合肥', lng: 117.2272 }, { name: '福州', lng: 119.2965 },
+    { name: '南昌', lng: 115.8582 }, { name: '长沙', lng: 112.9388 }, { name: '南宁', lng: 108.3665 },
+    { name: '海口', lng: 110.1999 }, { name: '贵阳', lng: 106.6302 }, { name: '昆明', lng: 102.8329 },
+    { name: '拉萨', lng: 91.1409 }, { name: '兰州', lng: 103.8343 }, { name: '西宁', lng: 101.7782 },
+    { name: '银川', lng: 106.2309 }, { name: '乌鲁木齐', lng: 87.6168 }, { name: '香港', lng: 114.1694 },
+    { name: '澳门', lng: 113.5439 }, { name: '台北', lng: 121.5654 }, { name: '青岛', lng: 120.3826 },
+    { name: '大连', lng: 121.6147 }, { name: '厦门', lng: 118.0894 }, { name: '苏州', lng: 120.5853 }
+];
+
+// 均时差（分钟），NOAA 常用近似式，精度约 ±30 秒
+function equationOfTime(month, day) {
+    const n = dayOfYear(month, day);
+    const b = (2 * Math.PI * (n - 81)) / 364;
+    return 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+}
+
 function calculateBaziInBrowser(payload) {
     const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -1317,7 +1470,8 @@ function calculateBaziInBrowser(payload) {
     const rawMonth = parseInt(payload.month, 10) || 5;
     const rawDay = parseInt(payload.day, 10) || 15;
     const isHourKnown = payload.hour !== null && payload.hour !== undefined && parseInt(payload.hour, 10) >= 0;
-    const hourVal = isHourKnown ? parseInt(payload.hour, 10) : null;
+    let hourVal = isHourKnown ? parseInt(payload.hour, 10) : null;
+    let minuteVal = isHourKnown ? (parseInt(payload.minute, 10) || 0) : null;
     const gender = payload.gender === 'female' ? 'female' : 'male';
 
     let solar = { year: rawYear, month: rawMonth, day: rawDay };
@@ -1325,9 +1479,43 @@ function calculateBaziInBrowser(payload) {
         solar = convertLunarToSolarInBrowser(rawYear, rawMonth, rawDay);
     }
 
-    const sYear = solar.year;
-    const sMonth = solar.month;
-    const sDay = solar.day;
+    // 出生地钟表时间换算后的公历（星座与春节口径以此为准）
+    const birthSolar = { year: solar.year, month: solar.month, day: solar.day };
+    let sYear = solar.year;
+    let sMonth = solar.month;
+    let sDay = solar.day;
+
+    // --- 真太阳时校准：经度差 × 4 分钟 + 均时差，可能跨越日界 ---
+    const lngRaw = (payload.lng === null || payload.lng === undefined) ? NaN : parseFloat(payload.lng);
+    const useTrueSolar = isHourKnown && Number.isFinite(lngRaw);
+    let trueSolar = null;
+    if (useTrueSolar) {
+        const eotMinutes = equationOfTime(sMonth, sDay);
+        const offsetMinutes = Math.round((lngRaw - 120) * 4 + eotMinutes);
+        const baseMs = Date.UTC(sYear, sMonth - 1, sDay, hourVal, minuteVal);
+        const shifted = new Date(baseMs + offsetMinutes * 60000);
+        const cYear = shifted.getUTCFullYear();
+        const cMonth = shifted.getUTCMonth() + 1;
+        const cDay = shifted.getUTCDate();
+        const cHour = shifted.getUTCHours();
+        const cMinute = shifted.getUTCMinutes();
+        const dayShift = Math.round((Date.UTC(cYear, cMonth - 1, cDay) - Date.UTC(sYear, sMonth - 1, sDay)) / 86400000);
+        trueSolar = {
+            lng: Math.round(lngRaw * 100) / 100,
+            placeName: payload.birthPlaceName || null,
+            eotMinutes: Math.round(eotMinutes * 10) / 10,
+            offsetMinutes,
+            clock: `${pad2(hourVal)}:${pad2(minuteVal)}`,
+            correctedClock: `${pad2(cHour)}:${pad2(cMinute)}`,
+            correctedDate: `${cYear}-${pad2(cMonth)}-${pad2(cDay)}`,
+            dayShift
+        };
+        sYear = cYear;
+        sMonth = cMonth;
+        sDay = cDay;
+        hourVal = cHour;
+        minuteVal = cMinute;
+    }
 
     // 12 Major Solar Terms (节) C-values for 20th/21st century (Jan 小寒 to Dec 大雪)
     const JIE_C_20 = [6.11, 4.6295, 6.3826, 5.59, 5.988, 6.5, 7.928, 8.35, 8.44, 9.098, 8.218, 7.9];
@@ -1458,6 +1646,9 @@ function calculateBaziInBrowser(payload) {
     const stdout = [
         `════════════════════ 观澜浏览器本机排盘引擎 ════════════════════`,
         headerMode,
+        `【时间口径】${trueSolar
+            ? `真太阳时 ${trueSolar.correctedDate} ${trueSolar.correctedClock}（经度${trueSolar.lng}°E，时差${trueSolar.offsetMinutes >= 0 ? '+' : ''}${trueSolar.offsetMinutes}分，均时差${trueSolar.eotMinutes >= 0 ? '+' : ''}${trueSolar.eotMinutes}分${trueSolar.dayShift !== 0 ? '，跨日' : ''}）`
+            : `北京时间（按 120°E 标准时，未做经度校准）`}`,
         `【日主】${dStem}${dmElem}，生于 ${mBranch}（${BRANCH_ELEM[mBranch]}） 月令`,
         `【五行力量】（天干1 / 藏干本气1·中气0.5·余气0.2 / 月支司令×2）`,
         `  木:${elemScores['木'].toFixed(1)}  火:${elemScores['火'].toFixed(1)}  土:${elemScores['土'].toFixed(1)}  金:${elemScores['金'].toFixed(1)}  水:${elemScores['水'].toFixed(1)}`,
@@ -1476,7 +1667,13 @@ function calculateBaziInBrowser(payload) {
         // Structured mirrors of what the stdout protocol above already reports.
         // The consumer report still parses stdout; these fields only feed the
         // three-source cross-check so it never has to re-derive solar dates.
-        solar: { year: sYear, month: sMonth, day: sDay },
+        solar: birthSolar,
+        chartSolar: { year: sYear, month: sMonth, day: sDay },
+        birthClock: {
+            hour: isHourKnown ? parseInt(payload.hour, 10) : null,
+            minute: isHourKnown ? (parseInt(payload.minute, 10) || 0) : null
+        },
+        trueSolar,
         yearPillar: `${yStem}${yBranch}`,
         monthPillar: `${mStem}${mBranch}`,
         isHourKnown
@@ -1496,6 +1693,10 @@ if (btnSubmitConsumerForm) {
         const monthSelect = document.getElementById('consumer-birth-month');
         const daySelect = document.getElementById('consumer-birth-day');
         const hourSelect = document.getElementById('consumer-birth-hour');
+        const hour24Select = document.getElementById('consumer-birth-hour24');
+        const minuteSelect = document.getElementById('consumer-birth-minute');
+        const citySelect = document.getElementById('consumer-birth-city');
+        const lngInput = document.getElementById('consumer-birth-lng');
         const precisionSelect = document.getElementById('consumer-time-precision');
 
         const sq1Radio = document.querySelector('input[name="situational_q1"]:checked');
@@ -1514,16 +1715,53 @@ if (btnSubmitConsumerForm) {
             q3: sq3Radio ? sq3Radio.value : 'subtract'
         };
         
-        const rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 11;
         const precisionVal = precisionSelect ? precisionSelect.value : 'hour';
+        let birthHour = -1;
+        let birthMinute = 0;
 
-        if (rawHour === -1 || precisionVal === 'unknown') {
-            consumerFormShellState.birthHour = -1;
-            consumerFormShellState.timePrecision = 'unknown';
-        } else {
-            consumerFormShellState.birthHour = rawHour;
-            consumerFormShellState.timePrecision = precisionVal;
+        if (precisionVal === 'exact') {
+            const h24 = hour24Select ? parseInt(hour24Select.value, 10) : NaN;
+            const mm = minuteSelect ? parseInt(minuteSelect.value, 10) : NaN;
+            if (!Number.isFinite(h24) || h24 < 0 || h24 > 23 || !Number.isFinite(mm) || mm < 0 || mm > 59) {
+                showConsumerFormError('请选择 0-23 时与 0-59 分后再生成报告。');
+                return;
+            }
+            birthHour = h24;
+            birthMinute = mm;
+        } else if (precisionVal === 'hour') {
+            const rawHour = hourSelect ? parseInt(hourSelect.value, 10) : 11;
+            if (rawHour >= 0) {
+                birthHour = rawHour;
+                birthMinute = 0;
+            }
         }
+
+        consumerFormShellState.birthHour = birthHour;
+        consumerFormShellState.birthMinute = birthMinute;
+        consumerFormShellState.timePrecision = birthHour < 0 ? 'unknown' : precisionVal;
+
+        // 出生地经度：手动输入优先，其次出生地下拉
+        const manualLng = lngInput && lngInput.value !== '' ? parseFloat(lngInput.value) : NaN;
+        let birthLng = null;
+        let birthPlaceName = null;
+        const manualLngValid = Number.isFinite(manualLng) && manualLng >= 73 && manualLng <= 135;
+        if (lngInput && lngInput.value !== '' && !manualLngValid) {
+            showConsumerFormError('经度需在 73–135°E 之间；留空表示使用出生地或不做校准。');
+            return;
+        }
+        if (manualLngValid) {
+            birthLng = manualLng;
+            birthPlaceName = '手动经度';
+        } else if (citySelect && citySelect.value) {
+            const cityLng = parseFloat(citySelect.value);
+            if (Number.isFinite(cityLng)) {
+                birthLng = cityLng;
+                const selectedOpt = citySelect.options[citySelect.selectedIndex];
+                birthPlaceName = selectedOpt ? selectedOpt.textContent.replace(/（.*$/, '') : null;
+            }
+        }
+        consumerFormShellState.birthLng = birthLng;
+        consumerFormShellState.birthPlaceName = birthPlaceName;
 
         // Validate date boundaries defensively
         const maxValidDays = (consumerFormShellState.calendarType === 'lunar') ? 30 : new Date(consumerFormShellState.birthYear, consumerFormShellState.birthMonth, 0).getDate();
@@ -1535,6 +1773,8 @@ if (btnSubmitConsumerForm) {
         if (daySelect) daySelect.classList.remove('is-error');
 
         const isHourKnown = consumerFormShellState.birthHour >= 0 && consumerFormShellState.timePrecision !== 'unknown';
+        // 真太阳时只在精确到分钟时启用：时辰模式是两小时窗口，校准会产生歧义
+        const applyTrueSolar = isHourKnown && consumerFormShellState.timePrecision === 'exact';
         const calcPayload = {
             module: 'bazi',
             gender: consumerFormShellState.gender,
@@ -1543,7 +1783,9 @@ if (btnSubmitConsumerForm) {
             month: consumerFormShellState.birthMonth,
             day: consumerFormShellState.birthDay,
             hour: isHourKnown ? consumerFormShellState.birthHour : null,
-            minute: isHourKnown ? 0 : null
+            minute: isHourKnown ? consumerFormShellState.birthMinute : null,
+            lng: applyTrueSolar ? birthLng : null,
+            birthPlaceName: applyTrueSolar ? birthPlaceName : null
         };
 
         btnSubmitConsumerForm.disabled = true;
@@ -2823,8 +3065,27 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         ? `当前大运（${parsedResult.luckDirection}）：${decade.pillar}（${decade.startAge}-${decade.endAge}岁，${decade.startYear}年起，主十神：${decade.tenGods.join('/')}）`
         : `大运排盘：${parsedResult.luckDirection}（因未提供出生时辰，省略起运岁数与时柱推演结论）`;
 
+    const trueSolarInfo = (baziResult && baziResult.trueSolar) || null;
+    const clockStr = isTimeKnown
+        ? (formState.timePrecision === 'exact'
+            ? `${pad2(formState.birthHour)}:${pad2(formState.birthMinute || 0)}（北京时间）`
+            : `${formState.birthHour}时（两小时时辰的代表时刻）`)
+        : '未提供';
+    const lngOffset = trueSolarInfo ? (trueSolarInfo.lng - 120) * 4 : null;
+    const timeEvidence = !isTimeKnown
+        ? '未提供出生时间：按三柱模式推演，不做时间校准。'
+        : (trueSolarInfo
+            ? `出生时间 ${clockStr}；出生地 ${trueSolarInfo.placeName || '手动经度'}（${trueSolarInfo.lng}°E）；经度差 ${lngOffset >= 0 ? '+' : ''}${lngOffset.toFixed(1)} 分 + 均时差 ${trueSolarInfo.eotMinutes >= 0 ? '+' : ''}${trueSolarInfo.eotMinutes} 分 = ${trueSolarInfo.offsetMinutes >= 0 ? '+' : ''}${trueSolarInfo.offsetMinutes} 分 → 真太阳时 ${trueSolarInfo.correctedDate} ${trueSolarInfo.correctedClock}${trueSolarInfo.dayShift !== 0 ? `（跨日 ${trueSolarInfo.dayShift > 0 ? '+' : ''}${trueSolarInfo.dayShift} 天）` : ''}`
+            : (formState.timePrecision === 'exact'
+                ? `${clockStr}；未做经度校准（按 120°E 标准时）。选择出生地即可按真太阳时排定时柱。`
+                : `${clockStr}；大概时辰模式下不启用真太阳时校准（两小时窗口内偏移方向不确定），按 120°E 标准时判定时辰。`));
+    const lateZiNote = (isTimeKnown && (formState.birthHour >= 23 ||
+        (trueSolarInfo && parseInt(trueSolarInfo.correctedClock.slice(0, 2), 10) >= 23)))
+        ? '；子时跨日采用 00:00 换日柱（晚子时）口径' : '';
+
     const evidenceHTML = `
         <p><strong>推演模式：</strong> ${modeLabel}（本机浏览器实时引擎）</p>
+        <p><strong>时间口径：</strong> ${timeEvidence}${lateZiNote}</p>
         <p><strong>传统模型映射关系：</strong> 核心驱动「${traitInfo.title}」对应日主 <strong>${traitInfo.name}</strong>（生于${parsedResult.monthBranch}月令）；力量模式「${strengthInfo.plainTitle}」对应旺衰量化参考 <strong>${parsedResult.strength}</strong>；主导行为通道「${topTgInfo.label} / ${secondTgInfo.label}」对应十神能量分组 <strong>${topTgKey}(${parsedResult.tenGodScores[topTgKey]?.toFixed(1) || '0.0'}) / ${secondTgKey}(${parsedResult.tenGodScores[secondTgKey]?.toFixed(1) || '0.0'})</strong>。</p>
         <p><strong>干支排盘结构：</strong> ${pillarsStr}</p>
         <p><strong>阶段运程依据：</strong> ${decadeEvidence}</p>
@@ -2855,7 +3116,9 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         userHeader: {
             nickname: formState.nickname || '阿澜',
             genderText: `性别：${formState.gender === 'female' ? '女' : '男'}`,
-            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${isTimeKnown && formState.birthHour >= 0 ? formState.birthHour + '时' : '时辰未定（三柱模式）'}`,
+            birthText: `生辰：${formState.birthYear}年${formState.birthMonth}月${formState.birthDay}日 ${isTimeKnown && formState.birthHour >= 0
+                ? (formState.timePrecision === 'exact' ? `${pad2(formState.birthHour)}:${pad2(formState.birthMinute || 0)}` : `${formState.birthHour}时`)
+                : '时辰未定（三柱模式）'}`,
             calendarText: `历法：${formState.calendarType === 'lunar' ? '农历' : '公历'}`,
             scenarioLabel: `本次关注：${scenarioNames[activeScenario] || '了解自己'}`,
             scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
@@ -3406,7 +3669,10 @@ function runQuickDemoReport(openPosterImmediately = false) {
     consumerFormShellState.birthMonth = 5;
     consumerFormShellState.birthDay = 15;
     consumerFormShellState.birthHour = 9;
-    consumerFormShellState.timePrecision = 'hour';
+    consumerFormShellState.birthMinute = 30;
+    consumerFormShellState.timePrecision = 'exact';
+    consumerFormShellState.birthLng = 104.0665;      // 成都
+    consumerFormShellState.birthPlaceName = '成都';
     consumerFormShellState.situationalAnswers = {
         q1: 'push',
         q2: 'overload',
@@ -3421,7 +3687,9 @@ function runQuickDemoReport(openPosterImmediately = false) {
         month: 5,
         day: 15,
         hour: 9,
-        minute: 0
+        minute: 30,
+        lng: 104.0665,
+        birthPlaceName: '成都'
     };
     const baziRes = calculateBaziInBrowser(demoPayload);
     consumerFormShellState.baziResult = baziRes;

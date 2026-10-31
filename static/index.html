@@ -579,24 +579,55 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-row two-cols">
+                                    <div class="form-group">
+                                        <label for="consumer-time-precision">时间准确度</label>
+                                        <div class="select-wrapper">
+                                            <select id="consumer-time-precision" class="form-select">
+                                                <option value="exact">精确到分钟（推荐）</option>
+                                                <option value="hour" selected>知道大概时辰</option>
+                                                <option value="unknown">不清楚出生时间</option>
+                                            </select>
+                                        </div>
+                                        <div class="field-hint">精确到分钟并选择出生地，时柱会按真太阳时校准</div>
+                                    </div>
+
+                                    <!-- 精确到分钟：时 / 分 -->
+                                    <div class="form-row two-cols hidden" id="clock-row">
                                         <div class="form-group">
-                                            <label for="consumer-birth-hour">出生时辰</label>
+                                            <label for="consumer-birth-hour24">出生时（0-23）</label>
                                             <div class="select-wrapper">
-                                                <select id="consumer-birth-hour" class="form-select"></select>
+                                                <select id="consumer-birth-hour24" class="form-select"></select>
                                             </div>
                                         </div>
                                         <div class="form-group">
-                                            <label for="consumer-time-precision">时间准确度</label>
+                                            <label for="consumer-birth-minute">出生分（0-59）</label>
                                             <div class="select-wrapper">
-                                                <select id="consumer-time-precision" class="form-select">
-                                                    <option value="exact">知道精准时分</option>
-                                                    <option value="hour" selected>知道大概时辰</option>
-                                                    <option value="unknown">不清楚出生时间</option>
-                                                </select>
+                                                <select id="consumer-birth-minute" class="form-select"></select>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- 大概时辰：两小时一段 -->
+                                    <div class="form-group" id="shichen-row">
+                                        <label for="consumer-birth-hour">出生时辰</label>
+                                        <div class="select-wrapper">
+                                            <select id="consumer-birth-hour" class="form-select"></select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row two-cols">
+                                        <div class="form-group">
+                                            <label for="consumer-birth-city">出生地（真太阳时校准）</label>
+                                            <div class="select-wrapper">
+                                                <select id="consumer-birth-city" class="form-select"></select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="consumer-birth-lng">经度（东经，可选覆盖）</label>
+                                            <input type="number" id="consumer-birth-lng" class="form-input" min="73" max="135" step="0.1" placeholder="留空则使用出生地">
+                                        </div>
+                                    </div>
+                                    <div class="true-solar-preview" id="true-solar-preview">未启用真太阳时校准（按北京时间）</div>
 
                                     <!-- 3 Behavioral Situational Calibration Questions (动态情境校准题) -->
                                     <div class="situational-calibration-block">

@@ -3786,3 +3786,27 @@ body {
     line-height: 1.5;
     letter-spacing: -0.01em;
 }
+
+/* ========================================================
+   True Solar Time calibration preview (form step 2)
+   ======================================================== */
+#consumer-form-shell .true-solar-preview {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    color: var(--sb-text-soft);
+    background: var(--sb-neutral-cool);
+    border: 1px dashed var(--sb-border-subtle);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 4px;
+}
+
+#consumer-form-shell .true-solar-preview.is-active {
+    color: var(--sb-house-green);
+    background: var(--sb-green-light-tint);
+    border: 1px solid rgba(0, 117, 74, 0.25);
+}
+
+#consumer-form-shell #consumer-birth-lng {
+    width: 100%;
+}
