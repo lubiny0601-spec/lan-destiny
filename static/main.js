@@ -2621,6 +2621,323 @@ function renderTriangulationHTML(tri) {
     `;
 }
 
+// ------------------------------------------------------------------
+// 年运 / 月运 / 90 天行动窗口
+// 全部由流年流月干支与日主的五行关系推导，不使用吉凶断语；
+// 节气日采用与排盘引擎相同的近似公式（±1 天）。
+// ------------------------------------------------------------------
+const SOLAR_TERM_C_20 = [6.11, 4.6295, 6.3826, 5.59, 5.988, 6.5, 7.928, 8.35, 8.44, 9.098, 8.218, 7.9];
+const SOLAR_TERM_C_21 = [5.4055, 3.87, 5.63, 4.81, 5.52, 5.678, 7.108, 7.5, 7.646, 8.318, 7.438, 7.18];
+const LIUYUE_BRANCH_ORDER = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+const BRANCH_CLASH = {
+    '子': '午', '午': '子', '丑': '未', '未': '丑', '寅': '申', '申': '寅',
+    '卯': '酉', '酉': '卯', '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳'
+};
+const BRANCH_HE = {
+    '子': '丑', '丑': '子', '寅': '亥', '亥': '寅', '卯': '戌', '戌': '卯',
+    '辰': '酉', '酉': '辰', '巳': '申', '申': '巳', '午': '未', '未': '午'
+};
+const ELEMENT_CYCLE = ['木', '火', '土', '金', '水'];
+
+// 十神分组对应的节奏语义（与报告既有 TEN_GOD_BEHAVIOR_MAP 口径一致）
+const GROUP_RHYTHM = {
+    '比劫': { type: '推进', plain: '同气', window: '自立与结盟窗口', action: '启动自主项目或找到同频伙伴，把分工讲清楚', risk: '单打独斗与抢功内耗' },
+    '印': { type: '补给', plain: '生扶', window: '沉淀与补给窗口', action: '学习复盘、补齐短板、减少对外承诺', risk: '过度准备导致交付拖延' },
+    '食伤': { type: '推进', plain: '输出', window: '输出与表达窗口', action: '推进需要被看见的工作：汇报、内容、对外方案', risk: '说得多做得少、情绪化表达' },
+    '财': { type: '推进', plain: '价值', window: '落地与结算窗口', action: '把想法变成可交付成果：谈条件、定价、结项', risk: '只算收益不算精力' },
+    '官杀': { type: '承压', plain: '压力', window: '立规与承压窗口', action: '对接权责、走流程、处理必须完成的硬任务', risk: '把外部压力全接成自我苛责' }
+};
+
+function getJieDayOfMonth(solarYear, month1to12) {
+    const y2 = solarYear % 100;
+    const arr = solarYear >= 2000 ? SOLAR_TERM_C_21 : SOLAR_TERM_C_20;
+    const c = arr[month1to12 - 1];
+    return Math.floor(y2 * 0.2422 + c) - Math.floor((y2 - 1) / 4);
+}
+
+function getGanzhiYearOf(date) {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const lichun = getJieDayOfMonth(y, 2);
+    const beforeLichun = (m === 1) || (m === 2 && d < lichun);
+    return beforeLichun ? y - 1 : y;
+}
+
+function getYearPillarOf(ganzhiYear) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const stemIdx = ((ganzhiYear - 4) % 10 + 10) % 10;
+    const branchIdx = ((ganzhiYear - 4) % 12 + 12) % 12;
+    return {
+        ganzhiYear,
+        stemIdx,
+        branchIdx,
+        stem: STEMS[stemIdx],
+        branch: BRANCHES[branchIdx],
+        label: `${STEMS[stemIdx]}${BRANCHES[branchIdx]}`
+    };
+}
+
+function getMonthSegmentStart(date) {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const jie = getJieDayOfMonth(y, m);
+    if (d >= jie) return new Date(y, m - 1, jie);
+    let py = y;
+    let pm = m - 1;
+    if (pm === 0) { pm = 12; py = y - 1; }
+    return new Date(py, pm - 1, getJieDayOfMonth(py, pm));
+}
+
+function getNextSegmentStart(start) {
+    let y = start.getFullYear();
+    let m = start.getMonth() + 1;
+    let nm = m + 1;
+    let ny = y;
+    if (nm > 12) { nm = 1; ny = y + 1; }
+    return new Date(ny, nm - 1, getJieDayOfMonth(ny, nm));
+}
+
+function getGroupRelation(dmElem, otherElem) {
+    const a = ELEMENT_CYCLE.indexOf(dmElem);
+    const b = ELEMENT_CYCLE.indexOf(otherElem);
+    if (a < 0 || b < 0) return '比劫';
+    if (a === b) return '比劫';
+    if ((b + 1) % 5 === a) return '印';
+    if ((a + 1) % 5 === b) return '食伤';
+    if ((a + 2) % 5 === b) return '财';
+    return '官杀';
+}
+
+function getMonthPillarOf(ganzhiYearStemIdx, mIdx) {
+    const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const stemIdx = ((ganzhiYearStemIdx % 5) * 2 + 2 + mIdx) % 10;
+    const branch = LIUYUE_BRANCH_ORDER[mIdx];
+    return { stemIdx, stem: STEMS[stemIdx], branch, label: `${STEMS[stemIdx]}${branch}` };
+}
+
+function formatRange(start, end) {
+    const endDay = new Date(end.getTime() - 86400000);
+    return `${start.getMonth() + 1}/${start.getDate()} – ${endDay.getMonth() + 1}/${endDay.getDate()}`;
+}
+
+function buildRhythmModel(parsedResult, baziResult, now) {    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
+    const today = now ? new Date(now) : new Date();
+    const dmElem = (parsedResult.dayMaster && parsedResult.dayMaster.element) || '火';
+    const dayBranch = parsedResult.fourPillars && parsedResult.fourPillars.day
+        ? parsedResult.fourPillars.day[1]
+        : null;
+    const yearBranch = (baziResult && baziResult.yearPillar ? baziResult.yearPillar[1] : null) ||
+        (parsedResult.fourPillars && parsedResult.fourPillars.year ? parsedResult.fourPillars.year[1] : null);
+
+    const sortedElems = Object.keys(parsedResult.elementScores || {})
+        .sort((a, b) => (parsedResult.elementScores[b] || 0) - (parsedResult.elementScores[a] || 0));
+    const top1 = getDimByElement(sortedElems[0] || '水');
+    const weak = getDimByElement(sortedElems[sortedElems.length - 1] || '水');
+
+    const ganzhiYear = getGanzhiYearOf(today);
+    const yearPillar = getYearPillarOf(ganzhiYear);
+    const nextYearPillar = getYearPillarOf(ganzhiYear + 1);
+    const BRANCH_ELEM = ZODIAC_BRANCH_ELEMENT;
+    const yearGroup = getGroupRelation(dmElem, BRANCH_ELEM[yearPillar.branch]);
+    const nextYearGroup = getGroupRelation(dmElem, BRANCH_ELEM[nextYearPillar.branch]);
+    const yearDim = getDimByElement(BRANCH_ELEM[yearPillar.branch]);
+    const nextYearDim = getDimByElement(BRANCH_ELEM[nextYearPillar.branch]);
+
+    const dimensionStance = (dim) => {
+        if (dim === top1) return { tag: '放大', note: '与你的光谱首位重叠：优势被放大，但容易过载，需要主动设限' };
+        if (dim === weak) return { tag: '补课', note: '落在你最需要补给的维度：适合补短板，而不是继续加码长板' };
+        return { tag: '常规', note: '处于你光谱的中间地带：按既有节奏推进即可' };
+    };
+
+    const yearStance = dimensionStance(yearDim);
+    const decadeGroup = parsedResult.currentDecade
+        ? (() => {
+            const primary = parsedResult.currentDecade.primaryTenGod || '';
+            if (/比肩|劫财/.test(primary)) return '比劫';
+            if (/正印|偏印/.test(primary)) return '印';
+            if (/食神|伤官/.test(primary)) return '食伤';
+            if (/正财|偏财/.test(primary)) return '财';
+            if (/正官|七杀/.test(primary)) return '官杀';
+            return null;
+        })()
+        : null;
+
+    const year = {
+        label: yearPillar.label,
+        stem: yearPillar.stem,
+        branch: yearPillar.branch,
+        group: yearGroup,
+        groupLabel: (TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态推进',
+        dim: yearDim,
+        stance: yearStance,
+        startText: `立春 ${ganzhiYear}-02-${pad2(getJieDayOfMonth(ganzhiYear, 2))} 起`,
+        narrative: `本流年为 ${yearPillar.label} 年，与你的日主构成【${GROUP_RHYTHM[yearGroup].plain}】关系（${(TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态'}）：年度主维度是【${yearDim}】，${yearStance.note}。${GROUP_RHYTHM[yearGroup].window}是这一年的主旋律，需要留意的是${GROUP_RHYTHM[yearGroup].risk}。`,
+        doText: GROUP_RHYTHM[yearGroup].action,
+        dontText: GROUP_RHYTHM[yearGroup].risk,
+        decadeEcho: decadeGroup && decadeGroup === yearGroup
+            ? `与大运主十神同气（${GROUP_RHYTHM[yearGroup].window}），本年度主题会被放大一倍。`
+            : ''
+    };
+
+    const nextYear = {
+        label: nextYearPillar.label,
+        group: nextYearGroup,
+        groupLabel: (TEN_GOD_BEHAVIOR_MAP[nextYearGroup] || {}).label || '稳态推进',
+        dim: nextYearDim,
+        stance: dimensionStance(nextYearDim),
+        startText: `立春 ${ganzhiYear + 1}-02-${pad2(getJieDayOfMonth(ganzhiYear + 1, 2))} 起`
+    };
+
+    // 流月：从当前所在节气月开始，取 6 个
+    const segments = [];
+    let cursor = getMonthSegmentStart(today);
+    for (let i = 0; i < 6; i++) {
+        const start = cursor;
+        const end = getNextSegmentStart(start);
+        const segGanzhiYear = getGanzhiYearOf(start);
+        const segYearPillar = getYearPillarOf(segGanzhiYear);
+        const mIdx = (start.getMonth() + 1 + 10) % 12; // start 一定在节之后，用引擎的同一规则
+        const pillar = getMonthPillarOf(segYearPillar.stemIdx, mIdx);
+        const branchElem = BRANCH_ELEM[pillar.branch];
+        const group = getGroupRelation(dmElem, branchElem);
+        const rhythm = GROUP_RHYTHM[group];
+        const clashDay = !!(dayBranch && BRANCH_CLASH[pillar.branch] === dayBranch);
+        const heDay = !!(dayBranch && BRANCH_HE[pillar.branch] === dayBranch);
+        const clashYear = !!(yearBranch && BRANCH_CLASH[pillar.branch] === yearBranch);
+
+        segments.push({
+            start,
+            end,
+            rangeText: formatRange(start, end),
+            pillar,
+            label: pillar.label,
+            branch: pillar.branch,
+            dim: getDimByElement(branchElem),
+            group,
+            groupPlain: rhythm.plain,
+            groupLabel: (TEN_GOD_BEHAVIOR_MAP[group] || {}).label || '稳态推进',
+            rhythmType: rhythm.type,
+            window: rhythm.window,
+            action: rhythm.action,
+            risk: rhythm.risk,
+            clashDay,
+            heDay,
+            clashYear,
+            tone: MONTH_RHYTHM_MAP[pillar.branch] || '',
+            note: clashDay
+                ? '本月冲你的日支：外部节奏容易打断既定安排，重承诺放到月内后段'
+                : (heDay
+                    ? '本月合你的日支：协作与沟通相对顺滑，适合把需要配合的事推进去'
+                    : (clashYear ? '本月冲你的年支：与外部环境存在张力，先稳住基本盘' : ''))
+        });
+        cursor = end;
+    }
+
+    // 90 天窗口：按流月切成 3 个动作窗口（首个含当前月剩余部分）
+    const horizon = new Date(today.getTime() + 90 * 86400000);
+    const windows = segments
+        .filter(seg => seg.start < horizon)
+        .slice(0, 3)
+        .map(seg => ({
+            rangeText: seg.rangeText,
+            label: seg.label,
+            group: seg.group,
+            groupPlain: seg.groupPlain,
+            window: seg.window,
+            action: seg.action,
+            type: seg.rhythmType,
+            dim: seg.dim,
+            clashDay: seg.clashDay,
+            start: seg.start
+        }));
+    const bestWindow = windows.find(w => w.type === '推进' && !w.clashDay) || windows[0] || null;
+    const pushCount = windows.filter(w => w.type === '推进').length;
+    const supplyCount = windows.filter(w => w.type === '补给').length;
+    const pressureCount = windows.filter(w => w.type === '承压').length;
+
+    const summary90 = windows.length
+        ? `未来 90 天按流月切成 ${windows.length} 个动作窗口（首个窗口含本月剩余部分）：推进型 ${pushCount} 个、补给型 ${supplyCount} 个、承压型 ${pressureCount} 个。${bestWindow ? `建议把关键决策放在 ${bestWindow.rangeText}（${bestWindow.window}），其余窗口用来收口与补课。` : ''}`
+        : '未来 90 天内没有可用的流月窗口。';
+
+    return {
+        nowText: `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`,
+        year,
+        nextYear,
+        months: segments,
+        windows,
+        summary90,
+        bestWindow,
+        evidence: `流年按立春换年（节气日为近似值 ±1 天）；流月按节气月划分；十神分组由流年/流月地支五行与日主「${dmElem}」的生克关系推导（同=比劫、生我=印、我生=食伤、我克=财、克我=官杀）；冲合仅比对日支/年支。`
+    };
+}
+
+function renderRhythmHTML(rhythm) {
+    if (!rhythm) return '';
+    const windowCards = rhythm.windows.map(w => `
+        <div class="rhythm-window ${w.type === '承压' ? 'is-pressure' : (w.type === '补给' ? 'is-supply' : 'is-push')}">
+            <span class="rhythm-window-range">${w.rangeText}</span>
+            <span class="rhythm-window-title">${w.label} · ${w.window}</span>
+            <p class="rhythm-window-action">${w.action}</p>
+            ${w.clashDay ? '<p class="rhythm-window-note">⚠ 冲日支：避免在本窗口启动长期承诺</p>' : ''}
+        </div>
+    `).join('');
+
+    const monthRows = rhythm.months.map(m => `
+        <div class="rhythm-month-row">
+            <span class="rhythm-month-range">${m.rangeText}</span>
+            <span class="rhythm-month-pillar">${m.label}</span>
+            <span class="rhythm-month-group">${m.groupPlain}</span>
+            <span class="rhythm-month-dim">${m.dim}</span>
+            <span class="rhythm-month-advice">${m.note || m.action}</span>
+        </div>
+    `).join('');
+
+    return `
+        <p class="rhythm-lead">流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的日主是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。下面这些结论全部可推导，依据层写明了换算方式。</p>
+        <div class="rhythm-year-row">
+            <div class="rhythm-year-card rhythm-year-current">
+                <span class="rhythm-year-label">当前流年 · ${rhythm.year.startText}</span>
+                <strong class="rhythm-year-value">${rhythm.year.label} 年</strong>
+                <span class="rhythm-year-tags">
+                    <span class="rhythm-tag">${rhythm.year.groupLabel}</span>
+                    <span class="rhythm-tag rhythm-tag-dim">${rhythm.year.dim}</span>
+                    <span class="rhythm-tag rhythm-tag-stance">${rhythm.year.stance.tag}</span>
+                </span>
+                <p class="rhythm-year-text">${rhythm.year.narrative}${rhythm.year.decadeEcho ? ' ' + rhythm.year.decadeEcho : ''}</p>
+                <p class="rhythm-year-rule">✔ 今年该做：${rhythm.year.doText}</p>
+                <p class="rhythm-year-rule rhythm-year-rule-warn">✖ 需要避开：${rhythm.year.dontText}</p>
+            </div>
+            <div class="rhythm-year-card rhythm-year-next">
+                <span class="rhythm-year-label">下一个流年 · ${rhythm.nextYear.startText}</span>
+                <strong class="rhythm-year-value">${rhythm.nextYear.label} 年</strong>
+                <span class="rhythm-year-tags">
+                    <span class="rhythm-tag">${rhythm.nextYear.groupLabel}</span>
+                    <span class="rhythm-tag rhythm-tag-dim">${rhythm.nextYear.dim}</span>
+                    <span class="rhythm-tag rhythm-tag-stance">${rhythm.nextYear.stance.tag}</span>
+                </span>
+                <p class="rhythm-year-text">下一年与你的日主构成【${GROUP_RHYTHM[rhythm.nextYear.group].plain}】关系（${rhythm.nextYear.groupLabel}），主维度【${rhythm.nextYear.dim}】。${rhythm.nextYear.stance.note}。可以提前把需要长期投入的事排到这一年的前段。</p>
+            </div>
+        </div>
+        <div class="rhythm-months">
+            <div class="rhythm-months-header">
+                <span>日期（节气月）</span><span>流月</span><span>关系</span><span>维度</span><span>节奏提示</span>
+            </div>
+            ${monthRows}
+        </div>
+        <div class="rhythm-windows-block">
+            <div class="rhythm-windows-title">未来 90 天行动窗口</div>
+            <p class="rhythm-windows-summary">${rhythm.summary90}</p>
+            <div class="rhythm-window-grid">${windowCards}</div>
+        </div>
+        <p class="rhythm-boundary">口径说明：${rhythm.evidence} 当前以本机日期 ${rhythm.nowText} 计算；窗口划分只说明节奏类型，不构成吉凶判断。</p>
+    `;
+}
+
+window.buildRhythmModel = buildRhythmModel;
+
 function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') {
         return {
@@ -2648,6 +2965,10 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     // 三源互证：生肖 × 星座 × 五维光谱（无星座数据时自动跳过，不阻断报告）
     const triangulation = buildTriangulation(parsedResult, baziResult);
     const triangulationHTML = renderTriangulationHTML(triangulation);
+
+    // 年运 / 月运 / 90 天窗口（流年流月干支推导，与三源互证同源）
+    const rhythm = buildRhythmModel(parsedResult, baziResult);
+    const rhythmHTML = renderRhythmHTML(rhythm);
 
     // Extract scenario-specific situational questions and selections
     const activeScenarioConfig = SCENARIO_CALIBRATION_CONFIG[activeScenario] || SCENARIO_CALIBRATION_CONFIG.self;
@@ -3091,6 +3412,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         <p><strong>阶段运程依据：</strong> ${decadeEvidence}</p>
         <p><strong>现实情境校准输入：</strong> Q1=${sq1.tag} · Q2=${sq2.tag} · Q3=${sq3.tag}</p>
         ${triangulation ? `<p><strong>三源比对口径：</strong> 生肖=${triangulation.branch}${triangulation.lichunAnimal}（年柱地支，立春换年${triangulation.boundaryDiffers ? `；春节口径为${triangulation.chunjieBranch || ''}${triangulation.chunjieAnimal}，两者不一致已在上方说明` : '；与春节口径一致'}）；星座=${triangulation.signName}（按公历出生月日的太阳星座，不含出生时刻与上升星座）；五维光谱=${triangulation.spectrum.top1} / ${triangulation.spectrum.top2}（由四柱五行力量加权）。比对结果：${triangulation.patternLabel}。</p>` : ''}
+        ${rhythm ? `<p><strong>流年流月口径：</strong> ${rhythm.evidence} 本报告以本机日期 ${rhythm.nowText} 计算；当前流年 ${rhythm.year.label}、下一个流年 ${rhythm.nextYear.label}。</p>` : ''}
         <p><strong>底层计算片段：</strong></p>
         <pre style="background: var(--consumer-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--consumer-border); font-size: 0.85rem; overflow-x: auto; color: var(--consumer-text-sub);">${stdoutSnippet}...</pre>
         <p style="margin-top: 16px; font-size: 0.9rem; color: var(--consumer-text-muted);">
@@ -3109,6 +3431,8 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         energyBarsData,
         triangulation,
         triangulationHTML,
+        rhythm,
+        rhythmHTML,
         decadeStageNote,
         summary30s,
         plainTerms,
@@ -3231,10 +3555,14 @@ function renderConsumerReport(baziResult, formState) {
 
         // Section DOM Reordering based on scenario
         const container = document.querySelector('#consumer-report-view .report-container');
-        // 三源互证卡片：数据不足时整卡隐藏，并从编号序列中剔除
+        // 三源互证 / 年运节奏卡片：数据不足时整卡隐藏，并从编号序列中剔除
         const triangulationCard = document.getElementById('card-section-triangulation');
         if (triangulationCard) {
             triangulationCard.classList.toggle('hidden', !reportModel.triangulationHTML);
+        }
+        const rhythmCard = document.getElementById('card-section-rhythm');
+        if (rhythmCard) {
+            rhythmCard.classList.toggle('hidden', !reportModel.rhythmHTML);
         }
         const cardNodes = {
             personality: document.getElementById('card-section-personality'),
@@ -3243,15 +3571,16 @@ function renderConsumerReport(baziResult, formState) {
             relationship: document.getElementById('card-section-relationship'),
             action: document.getElementById('card-section-action'),
             triangulation: document.getElementById('card-section-triangulation'),
+            rhythm: document.getElementById('card-section-rhythm'),
             evidence: document.getElementById('card-section-evidence')
         };
         const bottomActions = container ? container.querySelector('.report-bottom-actions') : null;
 
         const sectionOrders = {
-            self: ['personality', 'triangulation', 'energy', 'career', 'relationship', 'action', 'evidence'],
-            career: ['career', 'triangulation', 'energy', 'personality', 'action', 'relationship', 'evidence'],
-            relationship: ['relationship', 'triangulation', 'personality', 'energy', 'action', 'career', 'evidence'],
-            confusion: ['action', 'triangulation', 'personality', 'career', 'relationship', 'energy', 'evidence']
+            self: ['personality', 'triangulation', 'rhythm', 'energy', 'career', 'relationship', 'action', 'evidence'],
+            career: ['career', 'rhythm', 'triangulation', 'energy', 'personality', 'action', 'relationship', 'evidence'],
+            relationship: ['relationship', 'triangulation', 'energy', 'personality', 'action', 'career', 'rhythm', 'evidence'],
+            confusion: ['action', 'rhythm', 'personality', 'triangulation', 'career', 'relationship', 'energy', 'evidence']
         };
 
         const focusCardMap = {
@@ -3324,6 +3653,12 @@ function renderConsumerReport(baziResult, formState) {
         const triangulationEl = document.getElementById('report-section-triangulation');
         if (triangulationEl) {
             triangulationEl.innerHTML = reportModel.triangulationHTML || '';
+        }
+
+        // Fill Rhythm (年运 / 月运 / 90 天窗口)
+        const rhythmEl = document.getElementById('report-section-rhythm');
+        if (rhythmEl) {
+            rhythmEl.innerHTML = reportModel.rhythmHTML || '';
         }
 
         // Fill Level 3 Folded Evidence
