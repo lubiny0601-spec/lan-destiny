@@ -2936,7 +2936,7 @@ function formatRange(start, end) {
     return `${start.getMonth() + 1}/${start.getDate()} – ${endDay.getMonth() + 1}/${endDay.getDate()}`;
 }
 
-function buildRhythmModel(parsedResult, baziResult, now) {    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
+function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
     const today = now ? new Date(now) : new Date();
     const dmElem = (parsedResult.dayMaster && parsedResult.dayMaster.element) || '火';
     const dayBranch = parsedResult.fourPillars && parsedResult.fourPillars.day
@@ -3075,7 +3075,11 @@ function buildRhythmModel(parsedResult, baziResult, now) {    if (!parsedResult 
         ? `未来 90 天按流月切成 ${windows.length} 个动作窗口（首个窗口含本月剩余部分）：推进型 ${pushCount} 个、补给型 ${supplyCount} 个、承压型 ${pressureCount} 个。${bestWindow ? `建议把关键决策放在 ${bestWindow.rangeText}（${bestWindow.window}），其余窗口用来收口与补课。` : ''}`
         : '未来 90 天内没有可用的流月窗口。';
 
+    const scenarioFocus = buildRhythmScenarioFocus(scenario, windows);
+
     return {
+        scenario: scenario || 'self',
+        focus: scenarioFocus,
         nowText: `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`,
         year,
         nextYear,
@@ -3087,16 +3091,118 @@ function buildRhythmModel(parsedResult, baziResult, now) {    if (!parsedResult 
     };
 }
 
+// B. 年运 / 90 天窗口按场景选「主窗口」：事实不动，只决定展开哪一段、怎么解读。
+function buildRhythmScenarioFocus(scenario, windows) {
+    const list = windows || [];
+    const s = scenario || 'self';
+    const find = type => list.find(w => w.type === type) || null;
+    const pushWin = list.find(w => w.type === '推进' && !w.clashDay) || find('推进');
+    const supplyWin = find('补给');
+    const pressureWin = find('承压');
+    const firstWin = list[0] || null;
+    const typeLabel = w => (w.type === '承压' ? '承压窗口' : (w.type === '补给' ? '补给窗口' : '推进窗口'));
+
+    if (!list.length) {
+        return {
+            mode: 'triple',
+            chip: '本次重点：完整三段节奏',
+            lead: '未来 90 天内没有可用的流月窗口，这一段暂时不做展开。'
+        };
+    }
+
+    if (s === 'career') {
+        const primary = pushWin || firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合发起与交付',
+            lead: '事业方向只看一件事：接下来哪一段适合发起、谈判、交付。下面把这一段展开，另外两段压成一行备查——它们不是不重要，只是这一版不占用你的注意力。',
+            primary,
+            summary: `最优发起段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '把要对外发起的事（提案、谈判、发布、要资源）集中放进这一段，别摊到全月。',
+            dontText: pressureWin
+                ? `关键动作尽量避开 ${pressureWin.rangeText}（承压窗口）：那一段适合走流程、接硬任务，不适合谈条件。`
+                : '另外两段更适合收口与补课，别把发起动作均匀摊开。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：适合走流程、接硬任务，不适合谈条件）'
+        };
+    }
+
+    if (s === 'relationship') {
+        const primary = supplyWin || firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合把话说开',
+            lead: '关系模式只看一件事：哪一段适合把话说开、谈边界。补给窗口通常比推进窗口更适合谈感受，承压窗口最不适合谈敏感话题。',
+            primary,
+            summary: `最适合沟通的一段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '把需要沟通的事（边界、期待、分工）放到这一段谈：先讲自己的感受，再讲具体诉求。',
+            dontText: pressureWin
+                ? `如果对话只能落在 ${pressureWin.rangeText}（承压窗口），只谈事实与安排，别在那一段谈感受。`
+                : '其余两段更适合处理事务性沟通，别在推进最猛的时候谈边界。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：适合处理事务，不适合谈感受与边界）'
+        };
+    }
+
+    if (s === 'confusion') {
+        const primary = firstWin;
+        return {
+            mode: 'focus',
+            chip: '本次重点：哪一段适合做最小验证',
+            lead: '走出迷茫只看一件事：接下来哪一段适合做 1 个两周内能验证的假设，而不是继续收集信息。下面这一段就是最早可用的窗口。',
+            primary,
+            summary: `最早可用的验证段：${primary.rangeText}（${primary.label} · ${primary.window}），节奏类型是${typeLabel(primary)}。`,
+            doText: '选 1 个两周内能拿到结果的假设，用这一段做完；判断标准要在开始之前写下来。',
+            dontText: '别在这段同时开第二个实验——多线并行本身就是这一版要防的漏能。',
+            foldedNote: '另外两段本版不展开（多为承压窗口：先别开新实验，用来走完已经在手上的事）'
+        };
+    }
+
+    return {
+        mode: 'triple',
+        chip: '本次重点：完整三段节奏',
+        lead: '流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的日主是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。这一段全部展开，你先看全貌，再决定把关键动作放在哪一段。'
+    };
+}
+
 function renderRhythmHTML(rhythm) {
     if (!rhythm) return '';
-    const windowCards = rhythm.windows.map(w => `
-        <div class="rhythm-window ${w.type === '承压' ? 'is-pressure' : (w.type === '补给' ? 'is-supply' : 'is-push')}">
+
+    const windowCard = (w, isPrimary) => `
+        <div class="rhythm-window ${w.type === '承压' ? 'is-pressure' : (w.type === '补给' ? 'is-supply' : 'is-push')}${isPrimary ? ' is-primary' : ''}">
+            ${isPrimary ? '<span class="rhythm-window-badge">本次重点窗口</span>' : ''}
             <span class="rhythm-window-range">${w.rangeText}</span>
             <span class="rhythm-window-title">${w.label} · ${w.window}</span>
             <p class="rhythm-window-action">${w.action}</p>
             ${w.clashDay ? '<p class="rhythm-window-note">⚠ 冲日支：避免在本窗口启动长期承诺</p>' : ''}
+            ${isPrimary && rhythm.focus && rhythm.focus.doText ? `<p class="rhythm-window-rule rhythm-window-rule-do">✔ 这一段该做：${rhythm.focus.doText}</p>` : ''}
+            ${isPrimary && rhythm.focus && rhythm.focus.dontText ? `<p class="rhythm-window-rule rhythm-window-rule-dont">✖ 这一段避开：${rhythm.focus.dontText}</p>` : ''}
+        </div>
+    `;
+
+    const windowCards = rhythm.windows.map(w => windowCard(w, false)).join('');
+
+    const focus = rhythm.focus || buildRhythmScenarioFocus(rhythm.scenario, rhythm.windows);
+    const primaryRange = focus.primary ? focus.primary.rangeText : '';
+    const folded = rhythm.windows.filter(w => !focus.primary || w.rangeText !== primaryRange);
+    const foldedRows = folded.map(w => `
+        <div class="rhythm-window-folded">
+            <span class="rhythm-window-folded-range">${w.rangeText}</span>
+            <span class="rhythm-window-folded-title">${w.label} · ${w.window}</span>
+            <span class="rhythm-tag rhythm-tag-folded">${w.type === '承压' ? '承压' : (w.type === '补给' ? '补给' : '推进')}</span>
         </div>
     `).join('');
+
+    const windowsBlockHTML = focus.mode === 'triple'
+        ? `<div class="rhythm-focus-note is-compact"><span class="rhythm-focus-chip">${focus.chip}</span></div>
+           <p class="rhythm-windows-summary">${rhythm.summary90}</p>
+           <div class="rhythm-window-grid">${windowCards}</div>`
+        : `<div class="rhythm-focus-note">
+                <span class="rhythm-focus-chip">${focus.chip}</span>
+                <p>${focus.summary || ''}</p>
+           </div>
+           <div class="rhythm-window-grid is-focus">${windowCard(focus.primary, true)}</div>
+           <div class="rhythm-window-folded-head">${focus.foldedNote || `另外 ${folded.length} 段本版不展开（仅列时间与节奏类型）：`}</div>
+           <div class="rhythm-window-folded-list">${foldedRows}</div>
+           <p class="rhythm-windows-summary rhythm-windows-summary-compact">${rhythm.summary90}</p>`;
 
     const monthRows = rhythm.months.map(m => `
         <div class="rhythm-month-row">
@@ -3109,7 +3215,7 @@ function renderRhythmHTML(rhythm) {
     `).join('');
 
     return `
-        <p class="rhythm-lead">流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的日主是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。下面这些结论全部可推导，依据层写明了换算方式。</p>
+        <p class="rhythm-lead">${focus.lead}</p>
         <div class="rhythm-year-row">
             <div class="rhythm-year-card rhythm-year-current">
                 <span class="rhythm-year-label">当前流年 · ${rhythm.year.startText}</span>
@@ -3142,13 +3248,11 @@ function renderRhythmHTML(rhythm) {
         </div>
         <div class="rhythm-windows-block">
             <div class="rhythm-windows-title">未来 90 天行动窗口</div>
-            <p class="rhythm-windows-summary">${rhythm.summary90}</p>
-            <div class="rhythm-window-grid">${windowCards}</div>
+            ${windowsBlockHTML}
         </div>
         <p class="rhythm-boundary">口径说明：${rhythm.evidence} 当前以本机日期 ${rhythm.nowText} 计算；窗口划分只说明节奏类型，不构成吉凶判断。</p>
     `;
 }
-
 window.buildRhythmModel = buildRhythmModel;
 
 function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
@@ -3180,7 +3284,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     const triangulationHTML = renderTriangulationHTML(triangulation);
 
     // 年运 / 月运 / 90 天窗口（流年流月干支推导，与三源互证同源）
-    const rhythm = buildRhythmModel(parsedResult, baziResult);
+    const rhythm = buildRhythmModel(parsedResult, baziResult, undefined, activeScenario);
     const rhythmHTML = renderRhythmHTML(rhythm);
 
     // Extract scenario-specific situational questions and selections

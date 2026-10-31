@@ -4435,3 +4435,122 @@ body {
     .report-card .tri-source.is-focus::after { content: '重点'; }
     .report-card .tri-source.is-focus { border-width: 2px; }
 }
+
+/* B. 年运 / 90 天窗口 · 按场景展开主窗口 */
+.rhythm-focus-note {
+    background: var(--sb-green-light-tint, #f3f8f5);
+    border: 1px solid var(--sb-border-subtle);
+    border-left: 3px solid var(--sb-green);
+    border-radius: 8px;
+    padding: 13px 15px;
+    margin-bottom: 14px;
+}
+
+.rhythm-focus-chip {
+    display: block;
+    width: fit-content;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--sb-green);
+    background: var(--sb-white);
+    border: 1px solid var(--sb-border-subtle);
+    border-radius: 999px;
+    padding: 3px 11px;
+    margin-bottom: 8px;
+}
+
+.rhythm-focus-note p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--sb-text-black);
+}
+
+.rhythm-window-grid.is-focus {
+    grid-template-columns: 1fr;
+}
+
+.rhythm-window.is-primary {
+    position: relative;
+    border-width: 2px;
+    border-color: rgba(0, 117, 74, 0.45);
+    padding: 18px 20px;
+}
+
+.rhythm-window-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--sb-green);
+    background: var(--sb-white);
+    border: 1px solid rgba(0, 117, 74, 0.3);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-bottom: 8px;
+}
+
+.rhythm-window-rule {
+    margin: 10px 0 0;
+    font-size: 0.85rem;
+    line-height: 1.7;
+}
+
+.rhythm-window-rule-do {
+    color: var(--sb-green);
+    font-weight: 600;
+}
+
+.rhythm-window-rule-dont {
+    color: #b3261e;
+    font-weight: 600;
+}
+
+.rhythm-window-folded-head {
+    font-size: 0.8rem;
+    color: var(--sb-text-soft);
+    margin: 14px 0 8px;
+}
+
+.rhythm-window-folded-list {
+    display: grid;
+    gap: 6px;
+}
+
+.rhythm-window-folded {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: var(--sb-neutral-warm);
+    border: 1px solid var(--sb-border-subtle);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--sb-text-soft);
+}
+
+.rhythm-window-folded-range {
+    font-variant-numeric: tabular-nums;
+    color: var(--sb-text-black);
+    font-weight: 600;
+}
+
+.rhythm-window-folded-title {
+    color: var(--sb-text-black-soft);
+}
+
+.rhythm-tag-folded {
+    margin-left: auto;
+    font-size: 0.72rem;
+    padding: 2px 9px;
+}
+
+.rhythm-windows-summary-compact {
+    margin: 14px 0 0;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .rhythm-window.is-primary { padding: 16px; }
+    .rhythm-window-folded { font-size: 0.78rem; }
+}
