@@ -775,6 +775,61 @@ const consumerFormShellState = {
 
 // Initialize Date Select options
 let dateSelectsPopulated = false;
+// 出生地经度表（按省级行政区归组，城市取市中心近似经度，误差 <0.3°，对时辰判定无影响）
+// 格式：省: 城市 经度 | 城市 经度
+const CITY_GROUPS_RAW = `
+北京: 北京 116.41
+天津: 天津 117.20
+河北: 石家庄 114.51 | 唐山 118.18 | 秦皇岛 119.60 | 邯郸 114.49 | 邢台 114.50 | 保定 115.48 | 张家口 114.89 | 承德 117.94 | 沧州 116.86 | 廊坊 116.70 | 衡水 115.67 | 定州 114.99 | 辛集 115.22
+山西: 太原 112.55 | 大同 113.30 | 阳泉 113.58 | 长治 113.11 | 晋城 112.85 | 朔州 112.43 | 晋中 112.75 | 运城 111.00 | 忻州 112.73 | 临汾 111.52 | 吕梁 111.14
+内蒙古: 呼和浩特 111.75 | 包头 109.84 | 乌海 106.79 | 赤峰 118.89 | 通辽 122.24 | 鄂尔多斯 109.78 | 呼伦贝尔 119.77 | 巴彦淖尔 107.42 | 乌兰察布 113.13 | 锡林浩特 116.09 | 阿拉善左旗 105.67
+辽宁: 沈阳 123.43 | 大连 121.61 | 鞍山 122.99 | 抚顺 123.96 | 本溪 123.77 | 丹东 124.35 | 锦州 121.13 | 营口 122.24 | 阜新 121.67 | 辽阳 123.18 | 盘锦 122.07 | 铁岭 123.84 | 朝阳 120.45 | 葫芦岛 120.84
+吉林: 长春 125.32 | 吉林 126.55 | 四平 124.35 | 辽源 125.14 | 通化 125.94 | 白山 126.42 | 松原 124.82 | 白城 122.84 | 延吉 129.51
+黑龙江: 哈尔滨 126.53 | 齐齐哈尔 123.92 | 鸡西 130.97 | 鹤岗 130.28 | 双鸭山 131.16 | 大庆 125.10 | 伊春 128.84 | 佳木斯 130.32 | 七台河 131.00 | 牡丹江 129.62 | 黑河 127.48 | 绥化 126.99 | 加格达奇 124.12
+上海: 上海 121.47
+江苏: 南京 118.80 | 无锡 120.30 | 徐州 117.18 | 常州 119.95 | 苏州 120.59 | 南通 120.89 | 连云港 119.22 | 淮安 119.02 | 盐城 120.16 | 扬州 119.41 | 镇江 119.45 | 泰州 119.92 | 宿迁 118.28
+浙江: 杭州 120.16 | 宁波 121.55 | 温州 120.70 | 嘉兴 120.76 | 湖州 120.09 | 绍兴 120.58 | 金华 119.65 | 衢州 118.87 | 舟山 122.21 | 台州 121.42 | 丽水 119.92
+安徽: 合肥 117.23 | 芜湖 118.38 | 蚌埠 117.36 | 淮南 117.00 | 马鞍山 118.51 | 淮北 116.80 | 铜陵 117.81 | 安庆 117.05 | 黄山 118.34 | 滁州 118.32 | 阜阳 115.81 | 宿州 116.98 | 六安 116.51 | 亳州 115.78 | 池州 117.49 | 宣城 118.76
+福建: 福州 119.30 | 厦门 118.09 | 莆田 119.01 | 三明 117.64 | 泉州 118.68 | 漳州 117.65 | 南平 118.18 | 龙岩 117.02 | 宁德 119.55
+江西: 南昌 115.86 | 景德镇 117.18 | 萍乡 113.85 | 九江 115.99 | 新余 114.92 | 鹰潭 117.07 | 赣州 114.94 | 吉安 114.99 | 宜春 114.42 | 抚州 116.36 | 上饶 117.97
+山东: 济南 117.12 | 青岛 120.38 | 淄博 118.05 | 枣庄 117.32 | 东营 118.67 | 烟台 121.39 | 潍坊 119.16 | 济宁 116.59 | 泰安 117.09 | 威海 122.12 | 日照 119.53 | 临沂 118.35 | 德州 116.36 | 聊城 115.98 | 滨州 118.02 | 菏泽 115.48
+河南: 郑州 113.63 | 开封 114.31 | 洛阳 112.45 | 平顶山 113.19 | 安阳 114.39 | 鹤壁 114.30 | 新乡 113.88 | 焦作 113.24 | 濮阳 115.03 | 许昌 113.85 | 漯河 114.02 | 三门峡 111.20 | 南阳 112.53 | 商丘 115.65 | 信阳 114.09 | 周口 114.65 | 驻马店 114.02 | 济源 112.60
+湖北: 武汉 114.31 | 黄石 115.04 | 十堰 110.79 | 宜昌 111.29 | 襄阳 112.14 | 鄂州 114.89 | 荆门 112.20 | 孝感 113.92 | 荆州 112.24 | 黄冈 114.87 | 咸宁 114.32 | 随州 113.37 | 恩施 109.49 | 仙桃 113.45
+湖南: 长沙 112.94 | 株洲 113.13 | 湘潭 112.94 | 衡阳 112.57 | 邵阳 111.47 | 岳阳 113.13 | 常德 111.70 | 张家界 110.48 | 益阳 112.36 | 郴州 113.01 | 永州 111.61 | 怀化 110.00 | 娄底 112.00 | 吉首 109.74
+广东: 广州 113.26 | 深圳 114.06 | 珠海 113.58 | 汕头 116.68 | 佛山 113.12 | 韶关 113.60 | 湛江 110.36 | 肇庆 112.47 | 江门 113.09 | 茂名 110.93 | 惠州 114.42 | 梅州 116.12 | 汕尾 115.36 | 河源 114.70 | 阳江 111.98 | 清远 113.05 | 东莞 113.75 | 中山 113.39 | 潮州 116.63 | 揭阳 116.37 | 云浮 112.04
+广西: 南宁 108.37 | 柳州 109.42 | 桂林 110.29 | 梧州 111.28 | 北海 109.12 | 防城港 108.35 | 钦州 108.62 | 贵港 109.60 | 玉林 110.15 | 百色 106.62 | 贺州 111.55 | 河池 108.06 | 来宾 109.23 | 崇左 107.36
+海南: 海口 110.20 | 三亚 109.51 | 儋州 109.58 | 琼海 110.47 | 文昌 110.72 | 五指山 109.52
+重庆: 重庆 106.55
+四川: 成都 104.07 | 自贡 104.78 | 攀枝花 101.72 | 泸州 105.44 | 德阳 104.40 | 绵阳 104.68 | 广元 105.84 | 遂宁 105.59 | 内江 105.06 | 乐山 103.76 | 南充 106.11 | 眉山 103.85 | 宜宾 104.63 | 广安 106.63 | 达州 107.50 | 雅安 103.00 | 巴中 106.75 | 资阳 104.63 | 西昌 102.27 | 康定 101.96 | 马尔康 102.22
+贵州: 贵阳 106.63 | 六盘水 104.85 | 遵义 106.93 | 安顺 105.95 | 毕节 105.29 | 铜仁 109.19 | 凯里 107.98 | 都匀 107.52 | 兴义 104.90
+云南: 昆明 102.83 | 曲靖 103.80 | 玉溪 102.54 | 保山 99.17 | 昭通 103.72 | 丽江 100.23 | 普洱 100.97 | 临沧 100.09 | 大理 100.23 | 景洪 100.80 | 楚雄 101.55 | 蒙自 103.38 | 文山 104.24 | 芒市 98.58
+西藏: 拉萨 91.14 | 日喀则 88.88 | 昌都 97.17 | 林芝 94.36 | 山南 91.77 | 那曲 92.05 | 狮泉河 80.10
+陕西: 西安 108.94 | 铜川 108.95 | 宝鸡 107.14 | 咸阳 108.71 | 渭南 109.51 | 延安 109.49 | 汉中 107.03 | 榆林 109.73 | 安康 109.03 | 商洛 109.94
+甘肃: 兰州 103.83 | 嘉峪关 98.29 | 金昌 102.19 | 白银 104.14 | 天水 105.72 | 武威 102.64 | 张掖 100.45 | 平凉 106.67 | 酒泉 98.51 | 庆阳 107.64 | 定西 104.63 | 陇南 104.93 | 合作 102.91
+青海: 西宁 101.78 | 海东 102.10 | 格尔木 94.90 | 德令哈 97.37
+宁夏: 银川 106.23 | 石嘴山 106.38 | 吴忠 106.20 | 固原 106.28 | 中卫 105.19
+新疆: 乌鲁木齐 87.62 | 克拉玛依 84.89 | 吐鲁番 89.19 | 哈密 93.51 | 昌吉 87.30 | 库尔勒 86.15 | 阿克苏 80.26 | 喀什 75.99 | 和田 79.92 | 伊宁 81.32 | 石河子 86.08 | 塔城 82.98 | 阿勒泰 88.14 | 阿图什 76.17 | 博乐 82.07 | 奎屯 84.90
+香港: 香港 114.17
+澳门: 澳门 113.54
+台湾: 台北 121.57 | 高雄 120.31 | 台中 120.68 | 台南 120.21 | 新竹 120.97 | 花莲 121.60`;
+
+function parseCityGroups(raw) {
+    return raw.trim().split('\n').map(line => {
+        const idx = line.indexOf(':');
+        if (idx < 0) return null;
+        const province = line.slice(0, idx).trim();
+        const cities = line.slice(idx + 1).split('|').map(item => {
+            const parts = item.trim().split(/\s+/);
+            const lng = parseFloat(parts[1]);
+            return parts[0] && Number.isFinite(lng) ? { name: parts[0], lng } : null;
+        }).filter(Boolean);
+        return cities.length ? { province, cities } : null;
+    }).filter(Boolean);
+}
+
+const CITY_GROUPS = parseCityGroups(CITY_GROUPS_RAW);
+const CITY_LONGITUDES = CITY_GROUPS.reduce((acc, group) => acc.concat(group.cities), []);
+
 function populateBirthDateSelects() {
     if (dateSelectsPopulated) return;
     
@@ -870,6 +925,7 @@ function populateBirthDateSelects() {
     const hour24Select = document.getElementById('consumer-birth-hour24');
     const minuteSelect = document.getElementById('consumer-birth-minute');
     const citySelect = document.getElementById('consumer-birth-city');
+    const citySearchInput = document.getElementById('consumer-birth-city-search');
     const lngInput = document.getElementById('consumer-birth-lng');
     const previewEl = document.getElementById('true-solar-preview');
     const clockRow = document.getElementById('clock-row');
@@ -897,20 +953,58 @@ function populateBirthDateSelects() {
         minuteSelect.value = '0';
     }
 
-    // --- 出生地经度（真太阳时校准）---
-    if (citySelect) {
+    // --- 出生地经度（真太阳时校准，按省份归组 + 关键词过滤）---
+    const buildCityOptions = (keyword) => {
+        if (!citySelect) return;
+        const current = citySelect.value;
+        const kw = (keyword || '').trim();
         citySelect.innerHTML = '';
         const noneOpt = document.createElement('option');
         noneOpt.value = '';
-        noneOpt.textContent = '不知道 / 不校准（按北京时间）';
+        noneOpt.textContent = '不校准（按北京时间）';
         citySelect.appendChild(noneOpt);
-        CITY_LONGITUDES.forEach(city => {
-            const opt = document.createElement('option');
-            opt.value = String(city.lng);
-            opt.textContent = `${city.name}（${city.lng.toFixed(1)}°E）`;
-            citySelect.appendChild(opt);
+
+        let matched = 0;
+        CITY_GROUPS.forEach(group => {
+            const provinceHit = kw && group.province.indexOf(kw) >= 0;
+            const cities = kw && !provinceHit
+                ? group.cities.filter(city => city.name.indexOf(kw) >= 0)
+                : group.cities;
+            if (!cities.length) return;
+            const og = document.createElement('optgroup');
+            og.label = group.province;
+            cities.forEach(city => {
+                const opt = document.createElement('option');
+                opt.value = String(city.lng);
+                opt.textContent = `${city.name}（${city.lng.toFixed(1)}°E）`;
+                og.appendChild(opt);
+                matched += 1;
+            });
+            citySelect.appendChild(og);
         });
-        citySelect.value = '';
+
+        if (matched === 0) {
+            const empty = document.createElement('option');
+            empty.value = '';
+            empty.textContent = `没有匹配「${kw}」的城市：请在右侧直接填经度`;
+            citySelect.appendChild(empty);
+        }
+        if (current && Array.prototype.some.call(citySelect.options, o => o.value === current)) {
+            citySelect.value = current;
+        } else {
+            citySelect.value = '';
+        }
+        citySelect.dataset.matched = String(matched);
+    };
+
+    buildCityOptions('');
+    const cityCountEl = document.getElementById('consumer-birth-city-count');
+    if (cityCountEl) cityCountEl.textContent = String(CITY_LONGITUDES.length);
+    if (citySearchInput) {
+        citySearchInput.addEventListener('input', () => {
+            buildCityOptions(citySearchInput.value);
+            computeTrueSolarPreview();
+        });
     }
 
     const readLng = () => {
@@ -1464,21 +1558,6 @@ function pad2(n) {
 }
 
 // 常见出生地经度（东经），用于真太阳时校准；可按需扩充
-const CITY_LONGITUDES = [
-    { name: '北京', lng: 116.4074 }, { name: '天津', lng: 117.2008 }, { name: '上海', lng: 121.4737 },
-    { name: '重庆', lng: 106.5516 }, { name: '广州', lng: 113.2644 }, { name: '深圳', lng: 114.0579 },
-    { name: '杭州', lng: 120.1551 }, { name: '南京', lng: 118.7969 }, { name: '武汉', lng: 114.3055 },
-    { name: '成都', lng: 104.0665 }, { name: '西安', lng: 108.9398 }, { name: '沈阳', lng: 123.4315 },
-    { name: '长春', lng: 125.3235 }, { name: '哈尔滨', lng: 126.5349 }, { name: '济南', lng: 117.1205 },
-    { name: '郑州', lng: 113.6253 }, { name: '石家庄', lng: 114.5149 }, { name: '太原', lng: 112.5489 },
-    { name: '呼和浩特', lng: 111.7492 }, { name: '合肥', lng: 117.2272 }, { name: '福州', lng: 119.2965 },
-    { name: '南昌', lng: 115.8582 }, { name: '长沙', lng: 112.9388 }, { name: '南宁', lng: 108.3665 },
-    { name: '海口', lng: 110.1999 }, { name: '贵阳', lng: 106.6302 }, { name: '昆明', lng: 102.8329 },
-    { name: '拉萨', lng: 91.1409 }, { name: '兰州', lng: 103.8343 }, { name: '西宁', lng: 101.7782 },
-    { name: '银川', lng: 106.2309 }, { name: '乌鲁木齐', lng: 87.6168 }, { name: '香港', lng: 114.1694 },
-    { name: '澳门', lng: 113.5439 }, { name: '台北', lng: 121.5654 }, { name: '青岛', lng: 120.3826 },
-    { name: '大连', lng: 121.6147 }, { name: '厦门', lng: 118.0894 }, { name: '苏州', lng: 120.5853 }
-];
 
 // 均时差（分钟），NOAA 常用近似式，精度约 ±30 秒
 function equationOfTime(month, day) {

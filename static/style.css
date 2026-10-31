@@ -4290,3 +4290,18 @@ body {
         justify-content: flex-start; margin: 0;
     }
 }
+
+/* 出生地搜索框（Direction A 表单补充） */
+#consumer-form-shell .city-search-input { margin-bottom: 8px; }
+#consumer-form-shell .city-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* 表单：窄屏下两列表单行改为单列（出生地 + 经度） */
+@media (max-width: 640px) {
+    #consumer-form-shell .form-row.two-cols {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #consumer-form-shell .form-row.two-cols > .form-group {
+        width: 100%;
+    }
+}

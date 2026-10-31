@@ -743,9 +743,11 @@
                                     <div class="form-row two-cols">
                                         <div class="form-group">
                                             <label for="consumer-birth-city">出生地（真太阳时校准）</label>
+                                            <input type="search" id="consumer-birth-city-search" class="form-input city-search-input" placeholder="搜索城市：如 成都 / 喀什 / 台北" autocomplete="off">
                                             <div class="select-wrapper">
                                                 <select id="consumer-birth-city" class="form-select"></select>
                                             </div>
+                                            <div class="field-hint">共 <span id="consumer-birth-city-count">—</span> 个城市；找不到就直接填经度</div>
                                         </div>
                                         <div class="form-group">
                                             <label for="consumer-birth-lng">经度（东经，可选覆盖）</label>
