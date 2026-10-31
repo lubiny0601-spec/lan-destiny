@@ -4360,3 +4360,78 @@ body {
     .energy-bar-item.is-focus { padding: 6px; margin: 0 -6px; }
     .energy-focus-mark { display: none; }
 }
+
+/* A. 三源互证 · 场景化比对重点 */
+.report-card .tri-focus-chip,
+.tri-focus-chip {
+    display: inline-block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--sb-green);
+    background: var(--sb-green-light);
+    border-radius: 999px;
+    padding: 3px 11px;
+    margin-bottom: 8px;
+}
+
+.report-card .tri-scenario-reading,
+.tri-scenario-reading {
+    margin: 12px 0 0;
+    padding: 12px 14px;
+    font-size: 0.93rem;
+    line-height: 1.85;
+    color: var(--sb-text-black);
+    background: var(--sb-green-light-tint, #f3f8f5);
+    border-left: 3px solid var(--sb-green);
+    border-radius: 6px;
+}
+
+.report-card .tri-source.is-focus,
+.tri-source.is-focus {
+    border-color: rgba(0, 117, 74, 0.55);
+    box-shadow: 0 0 0 2px rgba(0, 117, 74, 0.12);
+}
+
+@media (max-width: 768px) {
+    .report-card .tri-scenario-reading,
+    .tri-scenario-reading { font-size: 0.9rem; padding: 10px 12px; }
+}
+
+/* A. 三源互证 · 强调层（覆盖上面的基础样式） */
+.report-card .tri-focus-chip,
+.tri-focus-chip {
+    display: block;
+    width: fit-content;
+    margin-bottom: 10px;
+}
+
+.report-card .tri-source.is-focus,
+.tri-source.is-focus {
+    position: relative;
+    border: 2px solid rgba(0, 117, 74, 0.5);
+    background: rgba(0, 117, 74, 0.05);
+}
+
+.report-card .tri-source.is-focus::after,
+.tri-source.is-focus::after {
+    content: '本次重点证据';
+    position: absolute;
+    top: -11px;
+    right: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--sb-green);
+    background: #fff;
+    border: 1px solid rgba(0, 117, 74, 0.3);
+    border-radius: 999px;
+    padding: 1px 8px;
+}
+
+.report-card .tri-source.is-focus .tri-source-label { color: var(--sb-green); }
+
+@media (max-width: 768px) {
+    .report-card .tri-source.is-focus::after { content: '重点'; }
+    .report-card .tri-source.is-focus { border-width: 2px; }
+}

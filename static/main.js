@@ -2552,7 +2552,83 @@ function getDimByElement(elem) {
 }
 
 // 三源比对：把三条线索归到同一套五维语言后再比较
-function buildTriangulation(parsedResult, baziResult) {
+// A. 场景化比对：三源的映射不变，只换「拿这三条证据回答哪个问题」
+const WORK_DIMS = ['表达感染', '秩序决断', '承载统筹'];
+const RELATION_DIMS = ['表达感染', '承载统筹', '洞察思辨'];
+
+function buildTriScenarioFocus(input) {
+    const { scenario, zodiacDim, signDim, spectrum, pattern, animal, signName } = input;
+    const sources = [
+        { key: '生肖', dim: zodiacDim },
+        { key: '星座', dim: signDim },
+        { key: '光谱首位', dim: spectrum.top1 },
+        { key: '光谱次位', dim: spectrum.top2 }
+    ];
+    const hitsIn = dims => sources.filter(s => dims.includes(s.dim));
+    const tally = list => list.reduce((acc, s) => { acc[s.dim] = (acc[s.dim] || 0) + 1; return acc; }, {});
+    const topOf = t => Object.keys(t).sort((a, b) => t[b] - t[a])[0] || null;
+    const quote = dims => dims.map(d => `【${d}】`).join('、');
+    const weak = spectrum.weak;
+
+    if (scenario === 'career') {
+        const hits = hitsIn(WORK_DIMS);
+        const t = tally(hits);
+        const best = topOf(t);
+        const bestCount = best ? t[best] : 0;
+        const others = Object.keys(t).filter(d => d !== best);
+        let reading;
+        if (!hits.length) {
+            reading = `三源里没有一条落在工作向的三条通道（${WORK_DIMS.join('、')}）——你的长板更偏「研判与开局」（${quote([spectrum.top1, spectrum.top2])}）。这类结构更适合当发起者、幕僚或判断者，被要求立刻收口执行时会格外耗电。`;
+        } else if (bestCount >= 2) {
+            reading = `三源里有 ${bestCount} 条落在【${best}】：这是你在工作上的立身通道，可以直接写进自我介绍与项目分工。${others.length ? `其余工作向维度（${others.map(d => `【${d}】`).join('')}）只有零星支持，适合当辅助，不宜当作对外主标签。` : ''}`;
+        } else {
+            reading = `工作向的通道被分散命中（${hits.map(s => `${s.key}→【${s.dim}】`).join('，')}），没有一条拿到两条以上支持：你不是单点型选手，而是在「对外表达」与「稳住基本盘」之间切换。选岗位时先看这个岗位更需要哪一条，再谈补短板——短板不该决定你的定位。`;
+        }
+        return { question: '工作上该靠哪条通道立身', focusDim: best || spectrum.top1, reading };
+    }
+
+    if (scenario === 'relationship') {
+        const hits = hitsIn(RELATION_DIMS);
+        const t = tally(hits);
+        const best = topOf(t);
+        const bestCount = best ? t[best] : 0;
+        const covered = Object.keys(t).length;
+        const weakInRelation = RELATION_DIMS.includes(weak);
+        let reading;
+        if (covered >= 3) {
+            reading = `关系向的三条通道全部被命中（${Object.keys(t).map(d => `【${d}】`).join('')}）：你能读懂、能接住、也能直接说出口。真正的风险不是能力缺口，而是${weakInRelation ? `【${weak}】在光谱里同时最弱——你想照顾所有人，但电量最低的恰恰是这一维，于是「懂事」本身变成消耗` : `你在高压下会先收回表达，让对方误以为你不在意`}。`;
+        } else if (bestCount >= 2) {
+            reading = `对方最容易感知到的，是【${best}】（三源里有 ${bestCount} 条落在它上面）。这一维既是你给出去的，也是别人给你贴标签的地方；关系里的边界问题通常也发生在这里。`;
+        } else {
+            reading = `关系向的证据比较分散（${hits.map(s => `${s.key}→【${s.dim}】`).join('，') || '无'}）：不同关系里你会呈现出不同的样子，与其找「真实的我」，不如观察哪一种关系让你回血。`;
+        }
+        return { question: '对方最先感知到的你，三源怎么说', focusDim: best || spectrum.top1, reading };
+    }
+
+    if (scenario === 'confusion') {
+        const pointing = sources.filter(s => s.dim === weak);
+        const reading = pointing.length
+            ? `三源里有 ${pointing.length} 条（${pointing.map(s => s.key).join('、')}）把【${weak}】放在显眼位置，而它正好是光谱里最弱的一维：当下那种「没做错什么但很累」，不是你不够努力，而是你在用一条低电量的通道长期硬撑。先把承诺减半，比继续加强【${spectrum.top1}】更有用。`
+            : `三源没有一条指向【${weak}】，说明当前的漏能更像环境与节奏的结果，而不是结构缺陷：先调节奏（减少并行、明确边界），不必急着否定自己。`;
+        return { question: '当下的卡点，三源能解释吗', focusDim: weak, reading };
+    }
+
+    const selfReadings = {
+        resonance3: `三源全部指向【${spectrum.top1}】：你对自己「是什么风格」的判断，和外部体系读到的结果一致，这份自我描述是自洽的。`,
+        resonance2: `生肖与星座都把【${zodiacDim}】放在首位，光谱首位是【${spectrum.top1}】——交叉体系给出的标签与你的实际输出基本吻合，自洽度较高。`,
+        complement: `两条独立线索各自落在光谱的两条主通道上（${quote([spectrum.top1, spectrum.top2])}）：你的自我描述天生是双轨的，只讲其中一条就会失真。`,
+        anchor: `主通道【${spectrum.top1}】在三源里被重复识别，另一条线索描述的是次级策略。自洽，但要注意别把次级策略当成主线来要求自己。`,
+        tension: `三源出现了「期待与电量」的错位：${zodiacDim === weak ? `生肖「${animal}」` : signName}把【${weak}】放在首位，而它恰是光谱里最弱的一维。自我描述里最该修正的假设是「我应该一直擅长这一维」——那不是能力问题，而是电量问题。`,
+        offset: `三源各指一处（【${zodiacDim}】/【${signDim}】/【${spectrum.top1}】）：你的自我描述会随场景切换，这不算矛盾，但意味着很难用一个词概括自己。`
+    };
+    return {
+        question: '这套自我描述自洽吗',
+        focusDim: input.consensusDim || spectrum.top1,
+        reading: selfReadings[pattern] || selfReadings.offset
+    };
+}
+
+function buildTriangulation(parsedResult, baziResult, scenario) {
     if (!parsedResult || parsedResult.parseStatus === 'failed') return null;
 
     const solar = (baziResult && baziResult.solar) || null;
@@ -2673,6 +2749,17 @@ function buildTriangulation(parsedResult, baziResult) {
         ? `你的出生日期落在立春与春节之间：本报告年柱按立春换年（${yearBranch}${lichunAnimal}，对应${zodiacDim}），大众习惯按春节（${chunjieBranch}${chunjieAnimal}，对应${chunjieDim}）。口径切换只改变生肖这一列的标签，不改变五维光谱与其余结论——本报告以年柱口径为准。`
         : `生肖同时按立春与春节口径核对，结果一致（${yearBranch}${lichunAnimal}），不存在换年边界争议。`;
 
+    const triFocus = buildTriScenarioFocus({
+        scenario: scenario || 'self',
+        zodiacDim,
+        signDim,
+        spectrum,
+        pattern,
+        consensusDim,
+        animal,
+        signName
+    });
+
     const posterStatus = pattern === 'tension'
         ? `补给：${spectrum.weak}`
         : (consensusDim ? `共识：${consensusDim}` : '待校准');
@@ -2699,6 +2786,10 @@ function buildTriangulation(parsedResult, baziResult) {
         body: bodies[pattern],
         action: actions[pattern],
         consensusDim,
+        triFocus,
+        focusQuestion: triFocus.question,
+        scenarioReading: triFocus.reading,
+        focusDim: triFocus.focusDim,
         posterLine
     };
 }
@@ -2711,19 +2802,19 @@ function renderTriangulationHTML(tri) {
     return `
         <p class="tri-lead">三条不同来源的线索，被翻译成同一套五维行为语言之后再比对：生肖来自年柱地支，星座来自出生月日，五维光谱来自四柱五行加权。它们一致时说明结构表述稳定，不一致时说明你的行为在不同场景里有分化。</p>
         <div class="tri-source-row">
-            <div class="tri-source">
+            <div class="tri-source${tri.focusDim === tri.zodiacDim ? ' is-focus' : ''}">
                 <span class="tri-source-label">生肖 · 年柱（立春口径）</span>
                 <strong class="tri-source-value${tri.boundaryDiffers ? ' is-pair' : ''}">${zodiacValue}</strong>
                 <span class="tri-source-dim">${tri.zodiacDim}</span>
                 <p class="tri-source-note">${tri.animalProfile.trait}：${tri.animalProfile.note}</p>
             </div>
-            <div class="tri-source">
+            <div class="tri-source${tri.focusDim === tri.signDim ? ' is-focus' : ''}">
                 <span class="tri-source-label">星座 · 出生月日（太阳星座）</span>
                 <strong class="tri-source-value">${tri.signName}</strong>
                 <span class="tri-source-dim">${tri.signDim}</span>
                 <p class="tri-source-note">${tri.signInfo.trait}：${tri.signInfo.note}</p>
             </div>
-            <div class="tri-source tri-source-spectrum">
+            <div class="tri-source tri-source-spectrum${tri.focusDim === tri.spectrum.top1 ? ' is-focus' : ''}">
                 <span class="tri-source-label">五维光谱 · 本机加权计算结果</span>
                 <strong class="tri-source-value">${tri.spectrum.top1}</strong>
                 <span class="tri-source-dim">首位维度</span>
@@ -2731,9 +2822,11 @@ function renderTriangulationHTML(tri) {
             </div>
         </div>
         <div class="tri-verdict">
+            <span class="tri-focus-chip">本次比对重点：${tri.focusQuestion || '三条线索是否一致'}</span>
             <span class="tri-verdict-label">三源比对结果 · ${tri.patternLabel}</span>
             <span class="tri-verdict-title">${tri.verdictTitle}</span>
             <p class="tri-explain">${tri.body}</p>
+            <p class="tri-scenario-reading">${tri.scenarioReading || ''}</p>
             <p class="tri-action">→ ${tri.action}</p>
         </div>
         <p class="tri-boundary">${tri.boundaryLine}</p>
@@ -3083,7 +3176,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     const monthRhythm = MONTH_RHYTHM_MAP[parsedResult.monthBranch] || '敏锐推进力';
 
     // 三源互证：生肖 × 星座 × 五维光谱（无星座数据时自动跳过，不阻断报告）
-    const triangulation = buildTriangulation(parsedResult, baziResult);
+    const triangulation = buildTriangulation(parsedResult, baziResult, activeScenario);
     const triangulationHTML = renderTriangulationHTML(triangulation);
 
     // 年运 / 月运 / 90 天窗口（流年流月干支推导，与三源互证同源）
