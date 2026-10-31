@@ -3690,6 +3690,32 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         `;
     }
 
+    else if (activeScenario === 'relationship') {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🤝 工作关系里的边界（这一版只看协作，不看岗位定位）</h5>
+                <p>你的协作偏好是【${topTgInfo.label}】。在需要长期配合的场景里，真正吃亏的不是能力，而是把「配合」当成了「关系」：${sq2.drainFocus}。</p>
+                <p><strong>两周可验证：</strong>挑一次本该由对方完成的环节，不代劳、只给标准（验收口径写在前面），看交付是否仍然成立。</p>
+            </div>
+        `;
+    } else if (activeScenario === 'confusion') {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🧭 下一步的最小职涯验证（先别换赛道）</h5>
+                <p>在没验证之前，换岗位往往只是把同一套消耗带到新环境：你当前的内耗来源是「${sq2.drainFocus}」，它和岗位名字关系不大，和协作方式关系更大。</p>
+                <p><strong>两周实验：</strong>在当前岗位上主动改一条协作规则（谁定标准、谁验收），记录交付质量与耗电量的变化，再决定要不要动方向。</p>
+            </div>
+        `;
+    } else {
+        careerHTML += `
+            <div class="reflection-card">
+                <h5>🔋 工作里的耗电点（自检用）</h5>
+                <p>结构上你最省力的打法是【${strongElemPlain.name}】；最耗电的往往不是难题，而是${sq2.drainFocus}。</p>
+                <p><strong>自检：</strong>回想最近一周，哪一类任务让你「做完比没做更累」——那是这一维在报警，而不是你不够努力。</p>
+            </div>
+        `;
+    }
+
     // --- 4. Relationship Section Construction ---
     const relationYinYangText = ELEMENT_RELATION_RULES[dm.yinYang] || ELEMENT_RELATION_RULES['阳'];
     const relationBoundary = RELATION_BOUNDARY_MAP[parsedResult.strength] || RELATION_BOUNDARY_MAP['均势'];
@@ -3718,6 +3744,32 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             <div class="reflection-card">
                 <h5>❓ 关系深度自我觉察提问</h5>
                 <p>${RELATION_REFLECTION_MAP[stem] || '试着在下一次沟通中，先倾听对方的感受，再表达你的需求。'}</p>
+            </div>
+        `;
+    }
+
+    else if (activeScenario === 'career') {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>💼 工作关系里的沟通成本（把这一章用于协作场景）</h5>
+                <p>在工作关系里，你的表达底色仍是【${strongElemPlain.name}】：${relationYinYangText}</p>
+                <p><strong>最容易吃亏的一次：</strong>把对方的情绪当成你的交付责任。两周可验证：完整说出一次「这件事我帮不了」，并给出替代方案。</p>
+            </div>
+        `;
+    } else if (activeScenario === 'confusion') {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>🪫 关系里的耗电点（当下最该减少的消耗）</h5>
+                <p>你最需要补给的是【${weakElemPlain.name}】，而在关系里，这一维常以「${relationBoundary.vulnerability}」的方式被透支。</p>
+                <p><strong>两周实验：</strong>把一次「不想去但会去」的邀约改成「这次不去」，只说明安排、不解释理由，观察关系是否真的受损。</p>
+            </div>
+        `;
+    } else {
+        relationshipHTML += `
+            <div class="reflection-card">
+                <h5>🧩 你在关系里的默认脚本（自检用）</h5>
+                <p>${relationYinYangText}</p>
+                <p><strong>自检：</strong>这套脚本在早年通常是有效的（它帮你维持了关系），现在可能只是惯性——区分「我还想这样」和「我只会这样」。</p>
             </div>
         `;
     }
