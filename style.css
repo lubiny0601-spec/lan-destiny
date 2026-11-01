@@ -4786,3 +4786,59 @@ body {
     .summary-detail { display: block !important; }
     .summary-more-toggle { display: none !important; }
 }
+/* ============================================================
+   P2 · iOS 输入框自动缩放修复 + 横向溢出兜底
+   问题：表单控件 font-size 14px < 16px，iPhone Safari / 微信内置浏览器
+   在点选生辰与出生地时会放大页面，表单关闭后放大状态不还原，
+   报告页看起来就被裁掉右侧、还要手动拖动才居中。
+   修法：移动端表单控件统一 16px（iOS 只在 <16px 时自动放大）。
+   ============================================================ */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+@media (max-width: 640px) {
+    #consumer-form-shell input,
+    #consumer-form-shell select,
+    #consumer-form-shell textarea,
+    #consumer-form-shell .form-input,
+    #consumer-form-shell .form-select,
+    #consumer-mode-view input[type="text"],
+    #consumer-mode-view input[type="number"],
+    #consumer-mode-view input[type="search"],
+    #consumer-mode-view input[type="tel"],
+    #consumer-mode-view select,
+    #consumer-mode-view textarea,
+    #consumer-birth-city-search,
+    #consumer-birth-city,
+    #consumer-birth-lng,
+    #consumer-birth-year,
+    #consumer-birth-month,
+    #consumer-birth-day,
+    #consumer-birth-hour24,
+    #consumer-birth-minute,
+    #consumer-time-precision,
+    #consumer-calendar-type {
+        font-size: 16px !important;
+    }
+}
+
+/* 横向溢出兜底：flex / grid 子项默认 min-width:auto 会被内容撑破容器 */
+.top-bar-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.top-bar-actions > button,
+.report-meta-pills > .meta-pill,
+.s3-row,
+.s3-text,
+.summary-keywords > *,
+.trio-item,
+.summary-30s-card,
+.card-content,
+.report-card,
+.report-container,
+.top-bar-inner {
+    min-width: 0;
+    max-width: 100%;
+}
+.s3-text { overflow-wrap: anywhere; }
+.meta-pill { max-width: 100%; }
