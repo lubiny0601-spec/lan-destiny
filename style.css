@@ -4718,3 +4718,71 @@ body {
 /* 章节导航整体实底（原来半透明让药丸看着像禁用态）；跳转时给卡片留出贴顶条的高度 */
 .rc-nav { background: rgba(250, 249, 246, 1); }
 .report-card { scroll-margin-top: 176px; }
+/* ============================================================
+   P1 · 30 秒摘要压成「三句话说明书」
+   目标：一屏内看完 你是谁 / 现在该做 / 别做，
+   长版解释（核心观察 + 战力/卡点/突破三段）收进折叠层。
+   ============================================================ */
+.summary-3lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 6px;
+}
+.s3-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--sb-border-subtle);
+    border-radius: 10px;
+    background: var(--sb-white);
+}
+.s3-row-do { border-left: 3px solid var(--sb-green); }
+.s3-row-dont { border-left: 3px solid #b3261e; }
+.s3-label {
+    flex: 0 0 auto;
+    min-width: 56px;
+    padding-top: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--sb-green);
+}
+.s3-row-dont .s3-label { color: #b3261e; }
+.s3-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.58;
+    color: var(--sb-text-black);
+}
+.summary-detail { display: none; }
+.summary-detail.is-open { display: block; }
+.summary-more-toggle {
+    display: block;
+    width: 100%;
+    min-height: 42px;
+    margin-top: 10px;
+    padding: 9px 12px;
+    border: 1px dashed var(--sb-border-subtle);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--sb-green);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+@media (max-width: 640px) {
+    .summary-3lines { gap: 7px; margin: 10px 0 4px; }
+    .s3-row { padding: 9px 11px; gap: 8px; }
+    .s3-text { font-size: 0.93rem; }
+    .report-banner { padding: 14px 14px 2px; }
+    .summary-more-toggle { min-height: 44px; }
+}
+
+/* 打印 / 存 PDF：三句话摘要的折叠层也要展开，按钮不打印 */
+@media print {
+    .summary-detail { display: block !important; }
+    .summary-more-toggle { display: none !important; }
+}
