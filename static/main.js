@@ -4165,6 +4165,9 @@ function renderConsumerReport(baziResult, formState) {
     if (footer) footer.classList.add('hidden');
     reportView.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 兜底：iOS 输入框聚焦放大后可能残留横向偏移，进出报告时强制归零
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
 }
 
 // ------------------------------------------------------------------
@@ -4345,6 +4348,9 @@ function closeConsumerReportView() {
     if (footer) footer.classList.remove('hidden');
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 兜底：iOS 输入框聚焦放大后可能残留横向偏移，进出报告时强制归零
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
 }
 
 // ------------------------------------------------------------------
