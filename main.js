@@ -734,6 +734,125 @@ if (chapterNavBtns.length && chapterPanels.length) {
     });
 }
 
+// ------------------------------------------------------------------
+// 1d. 分享落地页：?s=<scenario> 直接展开该场景试读，并预选进表单
+//     每个试读卡提供「复制这一章的链接」，报告复制摘要也带上落地链接。
+// ------------------------------------------------------------------
+const DEEP_SCENARIOS = ['self', 'career', 'relationship', 'confusion'];
+const DEEP_ALIASES = {
+    'me': 'self', 'personality': 'self', '了解自己': 'self',
+    'work': 'career', 'job': 'career', '事业': 'career', '事业方向': 'career',
+    'relation': 'relationship', 'love': 'relationship', '关系': 'relationship', '关系模式': 'relationship',
+    'lost': 'confusion', '迷茫': 'confusion', '走出迷茫': 'confusion'
+};
+
+function readDeepLinkScenario() {
+    let raw = '';
+    try {
+        const q = new URLSearchParams(window.location.search || '');
+        raw = (q.get('s') || q.get('scenario') || q.get('from') || '').trim();
+    } catch (e) { return null; }
+    if (!raw) return null;
+    const key = raw.toLowerCase();
+    if (DEEP_SCENARIOS.includes(key)) return key;
+    if (DEEP_ALIASES[key]) return DEEP_ALIASES[key];
+    if (DEEP_ALIASES[raw]) return DEEP_ALIASES[raw];
+    return null;
+}
+
+function buildScenarioShareUrl(scenario) {
+    const base = window.location.origin + window.location.pathname;
+    return base + '?s=' + encodeURIComponent(scenario || 'self');
+}
+
+function copyTextHard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand && document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('copy failed'));
+    });
+}
+
+function scenarioRowLabel(row) {
+    const el = row.querySelector('.sr-name');
+    return el ? el.textContent.trim() : '这一章';
+}
+
+function applyDeepLinkScenario() {
+    const scen = readDeepLinkScenario();
+    if (!scen) return null;
+    const row = document.querySelector('.scenario-row[data-scenario="' + scen + '"]');
+    if (!row) return null;
+
+    // 只展开这一行，其余收起
+    scenarioRows.forEach(other => {
+        const open = other === row;
+        other.setAttribute('aria-expanded', String(open));
+        const p = document.getElementById(other.getAttribute('aria-controls'));
+        if (p) p.dataset.open = String(open);
+    });
+    row.classList.add('is-deeplinked');
+
+    // 预选场景：试读里的 CTA（data-start-scenario）点击时本来就会带上这一章，
+    // 这里不去写 consumerFormShellState（它在本文件更靠后声明，顶层赋值会报 TDZ）。
+
+    const panel = document.getElementById(row.getAttribute('aria-controls'));
+    const card = panel ? panel.querySelector('.ss-card') : null;
+    if (card && !card.querySelector('.ss-deep-chip')) {
+        const chip = document.createElement('p');
+        chip.className = 'ss-deep-chip';
+        chip.textContent = '你收到的是「' + scenarioRowLabel(row) + '」的试读';
+        card.insertBefore(chip, card.firstChild);
+    }
+
+    // 让开贴顶头部，把这一行带进视野
+    requestAnimationFrame(() => {
+        const header = document.querySelector('.consumer-nav');
+        const hh = header ? header.getBoundingClientRect().height : 0;
+        const y = row.getBoundingClientRect().top + window.scrollY - hh - 24;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'auto' });
+    });
+
+    document.title = '观澜 Lan.Destiny · ' + scenarioRowLabel(row) + '试读';
+    return scen;
+}
+
+// 每个试读卡加「复制这一章的链接」
+scenarioRows.forEach(row => {
+    const panel = document.getElementById(row.getAttribute('aria-controls'));
+    const card = panel ? panel.querySelector('.ss-card') : null;
+    if (!card || card.querySelector('.ss-share')) return;
+    const scen = row.dataset.scenario || 'self';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ss-share';
+    btn.textContent = '复制这一章的链接';
+    btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const url = buildScenarioShareUrl(scen);
+        copyTextHard(url)
+            .then(() => showToast('已复制链接：打开后直接看「' + scenarioRowLabel(row) + '」试读'))
+            .catch(() => prompt('复制这个链接：', url));
+    });
+    const note = card.querySelector('.ss-note');
+    if (note) card.insertBefore(btn, note); else card.appendChild(btn);
+});
+
+try {
+    applyDeepLinkScenario();
+} catch (err) {
+    console.warn('[deep-link] 落地失败，已忽略：', err && err.message ? err.message : err);
+}
 // 2. Custom Notice for Start Generation
 const startBtns = document.querySelectorAll('.start-generation-btn');
 const consumerNotice = document.getElementById('consumer-notice');
@@ -4727,7 +4846,10 @@ function copyReportSummary() {
         `✦ 精力损耗：${burnout}\n` +
         `✦ 建议减法：${action}\n` +
         triLine +
-        `\n—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书`;
+        `\n—— 观澜 Lan.Destiny · 基于东方时间模型的个人结构说明书` +
+        `\n✦ 同一场景的说明书试读：${buildScenarioShareUrl(
+            (lastRenderedReportModel && lastRenderedReportModel.scenario) || consumerFormShellState.scenario || 'self'
+        )}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(copyText).then(() => {
