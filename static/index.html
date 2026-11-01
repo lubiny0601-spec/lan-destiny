@@ -417,8 +417,23 @@
                             <div class="summary-keywords" id="summary-keywords"></div>
                             <button type="button" id="btn-summary-poster" class="btn-summary-poster">🖼 生成分享海报</button>
                         </div>
-                        <div class="summary-observation" id="summary-observation"></div>
-                        <div class="summary-trio-grid">
+                        <div class="summary-3lines">
+                            <div class="s3-row">
+                                <span class="s3-label">你是谁</span>
+                                <p class="s3-text" id="summary-line-you"></p>
+                            </div>
+                            <div class="s3-row s3-row-do">
+                                <span class="s3-label">现在该做</span>
+                                <p class="s3-text" id="summary-line-do"></p>
+                            </div>
+                            <div class="s3-row s3-row-dont">
+                                <span class="s3-label">别做</span>
+                                <p class="s3-text" id="summary-line-dont"></p>
+                            </div>
+                        </div>
+                        <div class="summary-detail" id="summary-detail">
+                                <div class="summary-observation" id="summary-observation"></div>
+                            <div class="summary-trio-grid">
                             <div class="trio-item trio-advantage">
                                 <span class="trio-label" id="summary-label-adv">✦ 主要优势</span>
                                 <p id="summary-advantage"></p>
@@ -432,6 +447,8 @@
                                 <p id="summary-action"></p>
                             </div>
                         </div>
+                        </div>
+                        <button type="button" class="summary-more-toggle" id="btn-summary-more" aria-expanded="false">看懂这三句背后 ▾</button>
                     </div>
                 </div>
             </section>

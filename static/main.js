@@ -3394,6 +3394,18 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
 
     const currentTrioLabels = summaryTrioLabels[activeScenario] || summaryTrioLabels.self;
 
+    // 「三句话说明书」：你是谁 / 现在该做 / 别做。每句都短到能一屏读完，
+    // 长版解释留在折叠层（summary-detail）里，想深看再展开。
+    const summaryDontLine = {
+        self: '别在身心低能期做长期决定',
+        career: '别替别人没做完的环节兜底',
+        relationship: '别把对方的情绪当成你的交付责任',
+        confusion: '别在多条路之间反复比对'
+    };
+    const summaryLineYou = `${(traitInfo.title || '').split(' · ')[0]} · ${sq1.tag} · 强项是${strongElemPlain.name}`;
+    const summaryLineDo = `这周只做一件事：${sq3.tag}`;
+    const summaryLineDont = summaryDontLine[activeScenario] || summaryDontLine.self;
+
     const summary30s = {
         badgeText: summaryBadges[activeScenario] || summaryBadges.self,
         labelAdv: currentTrioLabels.adv,
@@ -3405,6 +3417,9 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         topBurnout: scenarioTopBurnouts[activeScenario] || scenarioTopBurnouts.self,
         topAction: scenarioTopActions[activeScenario] || scenarioTopActions.self,
         scenarioLabel: `本次关注: ${scenarioNames[activeScenario] || '了解自己'}`,
+        lineYou: summaryLineYou,
+        lineDo: summaryLineDo,
+        lineDont: summaryLineDont,
         scenarioSubtitle: scenarioSubtitles[activeScenario] || scenarioSubtitles.self
     };
 
@@ -3979,6 +3994,23 @@ function renderConsumerReport(baziResult, formState) {
         const summaryLabelActionEl = document.getElementById('summary-label-action');
         if (summaryLabelActionEl && reportModel.summary30s) {
             summaryLabelActionEl.textContent = reportModel.summary30s.labelAction;
+        }
+
+        const lineYouEl = document.getElementById('summary-line-you');
+        if (lineYouEl && reportModel.summary30s) lineYouEl.textContent = reportModel.summary30s.lineYou;
+        const lineDoEl = document.getElementById('summary-line-do');
+        if (lineDoEl && reportModel.summary30s) lineDoEl.textContent = reportModel.summary30s.lineDo;
+        const lineDontEl = document.getElementById('summary-line-dont');
+        if (lineDontEl && reportModel.summary30s) lineDontEl.textContent = reportModel.summary30s.lineDont;
+
+        const summaryMoreBtn = document.getElementById('btn-summary-more');
+        const summaryDetailEl = document.getElementById('summary-detail');
+        if (summaryMoreBtn && summaryDetailEl) {
+            summaryMoreBtn.onclick = () => {
+                const open = summaryDetailEl.classList.toggle('is-open');
+                summaryMoreBtn.textContent = open ? '收起细节 ▴' : '看懂这三句背后 ▾';
+                summaryMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            };
         }
 
         const summaryKeywordsEl = document.getElementById('summary-keywords');
