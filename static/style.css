@@ -4842,3 +4842,48 @@ html {
 }
 .s3-text { overflow-wrap: anywhere; }
 .meta-pill { max-width: 100%; }
+/* ============================================================
+   分享落地页：?s=<scenario> 打开即展开该场景试读
+   ============================================================ */
+#consumer-mode-view .scenario-row.is-deeplinked {
+    background: rgba(0, 98, 65, 0.055);
+}
+#consumer-mode-view .scenario-row.is-deeplinked .sr-name::after {
+    content: ' · 来自分享';
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #006241;
+}
+.ss-deep-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(0, 98, 65, 0.1);
+    color: #006241;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.ss-share {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin-top: 12px;
+    padding: 9px 16px;
+    border: 1px dashed var(--sb-border-subtle);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--consumer-text-sub);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ss-share:active { transform: scale(0.98); }
+@media (max-width: 640px) {
+    .ss-share { width: 100%; min-height: 44px; }
+}
