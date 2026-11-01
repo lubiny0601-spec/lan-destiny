@@ -1167,27 +1167,27 @@ const SCENARIO_CALIBRATION_CONFIG = {
                 key: 'q1',
                 title: 'Q1 · 在业务推进或团队协作中，你最擅长扮演什么角色？',
                 options: [
-                    { id: 'push', label: '攻坚操盘手', desc: '直面核心目标，独立拿结果与定方向', tag: '攻坚操盘手', note: '具备极强的主战破局力与目标牵引力，适合独当一面负责核心业务' },
-                    { id: 'think', label: '幕僚规划师', desc: '负责体系搭建、逻辑推演与风险把控', tag: '幕僚规划师', note: '擅长宏观推演与底层标准制定，是团队不可或缺的智囊与风控中枢' },
-                    { id: 'harmony', label: '资源协同者', desc: '跨角色连接、协调沟通与粘合团队', tag: '资源协同者', note: '具备极佳的人际润滑与资源整合手腕，擅长借力打力促成多方共赢' }
+                    { id: 'push', label: '主攻手', desc: '直面核心目标，独立拿结果与定方向', tag: '主攻手', note: '具备很强的破局力与目标牵引力，适合独当一面负责核心业务' },
+                    { id: 'think', label: '军师型', desc: '负责体系搭建、逻辑推演与风险把控', tag: '军师型', note: '擅长宏观推演与底层标准制定，是团队不可或缺的智囊与风控中枢' },
+                    { id: 'harmony', label: '协调型', desc: '跨角色连接、协调沟通与粘合团队', tag: '协调型', note: '具备极佳的人际润滑与资源整合手腕，擅长借力打力促成多方共赢' }
                 ]
             },
             {
                 key: 'q2',
                 title: 'Q2 · 当前职场中最让你感到内耗或阻碍发挥的是？',
                 options: [
-                    { id: 'overload', label: '协作内耗', desc: '流程冗长、权责不清或推诿扯皮', tag: '协作内耗', drainFocus: '低效的跨部门推诿与责任盲区正在消耗你最宝贵的战术精力', cutTarget: '划清交付边界，不为他人未履职的环节兜底' },
-                    { id: 'boundary', label: '空间受限', desc: '缺乏自主裁决权，被过度微观管理', tag: '空间受限', drainFocus: '过多的微观干预与汇报链路正在压制你的主观能动性', cutTarget: '争取 1 项拥有完整闭环决策权的小型试验' },
-                    { id: 'stagnation', label: '方向抉择', desc: '面临赛道或平台选择，缺乏清晰抓手', tag: '方向抉择', drainFocus: '在多条可能路径之间徘徊权衡，缺乏低成本验证手段', cutTarget: '停止空想比对，挑选 1 个赛道开展轻量级测水' }
+                    { id: 'overload', label: '协作消耗', desc: '流程冗长、权责不清或推诿扯皮', tag: '协作消耗', drainFocus: '低效的跨部门推诿与责任盲区正在消耗你最宝贵的战术精力', cutTarget: '划清交付边界，不为他人未履职的环节兜底' },
+                    { id: 'boundary', label: '被管得太细', desc: '缺乏自主裁决权，被过度微观管理', tag: '被管得太细', drainFocus: '过多的微观干预与汇报链路正在压制你的主观能动性', cutTarget: '争取 1 项拥有完整闭环决策权的小型试验' },
+                    { id: 'stagnation', label: '方向没定', desc: '面临赛道或平台选择，缺乏清晰抓手', tag: '方向没定', drainFocus: '在多条可能路径之间徘徊权衡，缺乏低成本验证手段', cutTarget: '停止空想比对，挑选 1 个赛道开展轻量级测水' }
                 ]
             },
             {
                 key: 'q3',
                 title: 'Q3 · 未来 14 天最希望在职场取得的战术突破？',
                 options: [
-                    { id: 'subtract', label: '硬核成果', desc: '完成 1 个高辨识度的核心业务交付', tag: '硬核成果', actionVerb: '推进“标杆交付攻坚”：集中精力完成 1 个最具说服力的高质量成果' },
-                    { id: 'breakthrough', label: '流程优化', desc: '理顺 1 条混乱协作链路，建立标准', tag: '流程优化', actionVerb: '启动“协作规则重塑”：拉齐核心干系人，敲定清晰明确的权责交接协议' },
-                    { id: 'recharge', label: '向上破圈', desc: '与关键决策人对齐长期目标与资源', tag: '向上破圈', actionVerb: '进行“关键对齐沟通”：与核心上级明确你的战术长板定位与资源支持' }
+                    { id: 'subtract', label: '拿出成果', desc: '完成 1 个高辨识度的核心业务交付', tag: '拿出成果', actionVerb: '先做出 1 个最具说服力的成果：集中精力做完它，再谈别的' },
+                    { id: 'breakthrough', label: '理顺流程', desc: '理顺 1 条混乱协作链路，建立标准', tag: '理顺流程', actionVerb: '启动“协作规则重塑”：拉齐核心干系人，敲定清晰明确的权责交接协议' },
+                    { id: 'recharge', label: '对齐上层', desc: '与关键决策人对齐长期目标与资源', tag: '对齐上层', actionVerb: '进行“关键对齐沟通”：与核心上级明确你的战术长板定位与资源支持' }
                 ]
             }
         ]
@@ -1231,9 +1231,9 @@ const SCENARIO_CALIBRATION_CONFIG = {
                 key: 'q1',
                 title: 'Q1 · 当你感到迷茫焦虑时，最容易出现的行为反应？',
                 options: [
-                    { id: 'push', label: '盲目多动型', desc: '抓各种事情做以缓解焦虑，却无核心抓手', tag: '盲目多动型', note: '用战术上的勤奋掩盖战略上的迷茫，容易在多线消耗中身心俱疲' },
-                    { id: 'think', label: '思维反刍型', desc: '在脑中反复推演各种可能，迟迟不敢动', tag: '思维反刍型', note: '在脑海中排练过多灾难化假设，导致分析瘫痪而错失行动时机' },
-                    { id: 'harmony', label: '避难拖延型', desc: '逃避核心重大抉择，沉迷于低难度琐事', tag: '避难拖延型', note: '通过处理次要事务回避核心矛盾，暂时舒缓却在后续积累更大压力' }
+                    { id: 'push', label: '靠忙来躲', desc: '抓各种事情做以缓解焦虑，却无核心抓手', tag: '靠忙来躲', note: '用战术上的勤奋掩盖战略上的迷茫，容易在多线消耗中身心俱疲' },
+                    { id: 'think', label: '想太多不动', desc: '在脑中反复推演各种可能，迟迟不敢动', tag: '想太多不动', note: '在脑海中排练过多灾难化假设，导致分析瘫痪而错失行动时机' },
+                    { id: 'harmony', label: '专挑小事做', desc: '逃避核心重大抉择，沉迷于低难度琐事', tag: '专挑小事做', note: '通过处理次要事务回避核心矛盾，暂时舒缓却在后续积累更大压力' }
                 ]
             },
             {
@@ -1974,7 +1974,7 @@ if (btnCloseNotice) {
 const DAY_MASTER_TRAITS = {
     '甲': {
         name: '甲木 (阳木)',
-        title: '参天开路型 · 极强目标感',
+        title: '大树型 · 目标感强',
         trait: '如参天大树，性格直爽包容，富有主见与进取心，讲求信义，但有时略显固执，不愿轻易妥协折弯。',
         advantage: '具备极强开创力与领头羊意识，面对明确目标时启动迅速，行动干净利落。',
         risk: '容易因为刚直不阿而在人际或沟通中显得硬朗过度，缺乏回旋余地。',
@@ -1984,7 +1984,7 @@ const DAY_MASTER_TRAITS = {
     },
     '乙': {
         name: '乙木 (阴木)',
-        title: '柔藤随应型 · 极强生存韧性',
+        title: '藤蔓型 · 适应力强',
         trait: '如藤蔓柔草，适应能力极强，外柔内刚，善于借力打力、随遇而安，富有人情味与洞察力。',
         advantage: '具备极高的环境生存韧性与协调手腕，擅长在复杂人际中化解矛盾。',
         risk: '面对重大抉择时偶尔容易优柔寡断，过度受周围情绪与环境影响。',
@@ -1994,7 +1994,7 @@ const DAY_MASTER_TRAITS = {
     },
     '丙': {
         name: '丙火 (阳火)',
-        title: '太阳感染型 · 极高爆发力',
+        title: '太阳型 · 爆发力强',
         trait: '如太阳炽热，热情光明，坦荡直率，行动力极强，乐于奉献与照亮他人，感染力十足。',
         advantage: '具备天生的领袖气场与号召力，办事果敢，能迅速激活团队氛围。',
         risk: '情绪来得快去得也快，容易三分钟热度，或因急躁而忽略细节执行。',
@@ -2004,7 +2004,7 @@ const DAY_MASTER_TRAITS = {
     },
     '丁': {
         name: '丁火 (阴火)',
-        title: '灯火洞察型 · 深度专注力',
+        title: '灯火型 · 专注细腻',
         trait: '如烛光灯火，心思细腻内敛，专注度高，洞察力极强，富温情与礼数，内心执着而有明灯。',
         advantage: '擅长深耕细作与察觉他人未表达的需求，具备极高的高维感知力。',
         risk: '容易思虑过度、敏感内耗，在低能期倾向于将情绪埋藏于心。',
@@ -2014,7 +2014,7 @@ const DAY_MASTER_TRAITS = {
     },
     '戊': {
         name: '戊土 (阳土)',
-        title: '高山基石型 · 极强承载力',
+        title: '高山型 · 扛得住事',
         trait: '如城墙高山，沉稳厚重，包容守信，讲求实在，做人做事有始有终，极具安全感。',
         advantage: '承载力极强，能扛重任，在团队中是定海神针般的稳定基石。',
         risk: '反应速度相对偏稳，容易显得固执守旧，对突发变革接受度较低。',
@@ -2024,7 +2024,7 @@ const DAY_MASTER_TRAITS = {
     },
     '己': {
         name: '己土 (阴土)',
-        title: '沃土筹谋型 · 极强吸收整合力',
+        title: '沃土型 · 善于筹谋',
         trait: '如田园沃土，温和包容，多才多艺，善于配合与筹谋，能吸收整合各方资源。',
         advantage: '具备极高的包容度与细节整合能力，擅长默默滋养团队与项目。',
         risk: '偶尔缺乏果断斩乱麻的狠劲，容易因顾全大局而委屈自身需求。',
@@ -2034,7 +2034,7 @@ const DAY_MASTER_TRAITS = {
     },
     '庚': {
         name: '庚金 (阳金)',
-        title: '刀剑裁决型 · 极强刚毅决断力',
+        title: '刀剑型 · 决断利落',
         trait: '如刀剑矿石，刚毅果断，讲究义气与规则，决断力极强，重视效率与结果。',
         advantage: '斩钉截铁，执行力强，在危机时刻具备极佳的破局与裁决魄力。',
         risk: '性格直白硬朗，有时说话易伤人而不自知，缺乏缓冲温情。',
@@ -2044,7 +2044,7 @@ const DAY_MASTER_TRAITS = {
     },
     '辛': {
         name: '辛金 (阴金)',
-        title: '珠玉精雕型 · 极高审美品味',
+        title: '珠玉型 · 讲究细节',
         trait: '如珠玉金饰，精致温润，注重品质与自尊，感受敏锐，带独特的审美品味与批判眼光。',
         advantage: '追求完美与极致细节，在专业领域具备极高的鉴赏力与雕琢精神。',
         risk: '自尊心强，对批评较敏锐，容易在细节瑕疵上死磕而产生精神内耗。',
@@ -2054,7 +2054,7 @@ const DAY_MASTER_TRAITS = {
     },
     '壬': {
         name: '壬水 (阳水)',
-        title: '江河大局型 · 极强资源流动力',
+        title: '江河型 · 看重全局',
         trait: '如江河大海，奔放聪明，视野宏大，随应万变，富战略眼光与宏观统筹力。',
         advantage: '思维活跃不设限，具备极强的资源流动意识与大局观。',
         risk: '纪律束缚感差，容易心浮气躁，有时缺乏持久落地的细致耐性。',
@@ -2064,7 +2064,7 @@ const DAY_MASTER_TRAITS = {
     },
     '癸': {
         name: '癸水 (阴水)',
-        title: '雨露智谋型 · 静水流深直觉力',
+        title: '雨露型 · 直觉敏锐',
         trait: '如雨露甘霖，润物无声，智谋深远，内秀柔和，思维缜密，富深层直觉力。',
         advantage: '擅长以柔克刚、静水流深，在暗处默默布局与达成目标。',
         risk: '想法过于隐秘内敛，容易陷入悲观多虑或沉溺于内心情感漩涡。',
@@ -2076,35 +2076,35 @@ const DAY_MASTER_TRAITS = {
 
 const STRENGTH_MODULATION = {
     '身强': {
-        plainTitle: '自主驱动型',
+        plainTitle: '自主型',
         plainExplain: '更容易依靠自身判断与独立行动推进事情，主导欲较强，适合独当一面。',
         desc: '全局能量主控力强，独立意识突出，习惯掌控主导权，擅长单点攻坚与主导大局；宜防范自负孤行。',
         workStyle: '倾向自主决策、主导业务方向，适合在富有自主权的舞台上担任核心指挥官。',
         relationStyle: '在关系中习惯占据主导庇护地位，表达直接，需学会主动倾听对方情绪。'
     },
     '偏强': {
-        plainTitle: '充沛破局型',
+        plainTitle: '冲劲型',
         plainExplain: '能量较为充沛，自信心足，行动主动性强，在攻守转换间具备良好的独立破局力。',
         desc: '全局能量充沛有余，自信心足，行动主动性强；在攻守转换间具备良好的独立破局力。',
         workStyle: '具备极强的执行推动力与目标感，擅长领头攻坚或独立承担重大板块。',
         relationStyle: '互动中积极坦诚，愿意为他人遮风挡雨，需适度给对方留出表达空间。'
     },
     '身弱': {
-        plainTitle: '环境协同型',
+        plainTitle: '配合型',
         plainExplain: '更容易感知环境变化，善于借助资源、团队与合作伙伴的力量共同推进。',
         desc: '全局能量敏感细腻，感受力强，善于统筹协同与借势打力；宜防范精力过度分散与多虑内耗。',
         workStyle: '擅长借助平台与团队力量协同推进，在智囊、风控或协调岗位上长板明显。',
         relationStyle: '关系中极其看重信任感与情绪安全感，敏感体贴，需建立清晰的自我边界。'
     },
     '偏弱': {
-        plainTitle: '敏锐精细型',
+        plainTitle: '精细型',
         plainExplain: '感受力敏锐，对环境变化感察深刻，擅长在既定框架内精雕细琢与避其锋芒。',
         desc: '全局能量柔和敏锐，对环境变化感察深刻，擅长避其锋芒与精细化运作；宜注重能量滋养。',
         workStyle: '擅长在既定框架内精雕细琢，适合扮演智囊协助、品质把控或顾问专家角色。',
         relationStyle: '重情重义且注重深层精神共鸣，偶尔表达含蓄，需要对方给予明确正向反馈。'
     },
     '均势': {
-        plainTitle: '灵活调和型',
+        plainTitle: '切换型',
         plainExplain: '攻守兼备，阴阳调和，能根据外部环境灵活切换独立攻坚与团队协同模式。',
         desc: '全局能量中和均衡，阴阳调和，应变度极高；能根据外部环境灵活切换攻守与进退策略。',
         workStyle: '适应力极广，既能独立攻坚亦能团队协作，在复杂变化中能保持情绪定力。',
@@ -2349,7 +2349,7 @@ const ENERGY_RECHARGE_DRAIN_MAP = {
         drain: ['需要正面发起攻坚抢夺资源的竞争', '付出被视为理所当然缺乏感谢', '被迫站上风口浪尖承担攻击']
     },
     '庚': {
-        recharge: ['清晰透明的规则与高效率协作', '大刀阔斧推行流程优化的裁决权', '高强度体能锻炼与利落整理'],
+        recharge: ['清晰透明的规则与高效率协作', '大刀阔斧推行理顺流程的裁决权', '高强度体能锻炼与利落整理'],
         drain: ['说话弯弯绕绕不讲重点的低效沟通', '人浮于事、责任不清的推诿环境', '被迫配合毫无结果的虚假表演']
     },
     '辛': {
@@ -2424,44 +2424,44 @@ const RELATION_REFLECTION_MAP = {
 };
 
 const PLAIN_ELEMENT_MAP = {
-    '木': { name: '生长开拓', short: '开拓规划', color: '#006241' },
-    '火': { name: '表达感染', short: '传播号召', color: '#c82014' },
-    '土': { name: '承载统筹', short: '稳健整合', color: '#cba258' },
-    '金': { name: '秩序决断', short: '精密裁决', color: '#607870' },
-    '水': { name: '洞察思辨', short: '策略流动', color: '#2B4C5E' }
+    '木': { name: '生长力', short: '开新局', color: '#006241' },
+    '火': { name: '表达力', short: '对外表达', color: '#c82014' },
+    '土': { name: '承载力', short: '稳住基本盘', color: '#cba258' },
+    '金': { name: '决断力', short: '定规矩收口', color: '#607870' },
+    '水': { name: '洞察力', short: '看透局势', color: '#2B4C5E' }
 };
 
 const TEN_GOD_BEHAVIOR_MAP = {
     '比劫': {
-        label: '自主并肩驱动',
+        label: '自主协作',
         coreStyle: '极看重个人主权与直接行动，在有竞争张力或自主拍板的场景中状态最佳',
         careerEdge: '适合独立负责核心业务单元或带领高执行力小分队突围',
         burnoutTrap: '容易把本可分工的协作全部扛在自己肩上，不愿轻易示弱求助',
         relationHabit: '习惯用并肩作战与实际行动表达在乎，反感被单方面说教或控制'
     },
     '印': {
-        label: '深度内化吸收',
+        label: '深度钻研',
         coreStyle: '习惯先洞察底层逻辑与系统安全感，在深度钻研与知识沉淀中积累势能',
         careerEdge: '适合策略研究、体系搭建、专家顾问或高壁垒专业深耕',
         burnoutTrap: '容易在准备阶段反复推演而推迟行动节点，将外部压力内化为精神思虑',
         relationHabit: '看重精神默契与温和包容的安全感，需要稳定的独处充电空间'
     },
     '食伤': {
-        label: '创造表达生发',
+        label: '创意表达',
         coreStyle: '极具原创灵气与表达张力，天然抗拒机械刻板的重复流程',
         careerEdge: '适合产品创新、内容创作、审美设计、方案策划或从0到1孵化',
         burnoutTrap: '容易因情绪起伏或对庸常流程的不耐烦而损耗心神，难以忍受僵化指令',
         relationHabit: '追求鲜活有趣的灵魂共鸣与高感知度互动，对敷衍冷漠极其敏感'
     },
     '财': {
-        label: '结果价值导向',
+        label: '结果导向',
         coreStyle: '务实敏锐、看重投入产出比与可量化成果，擅长把想法转化为具体落地价值',
         careerEdge: '适合商业运营、资源变现、项目管理、供应链统筹或目标闭环攻坚',
         burnoutTrap: '容易被过多多线程的目标与现实得失绑架，忽略身心长期的休养弹性',
         relationHabit: '倾向于用具体的物质照顾与解决问题来表达爱意，有时显得过于理性务实'
     },
     '官杀': {
-        label: '秩序责任攻坚',
+        label: '规则与责任',
         coreStyle: '对规则、标准与外部承诺有极强的自我要求，危机感与抗压使命感突出',
         careerEdge: '适合风控管理、架构治理、高标准交付、流程裁决或复杂组织协同',
         burnoutTrap: '容易把外部评价与责任枷锁背得过重，长期处于紧绷备战状态难以放松',
@@ -2519,18 +2519,18 @@ const SIGN_BOUNDARY_DOY = [
     [9, 23, '天秤座'], [10, 24, '天蝎座'], [11, 23, '射手座'], [12, 22, '摩羯座']
 ];
 const SIGN_PROFILE = {
-    '白羊座': { element: '火', mode: '基本', dim: '表达感染', trait: '先发行动力', note: '以速度和直接表达打开局面，容易在开局阶段占优。' },
-    '金牛座': { element: '土', mode: '固定', dim: '承载统筹', trait: '稳定累积与质感坚持', note: '靠持续投入建立安全感，对突变与不确定的耐受度偏低。' },
-    '双子座': { element: '风', mode: '变动', dim: '洞察思辨', trait: '信息串联与快速理解', note: '靠不断获取新信息保持活力，深度需要主动补足。' },
-    '巨蟹座': { element: '水', mode: '基本', dim: '承载统筹', trait: '情绪承接与安全守护', note: '以照顾他人建立连接，需分清共情与过度负责。' },
-    '狮子座': { element: '火', mode: '固定', dim: '表达感染', trait: '中心表达与气场驱动', note: '在被人看见时输出最强，需警惕为维持形象而硬撑。' },
-    '处女座': { element: '土', mode: '变动', dim: '秩序决断', trait: '标准校准与流程优化', note: '通过发现问题体现价值，容易把自我要求变成对他人的挑剔。' },
-    '天秤座': { element: '风', mode: '基本', dim: '表达感染', trait: '关系协调与平衡表达', note: '擅长在多方之间找共识，代价是决策时容易延迟表态。' },
-    '天蝎座': { element: '水', mode: '固定', dim: '洞察思辨', trait: '深度洞察与专注穿透', note: '一旦认定就投入极深，需注意把洞察用于理解而非防御。' },
-    '射手座': { element: '火', mode: '变动', dim: '生长开拓', trait: '向外扩展与意义追寻', note: '靠新目标与新场景获得动力，落地执行需要外部结构支撑。' },
-    '摩羯座': { element: '土', mode: '基本', dim: '秩序决断', trait: '长期规划与责任担当', note: '以结构化方式推进目标，容易忽略过程中的情绪信号。' },
-    '水瓶座': { element: '风', mode: '固定', dim: '洞察思辨', trait: '系统视角与独立思考', note: '习惯跳出既有框架看问题，落地时需补足对他人的解释。' },
-    '双鱼座': { element: '水', mode: '变动', dim: '生长开拓', trait: '想象扩散与共感吸收', note: '以感受力理解世界，边界感需要主动建立。' }
+    '白羊座': { element: '火', mode: '基本', dim: '表达力', trait: '先发行动力', note: '以速度和直接表达打开局面，容易在开局阶段占优。' },
+    '金牛座': { element: '土', mode: '固定', dim: '承载力', trait: '稳定累积与质感坚持', note: '靠持续投入建立安全感，对突变与不确定的耐受度偏低。' },
+    '双子座': { element: '风', mode: '变动', dim: '洞察力', trait: '信息串联与快速理解', note: '靠不断获取新信息保持活力，深度需要主动补足。' },
+    '巨蟹座': { element: '水', mode: '基本', dim: '承载力', trait: '情绪承接与安全守护', note: '以照顾他人建立连接，需分清共情与过度负责。' },
+    '狮子座': { element: '火', mode: '固定', dim: '表达力', trait: '中心表达与气场驱动', note: '在被人看见时输出最强，需警惕为维持形象而硬撑。' },
+    '处女座': { element: '土', mode: '变动', dim: '决断力', trait: '标准校准与理顺流程', note: '通过发现问题体现价值，容易把自我要求变成对他人的挑剔。' },
+    '天秤座': { element: '风', mode: '基本', dim: '表达力', trait: '关系协调与平衡表达', note: '擅长在多方之间找共识，代价是决策时容易延迟表态。' },
+    '天蝎座': { element: '水', mode: '固定', dim: '洞察力', trait: '深度洞察与专注穿透', note: '一旦认定就投入极深，需注意把洞察用于理解而非防御。' },
+    '射手座': { element: '火', mode: '变动', dim: '生长力', trait: '向外扩展与意义追寻', note: '靠新目标与新场景获得动力，落地执行需要外部结构支撑。' },
+    '摩羯座': { element: '土', mode: '基本', dim: '决断力', trait: '长期规划与责任担当', note: '以结构化方式推进目标，容易忽略过程中的情绪信号。' },
+    '水瓶座': { element: '风', mode: '固定', dim: '洞察力', trait: '系统视角与独立思考', note: '习惯跳出既有框架看问题，落地时需补足对他人的解释。' },
+    '双鱼座': { element: '水', mode: '变动', dim: '生长力', trait: '想象扩散与共感吸收', note: '以感受力理解世界，边界感需要主动建立。' }
 };
 
 function dayOfYear(month, day) {
@@ -2553,8 +2553,8 @@ function getDimByElement(elem) {
 
 // 三源比对：把三条线索归到同一套五维语言后再比较
 // A. 场景化比对：三源的映射不变，只换「拿这三条证据回答哪个问题」
-const WORK_DIMS = ['表达感染', '秩序决断', '承载统筹'];
-const RELATION_DIMS = ['表达感染', '承载统筹', '洞察思辨'];
+const WORK_DIMS = ['表达力', '决断力', '承载力'];
+const RELATION_DIMS = ['表达力', '承载力', '洞察力'];
 
 function buildTriScenarioFocus(input) {
     const { scenario, zodiacDim, signDim, spectrum, pattern, animal, signName } = input;
@@ -2726,11 +2726,11 @@ function buildTriangulation(parsedResult, baziResult, scenario) {
     };
 
     const dimensionVerbs = {
-        '生长开拓': '开新局、探方向',
-        '表达感染': '开场、推动、号召',
-        '承载统筹': '承接、整合、稳住基本盘',
-        '秩序决断': '定标准、做取舍、收口',
-        '洞察思辨': '研判、拆解、做长线判断'
+        '生长力': '开新局、探方向',
+        '表达力': '开场、推动、号召',
+        '承载力': '承接、整合、稳住基本盘',
+        '决断力': '定标准、做取舍、收口',
+        '洞察力': '研判、拆解、做长线判断'
     };
     const verbOf = dim => dimensionVerbs[dim] || '推进';
 
@@ -2800,10 +2800,10 @@ function renderTriangulationHTML(tri) {
         ? `${tri.branch}${tri.lichunAnimal}（立春） / ${tri.chunjieBranch || ''}${tri.chunjieAnimal}（春节）`
         : `${tri.branch}${tri.animal}`;
     return `
-        <p class="tri-lead">三条不同来源的线索，被翻译成同一套五维行为语言之后再比对：生肖来自年柱地支，星座来自出生月日，五维光谱来自四柱五行加权。它们一致时说明结构表述稳定，不一致时说明你的行为在不同场景里有分化。</p>
+        <p class="tri-lead">三条不同来源的线索，先翻译成同一套「五个维度」的语言，再互相比对：生肖取自出生那一年的地支，星座取自出生月日，五维光谱由四柱里五行的强弱加权得出。它们一致时说明结构表述稳定，不一致时说明你的行为在不同场景里有分化。</p>
         <div class="tri-source-row">
             <div class="tri-source${tri.focusDim === tri.zodiacDim ? ' is-focus' : ''}">
-                <span class="tri-source-label">生肖 · 年柱（立春口径）</span>
+                <span class="tri-source-label">生肖 · 出生年（立春口径）</span>
                 <strong class="tri-source-value${tri.boundaryDiffers ? ' is-pair' : ''}">${zodiacValue}</strong>
                 <span class="tri-source-dim">${tri.zodiacDim}</span>
                 <p class="tri-source-note">${tri.animalProfile.trait}：${tri.animalProfile.note}</p>
@@ -2854,11 +2854,11 @@ const ELEMENT_CYCLE = ['木', '火', '土', '金', '水'];
 
 // 十神分组对应的节奏语义（与报告既有 TEN_GOD_BEHAVIOR_MAP 口径一致）
 const GROUP_RHYTHM = {
-    '比劫': { type: '推进', plain: '同气', window: '自立与结盟窗口', action: '启动自主项目或找到同频伙伴，把分工讲清楚', risk: '单打独斗与抢功内耗' },
-    '印': { type: '补给', plain: '生扶', window: '沉淀与补给窗口', action: '学习复盘、补齐短板、减少对外承诺', risk: '过度准备导致交付拖延' },
-    '食伤': { type: '推进', plain: '输出', window: '输出与表达窗口', action: '推进需要被看见的工作：汇报、内容、对外方案', risk: '说得多做得少、情绪化表达' },
-    '财': { type: '推进', plain: '价值', window: '落地与结算窗口', action: '把想法变成可交付成果：谈条件、定价、结项', risk: '只算收益不算精力' },
-    '官杀': { type: '承压', plain: '压力', window: '立规与承压窗口', action: '对接权责、走流程、处理必须完成的硬任务', risk: '把外部压力全接成自我苛责' }
+    '比劫': { type: '推进', plain: '同类', window: '自立与结盟窗口', action: '启动自主项目或找到同频伙伴，把分工讲清楚', risk: '单打独斗与抢功内耗' },
+    '印': { type: '补给', plain: '补给', window: '沉淀与补给窗口', action: '学习复盘、补齐短板、减少对外承诺', risk: '过度准备导致交付拖延' },
+    '食伤': { type: '推进', plain: '输出', window: '输出与表达窗口', action: '主题是提案、汇报、发布、要资源', risk: '说得多做得少、情绪化表达' },
+    '财': { type: '推进', plain: '兑现', window: '落地与结算窗口', action: '把想法变成可交付成果：谈条件、定价、结项', risk: '只算收益不算精力' },
+    '官杀': { type: '承压', plain: '承压', window: '立规与承压窗口', action: '对接权责、走流程、处理必须完成的硬任务', risk: '把外部压力全接成自我苛责' }
 };
 
 function getJieDayOfMonth(solarYear, month1to12) {
@@ -2986,8 +2986,8 @@ function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!par
         groupLabel: (TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态推进',
         dim: yearDim,
         stance: yearStance,
-        startText: `立春 ${ganzhiYear}-02-${pad2(getJieDayOfMonth(ganzhiYear, 2))} 起`,
-        narrative: `本流年为 ${yearPillar.label} 年，与你的日主构成【${GROUP_RHYTHM[yearGroup].plain}】关系（${(TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态'}）：年度主维度是【${yearDim}】，${yearStance.note}。${GROUP_RHYTHM[yearGroup].window}是这一年的主旋律，需要留意的是${GROUP_RHYTHM[yearGroup].risk}。`,
+        startText: `${ganzhiYear}-02-${pad2(getJieDayOfMonth(ganzhiYear, 2))} 起（立春换年）`,
+        narrative: `本流年为 ${yearPillar.label} 年，与你的核心五行构成【${GROUP_RHYTHM[yearGroup].plain}】关系（${(TEN_GOD_BEHAVIOR_MAP[yearGroup] || {}).label || '稳态'}）：年度主维度是【${yearDim}】，${yearStance.note}。${GROUP_RHYTHM[yearGroup].window}是这一年的主旋律，需要留意的是${GROUP_RHYTHM[yearGroup].risk}。`,
         doText: GROUP_RHYTHM[yearGroup].action,
         dontText: GROUP_RHYTHM[yearGroup].risk,
         decadeEcho: decadeGroup && decadeGroup === yearGroup
@@ -3001,7 +3001,7 @@ function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!par
         groupLabel: (TEN_GOD_BEHAVIOR_MAP[nextYearGroup] || {}).label || '稳态推进',
         dim: nextYearDim,
         stance: dimensionStance(nextYearDim),
-        startText: `立春 ${ganzhiYear + 1}-02-${pad2(getJieDayOfMonth(ganzhiYear + 1, 2))} 起`
+        startText: `${ganzhiYear + 1}-02-${pad2(getJieDayOfMonth(ganzhiYear + 1, 2))} 起（立春换年）`
     };
 
     // 流月：从当前所在节气月开始，取 6 个
@@ -3041,10 +3041,10 @@ function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!par
             clashYear,
             tone: MONTH_RHYTHM_MAP[pillar.branch] || '',
             note: clashDay
-                ? '本月冲你的日支：外部节奏容易打断既定安排，重承诺放到月内后段'
+                ? '这个月外部节奏容易打断你原有的安排：重要承诺往后放'
                 : (heDay
-                    ? '本月合你的日支：协作与沟通相对顺滑，适合把需要配合的事推进去'
-                    : (clashYear ? '本月冲你的年支：与外部环境存在张力，先稳住基本盘' : ''))
+                    ? '这个月协作沟通相对顺滑：需要别人配合的事适合现在推'
+                    : (clashYear ? '这个月和大环境有点顶：先把基本盘稳住' : ''))
         });
         cursor = end;
     }
@@ -3087,7 +3087,7 @@ function buildRhythmModel(parsedResult, baziResult, now, scenario) {    if (!par
         windows,
         summary90,
         bestWindow,
-        evidence: `流年按立春换年（节气日为近似值 ±1 天）；流月按节气月划分；十神分组由流年/流月地支五行与日主「${dmElem}」的生克关系推导（同=比劫、生我=印、我生=食伤、我克=财、克我=官杀）；冲合仅比对日支/年支。`
+        evidence: `流年按立春换年（2 月 4 日前后，节气日取近似值 ±1 天）；流月按节气月划分；每段的节奏类型，由该年/月的地支五行与你本人的核心五行「${dmElem}」的生克关系推出来（同类=推进、生我=补给、我生=输出、我克=兑现、克我=承压）；冲合只比对日支与年支。`
     };
 }
 
@@ -3159,9 +3159,17 @@ function buildRhythmScenarioFocus(scenario, windows) {
     return {
         mode: 'triple',
         chip: '本次重点：完整三段节奏',
-        lead: '流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的日主是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。这一段全部展开，你先看全貌，再决定把关键动作放在哪一段。'
+        lead: '流年与流月不是预测结论，而是把你所在的时间段换算成一套「关系语言」：这一段的能量与你的核心五行是什么关系，就决定了它更像输出窗口、结算窗口还是补给窗口。这一段全部展开，你先看全貌，再决定把关键动作放在哪一段。'
     };
 }
+
+const MONTH_SHORT_ADVICE = {
+    '同类': '启动自己的事、找同频伙伴',
+    '补给': '学习复盘、少承诺',
+    '输出': '汇报、内容、对外方案',
+    '兑现': '谈条件、定价、结项',
+    '承压': '走流程、接硬任务'
+};
 
 function renderRhythmHTML(rhythm) {
     if (!rhythm) return '';
@@ -3197,7 +3205,6 @@ function renderRhythmHTML(rhythm) {
            <div class="rhythm-window-grid">${windowCards}</div>`
         : `<div class="rhythm-focus-note">
                 <span class="rhythm-focus-chip">${focus.chip}</span>
-                <p>${focus.summary || ''}</p>
            </div>
            <div class="rhythm-window-grid is-focus">${windowCard(focus.primary, true)}</div>
            <div class="rhythm-window-folded-head">${focus.foldedNote || `另外 ${folded.length} 段本版不展开（仅列时间与节奏类型）：`}</div>
@@ -3210,7 +3217,7 @@ function renderRhythmHTML(rhythm) {
             <span class="rhythm-month-pillar">${m.label}</span>
             <span class="rhythm-month-group">${m.groupPlain}</span>
             <span class="rhythm-month-dim">${m.dim}</span>
-            <span class="rhythm-month-advice">${m.note || m.action}</span>
+            <span class="rhythm-month-advice">${m.note || MONTH_SHORT_ADVICE[m.groupPlain] || m.action}</span>
         </div>
     `).join('');
 
@@ -3237,12 +3244,12 @@ function renderRhythmHTML(rhythm) {
                     <span class="rhythm-tag rhythm-tag-dim">${rhythm.nextYear.dim}</span>
                     <span class="rhythm-tag rhythm-tag-stance">${rhythm.nextYear.stance.tag}</span>
                 </span>
-                <p class="rhythm-year-text">下一年与你的日主构成【${GROUP_RHYTHM[rhythm.nextYear.group].plain}】关系（${rhythm.nextYear.groupLabel}），主维度【${rhythm.nextYear.dim}】。${rhythm.nextYear.stance.note}。可以提前把需要长期投入的事排到这一年的前段。</p>
+                <p class="rhythm-year-text">下一年与你的核心五行是【${GROUP_RHYTHM[rhythm.nextYear.group].plain}】关系（${rhythm.nextYear.groupLabel}），主维度【${rhythm.nextYear.dim}】。${rhythm.nextYear.stance.note}。可以提前把需要长期投入的事排到这一年的前段。</p>
             </div>
         </div>
         <div class="rhythm-months">
             <div class="rhythm-months-header">
-                <span>日期（节气月）</span><span>流月</span><span>关系</span><span>维度</span><span>节奏提示</span>
+                <span>日期（节气月）</span><span>干支</span><span>关系</span><span>维度</span><span>节奏提示</span>
             </div>
             ${monthRows}
         </div>
@@ -3305,8 +3312,13 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     // Decade stage rhythm (varies by gender's 顺排/逆排)
     const decade = parsedResult.currentDecade;
     const decadeStageNote = (isTimeKnown && decade)
-        ? `当前所处的十年阶段节奏（${decade.startAge}-${decade.endAge}岁 · ${decade.startYear}-${decade.endYear}年）正处于【${decade.pillar}】周期，阶段课题聚焦于“${decade.primaryTenGod === '正官' || decade.primaryTenGod === '七杀' ? '秩序建立与责任突破' : decade.primaryTenGod === '正财' || decade.primaryTenGod === '偏财' ? '价值落地与资源统筹' : decade.primaryTenGod === '食神' || decade.primaryTenGod === '伤官' ? '创新表达与赛道拓宽' : decade.primaryTenGod === '正印' || decade.primaryTenGod === '偏印' ? '深度沉淀与认知升级' : '自主破局与同频结盟'}”`
+        ? `当前所处的十年阶段节奏（${decade.startAge}-${decade.endAge}岁 · ${decade.startYear}-${decade.endYear}年）的主题是“${decade.primaryTenGod === '正官' || decade.primaryTenGod === '七杀' ? '秩序建立与责任突破' : decade.primaryTenGod === '正财' || decade.primaryTenGod === '偏财' ? '价值落地与资源统筹' : decade.primaryTenGod === '食神' || decade.primaryTenGod === '伤官' ? '创新表达与赛道拓宽' : decade.primaryTenGod === '正印' || decade.primaryTenGod === '偏印' ? '深度沉淀与认知升级' : '自主破局与同频结盟'}”`
         : `当前按出生年月日三柱识别核心底色（未纳入出生时辰），阶段节奏倾向于稳步沉淀与自我校准`;
+
+    // 阶段节奏只在一章展开，其余章节引用（避免同一整句出现 3 次）
+    const decadeStageShort = (isTimeKnown && decade)
+        ? `这十年的主题已经在前面展开（${decade.startYear}-${decade.endYear} 年）`
+        : `阶段节奏倾向于稳步沉淀与自我校准`;
 
     const scenarioNames = {
         self: '了解自己',
@@ -3333,10 +3345,10 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
 
     // Scenario Badges & Trio Labels
     const summaryBadges = {
-        self: '⚡ 30秒精力说明书（先天结构 × 精力模式校准）',
-        career: '⚡ 30秒职场说明书（先天结构 × 职场定位校准）',
-        relationship: '⚡ 30秒关系说明书（先天结构 × 沟通边界校准）',
-        confusion: '⚡ 30秒破局说明书（先天结构 × 优先破局校准）'
+        self: '⚡ 30 秒精力说明书',
+        career: '⚡ 30 秒职场说明书',
+        relationship: '⚡ 30 秒关系说明书',
+        confusion: '⚡ 30 秒破局说明书'
     };
 
     const summaryTrioLabels = {
@@ -3408,8 +3420,8 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             },
             {
                 priorityPill: 'P2 协作解耦',
-                action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中与上下游明确交付协议。`,
-                why: `${decadeStageNote}，清晰的规则交接能最大化释放你的推进效率。`,
+                action: `${sq3.actionVerb}；同时和上下游把交接标准写清楚。`,
+                why: `${decadeStageShort}。规则交接清楚了，【${topTgInfo.label}】这一维才不用花力气去猜。`,
                 verifyMetric: `连续执行 7 天后，评估自己在跨部门协同中的推动阻力是否显著降低。`
             },
             {
@@ -3457,7 +3469,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             {
                 priorityPill: 'P3 资产锚定',
                 action: `写下 3 项属于你的【${strongElemPlain.name}】确定性长板，贴在显眼位置作为每日定心锚点。`,
-                why: `${decadeStageNote}，确立不可动摇的底层安全感，是开启下一阶段探索的基石。`,
+                why: `${decadeStageShort}。先有不可动摇的支点，才谈得上探索。`,
                 verifyMetric: `在面临犹豫时，以这 3 项确定性长板作为所有决策的第一筛选标准。`
             }
         ];
@@ -3473,7 +3485,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             {
                 priorityPill: 'P2 节奏微调',
                 action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中提前划清协作交付边界。`,
-                why: `${decadeStageNote}，用清晰的微节奏替代无意识硬撑最能保护心流。`
+                why: `${decadeStageShort}。用清晰的微节奏替代无意识硬撑，最能保护心流。`
                 ,
                 verifyMetric: `连续执行 7 天后，评估自己在「${traitInfo.title.split(' · ')[0]}」主导事项上的掌控感是否显著回升。`
             },
@@ -3508,7 +3520,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         <div class="highlight-box" style="background: #F4F8F6; border-left-color: var(--consumer-primary); margin-top: 16px;">
             <p><strong>🧭 先天结构 × 当下情境交叉校准（${traitInfo.title.split(' · ')[0]} × ${sq1.tag}）：</strong> 作为【${strengthInfo.plainTitle}】，你${sq1.note}，而近期【${sq2.tag}】使【${strongElemPlain.name}】长板被琐事稀释，建议通过「${sq3.tag}」优先守护【${weakElemPlain.name}】恢复空间。</p>
         </div>
-        <p>👉 <strong>力量调和与阶段节奏：</strong> ${strengthInfo.desc}${decadeStageNote}。</p>
+        <p>👉 <strong>力量调和与阶段节奏：</strong> ${strengthInfo.desc}${decadeStageShort}。</p>
     `;
 
     if (activeScenario === 'self') {
@@ -3544,18 +3556,18 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     const elemClasses = { '木': 'fill-mu', '火': 'fill-huo', '土': 'fill-tu', '金': 'fill-jin', '水': 'fill-shui' };
 
     const strongestAdviceMap = {
-        '木': '你的【生长开拓】维度充盈，新方向感知与生发规划力极强，宜将发散创意及时收敛为可交付成果',
-        '火': '你的【表达感染】维度旺盛，号召力与推进爆发力突出，宜在高频输出后主动安排静心降噪时段',
-        '土': '你的【承载统筹】维度厚重，资源整合与抗压稳定性极佳，宜在稳健守成中保持小步敏捷尝试',
-        '金': '你的【秩序决断】维度敏锐，规则边界与裁决效率极高，宜在刚性标准之外留出温和沟通缓冲',
-        '水': '你的【洞察思辨】维度深邃，宏观直觉与策略推演力出众，宜用小闭环行动打破过度思虑'
+        '木': '你的【生长力】维度充盈，新方向感知与生发规划力极强，宜将发散创意及时收敛为可交付成果',
+        '火': '你的【表达力】维度旺盛，号召力与推进爆发力突出，宜在高频输出后主动安排静心降噪时段',
+        '土': '你的【承载力】维度厚重，资源整合与抗压稳定性极佳，宜在稳健守成中保持小步敏捷尝试',
+        '金': '你的【决断力】维度敏锐，规则边界与裁决效率极高，宜在刚性标准之外留出温和沟通缓冲',
+        '水': '你的【洞察力】维度深邃，宏观直觉与策略推演力出众，宜用小闭环行动打破过度思虑'
     };
     const weakestAdviceMap = {
-        '木': '补充【生长开拓】维度：多接触自然绿植与户外舒展运动，为长期目标建立清晰的可视化推进阶梯',
-        '火': '补充【表达感染】维度：保持工作空间明亮通透，通过适度表达与正向反馈激活内在行动热情',
-        '土': '补充【承载统筹】维度：建立固定的生活作息锚点，将零散灵光沉淀为结构化清单与稳定基盘',
-        '金': '补充【秩序决断】维度：定期清理冗余信息与低效社交，训练果断止损与明确划界的决断肌肉',
-        '水': '补充【洞察思辨】维度：保障深度睡眠与不被打扰的留白时间，让高负荷运转的大脑恢复敏锐直觉'
+        '木': '补充【生长力】维度：多接触自然绿植与户外舒展运动，为长期目标建立清晰的可视化推进阶梯',
+        '火': '补充【表达力】维度：保持工作空间明亮通透，通过适度表达与正向反馈激活内在行动热情',
+        '土': '补充【承载力】维度：建立固定的生活作息锚点，将零散灵光沉淀为结构化清单与稳定基盘',
+        '金': '补充【决断力】维度：定期清理冗余信息与低效社交，训练果断止损与明确划界的决断肌肉',
+        '水': '补充【洞察力】维度：保障深度睡眠与不被打扰的留白时间，让高负荷运转的大脑恢复敏锐直觉'
     };
 
     const scoreEntries = Object.keys(parsedResult.elementScores).map(elem => {
@@ -3660,12 +3672,12 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         <p>结合你的 <strong>${traitInfo.title}</strong> 核心底色与 <strong>${strengthInfo.plainTitle}（${topTgInfo.label}）</strong> 协作偏好，${decadeStageNote}：</p>
         <div class="dos-donts-container">
             <div class="dos-box">
-                <strong>✔ 最推荐的战术定位（${strongElemPlain.short}）</strong>
-                ${careerElemAdvice}${topTgInfo.careerEdge}。
+                <strong>✔ 该往哪个方向站（${strongElemPlain.short}）</strong>
+                ${careerElemAdvice}
             </div>
             <div class="donts-box">
-                <strong>✖ 最应避开的内耗红线（${sq2.tag}）</strong>
-                避免在【${weakElemPlain.name}】相对薄弱时陷入「${sq2.drainFocus}」，${topTgInfo.burnoutTrap}。
+                <strong>✖ 该拦住的一件事（${sq2.tag}）</strong>
+                ${sq2.cutTarget}。别人的未完成，不是你的待办。
             </div>
         </div>
         <p>👉 <strong>最佳工作推进节奏（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.workStyle}在跨角色配合中可善用【${secondTgInfo.label}】作为辅助抓手。</p>
@@ -3685,7 +3697,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             </div>
             <div class="reflection-card">
                 <h5>🎯 职场定位两周微实验建议</h5>
-                <p>${sq3.actionVerb}，同时在【${topTgInfo.label}】主赛道上完成一次高辨识度交付。</p>
+                <p>两周内只推进一件能挂在你名下的交付：做完、起个名字、交出去，再谈下一步。</p>
             </div>
         `;
     }
@@ -3752,7 +3764,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         relationshipHTML += `
             <div class="reflection-card">
                 <h5>💼 工作关系里的沟通成本（把这一章用于协作场景）</h5>
-                <p>在工作关系里，你的表达底色仍是【${strongElemPlain.name}】：${relationYinYangText}</p>
+                <p>把上面那套沟通习惯搬进工作关系，代价会变高：工作场合没人有义务读懂你的善意，只看交付结果。</p>
                 <p><strong>最容易吃亏的一次：</strong>把对方的情绪当成你的交付责任。两周可验证：完整说出一次「这件事我帮不了」，并给出替代方案。</p>
             </div>
         `;
@@ -4115,12 +4127,181 @@ function renderConsumerReport(baziResult, formState) {
         }
     }
 
+    applyReadabilityShell();
     // Toggle Views
     if (mainView) mainView.classList.add('hidden');
     if (footer) footer.classList.add('hidden');
     reportView.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ------------------------------------------------------------------
+// 阅读壳：章节贴顶导航 + 每卡「先结论后细节」折叠 + 回到目录
+// 设计约束：卡片内容仍由报告模型生成，这里只做分层，不改事实。
+// ------------------------------------------------------------------
+// 按卡定制：哪些块必须默认折叠（时间轴/流月表等细节），哪些块必须默认可见
+const RC_CARD_RULES = {
+    'card-section-rhythm': { fold: ['.rhythm-year-row', '.rhythm-months', '.rhythm-boundary'] },
+    'card-section-triangulation': { fold: ['.tri-explain', '.tri-boundary'] },
+        'card-section-evidence': { fold: [] },
+    'card-section-action': { deepFold: ['.priority-action-card'], deepKeep: 1 }
+};
+
+// 章节导航的短名（按卡 id 指定，避免把标题截成半个词）
+const RC_NAV_LABELS = {
+    'card-section-career': '事业',
+    'card-section-rhythm': '90 天',
+    'card-section-triangulation': '三源对照',
+    'card-section-energy': '优势',
+    'card-section-personality': '画像',
+    'card-section-action': '14 天实验',
+    'card-section-relationship': '关系',
+    'card-section-evidence': '依据'
+};
+
+const RC_KEEP_BLOCKS = [
+    '.energy-bars', '.tri-source-grid', '.rhythm-windows-block',
+    '.dos-donts-container', '.priority-action-list', '.report-spectrum-box'
+];
+
+// 报告页有两个贴顶元素：站点头部（sticky, z-index 100）与章节导航。
+// 章节导航必须让出站点头部的高度，否则会被盖住。
+function rcStickyOffset() {
+    const hdr = document.querySelector('.consumer-nav');
+    if (!hdr) return 0;
+    const cs = getComputedStyle(hdr);
+    if (cs.position !== 'sticky' && cs.position !== 'fixed') return 0;
+    if (cs.display === 'none' || cs.visibility === 'hidden') return 0;
+    return Math.round(hdr.getBoundingClientRect().height);
+}
+
+function syncRcNavOffset() {
+    const nav = document.querySelector('#consumer-report-view .rc-nav');
+    if (!nav) return;
+    nav.style.top = rcStickyOffset() + 'px';
+}
+if (!window.__rcNavOffsetBound) {
+    window.__rcNavOffsetBound = true;
+    window.addEventListener('resize', syncRcNavOffset);
+}
+
+function applyReadabilityShell() {
+    const view = document.getElementById('consumer-report-view');
+    if (!view) return;
+    const container = view.querySelector('.report-container');
+    if (!container) return;
+
+    // 幂等：先拆掉上一次的壳
+    container.querySelectorAll('.rc-nav, .rc-toggle, .rc-to-top').forEach(n => n.remove());
+    container.querySelectorAll('.rc-more').forEach(m => {
+        const parent = m.parentElement;
+        if (!parent) { m.remove(); return; }
+        while (m.firstChild) parent.insertBefore(m.firstChild, m);
+        m.remove();
+    });
+    container.querySelectorAll('.report-card').forEach(c => c.classList.remove('rc-collapsed', 'rc-open'));
+
+    const cards = Array.from(container.querySelectorAll('.report-card')).filter(c => !c.classList.contains('hidden'));
+    if (!cards.length) return;
+
+    // 1) 章节导航
+    const nav = document.createElement('nav');
+    nav.className = 'rc-nav';
+    nav.style.top = rcStickyOffset() + 'px';
+    nav.setAttribute('aria-label', '报告章节导航');
+    nav.innerHTML = cards.map((c, i) => {
+        const t = ((c.querySelector('h3') || {}).textContent || '').trim();
+        const num = (c.querySelector('.section-num') || {}).textContent || '';
+        const short = RC_NAV_LABELS[c.id] || (t.split(/[：:（(]/)[0].slice(0, 8)).trim() || '依据';
+        return '<button type="button" class="rc-nav-item" data-rc-target="' + i + '"><span>' + num + '</span>' + short + '</button>';
+    }).join('');
+    container.insertBefore(nav, container.firstChild);
+    cards.forEach((c, i) => { c.setAttribute('data-rc-index', String(i)); });
+
+    // 2) 每卡折叠：保留结论段 + 关键可视化块，其余进折叠层
+    cards.forEach(card => {
+        const content = card.querySelector('.card-content');
+        if (!content) return;
+        const kids = Array.from(content.children);
+        const rule = RC_CARD_RULES[card.id] || {};
+        const foldSel = (rule.fold || []).join(',');
+        const keepSel = RC_KEEP_BLOCKS.join(',');
+
+        let extraText = 0;
+        const rest = [];
+        kids.forEach((el, i) => {
+            if (i === 0) return;                              // 首块＝结论句，始终可见
+            if (foldSel && el.matches(foldSel)) { rest.push(el); return; }
+            if (keepSel && el.matches(keepSel)) return;         // 关键可视化块始终可见
+            if (extraText < 1) { extraText++; return; }         // 再留 1 块补充说明
+            rest.push(el);
+        });
+
+        // 深折叠：同类条目只留第一条（例：14 天实验只露 P1，P2/P3 折起来）
+        const deepSel = (rule.deepFold || []).join(',');
+        const deepItems = deepSel
+            ? Array.from(content.querySelectorAll(deepSel)).slice(rule.deepKeep || 1)
+            : [];
+        if (!rest.length && !deepItems.length) return;
+
+        const created = [];
+        if (rest.length) {
+            const more = document.createElement('div');
+            more.className = 'rc-more';
+            content.insertBefore(more, rest[0]);
+            rest.forEach(el => more.appendChild(el));
+            created.push(more);
+        }
+        if (deepItems.length) {
+            const moreDeep = document.createElement('div');
+            moreDeep.className = 'rc-more rc-more-deep';
+            deepItems[0].parentElement.insertBefore(moreDeep, deepItems[0]);
+            deepItems.forEach(el => moreDeep.appendChild(el));
+            created.push(moreDeep);
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rc-toggle';
+        btn.innerHTML = '展开细读 ▾';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.addEventListener('click', () => {
+            const open = !card.classList.contains('rc-open');
+            card.querySelectorAll('.rc-more').forEach(m => m.classList.toggle('rc-more-open', open));
+            card.classList.toggle('rc-open', open);
+            card.classList.toggle('rc-collapsed', !open);
+            btn.innerHTML = open ? '收起细节 ▴' : '展开细读 ▾';
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        card.classList.add('rc-collapsed');
+        content.appendChild(btn);
+    });
+
+    // 3) 导航点击
+    nav.addEventListener('click', ev => {
+        const b = ev.target.closest('.rc-nav-item');
+        if (!b) return;
+        const idx = Number(b.getAttribute('data-rc-target'));
+        const card = cards[idx];
+        if (!card) return;
+        const navH = nav.getBoundingClientRect().height;
+        const top = card.getBoundingClientRect().top + window.scrollY - rcStickyOffset() - navH - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    });
+
+    // 4) 回到目录
+    const toTop = document.createElement('button');
+    toTop.type = 'button';
+    toTop.className = 'rc-to-top';
+    toTop.textContent = '☰ 回到章节目录';
+    toTop.addEventListener('click', () => {
+        const navH = nav.getBoundingClientRect().height;
+        const top = nav.getBoundingClientRect().top + window.scrollY - rcStickyOffset() - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    });
+    container.appendChild(toTop);
+}
+window.applyReadabilityShell = applyReadabilityShell;
 
 function closeConsumerReportView() {
     const reportView = document.getElementById('consumer-report-view');
@@ -4271,7 +4452,7 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 42px ${fontSans}`;
-    ctx.fillText(`${model.archetypeTitle || '太阳感染型'} × ${model.strengthTitle || '充沛破局型'}`, 120, 382);
+    ctx.fillText(`${model.archetypeTitle || '太阳型'} × ${model.strengthTitle || '冲劲型'}`, 120, 382);
 
     // Keyword Pills inside Hero Card (Gold Accents #cba258)
     const kws = [
