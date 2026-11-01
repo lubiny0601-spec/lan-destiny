@@ -4519,7 +4519,7 @@ function renderSharePosterCanvas(model) {
     if (!canvas || !canvas.getContext || !model) return;
     const ctx = canvas.getContext('2d');
     const W = 1080;
-    const H = 1560;
+    const H = 1880;
     canvas.width = W;
     canvas.height = H;
 
@@ -4661,7 +4661,7 @@ function renderSharePosterCanvas(model) {
 
     ctx.fillStyle = '#006241';
     ctx.font = `700 24px ${fontSans}`;
-    ctx.fillText('📊 五维行为能量光谱分布', 116, 796);
+    ctx.fillText('五维行为能量光谱分布', 116, 796);
 
     const bars = model.energyBarsData || [];
     bars.forEach((b, idx) => {
@@ -4728,14 +4728,80 @@ function renderSharePosterCanvas(model) {
         model.summary30s?.topAction || ''
     );
 
-    // 9. Footer Signature — right text drawn first, left text bounded by the剩余宽度
-    const leftFooter = '观澜 Lan.Destiny · 东方时间模型 × 行为情境校准';
-    const rightFooter = '本机计算 · 零隐私上传';
-    ctx.font = `600 20px ${fontSans}`;
-    const rfW = ctx.measureText(rightFooter).width;
+    // 9. 底部二维码带：扫码直接打开「同一场景」的试读落地页
+    const POSTER_SCENARIO_NAMES = { self: '了解自己', career: '事业方向', relationship: '关系模式', confusion: '走出迷茫' };
+    const posterScenario = (model && model.scenario) || 'self';
+    const posterScenarioName = POSTER_SCENARIO_NAMES[posterScenario] || '了解自己';
+    const posterUrl = (typeof buildScenarioShareUrl === 'function') ? buildScenarioShareUrl(posterScenario) : '';
+
+    ctx.strokeStyle = 'rgba(0, 98, 65, 0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(84, 1500);
+    ctx.lineTo(W - 84, 1500);
+    ctx.stroke();
+
+    ctx.fillStyle = '#006241';
+    ctx.font = `700 28px ${fontSans}`;
+    ctx.fillText('扫码看这一章的试读', 84, 1562);
+
+    ctx.fillStyle = '#1E3932';
+    ctx.font = `800 32px ${fontSans}`;
+    ctx.fillText(`「${posterScenarioName}」试读页`, 84, 1612);
+
     ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
-    ctx.fillText(rightFooter, W - 84 - rfW, 1496);
-    ctx.fillText(leftFooter, 84, 1496, Math.max(120, W - 168 - rfW - 32));
+    ctx.font = `600 20px ${fontSans}`;
+    ctx.fillText('观澜 Lan.Destiny · 东方时间模型 × 行为情境校准', 84, 1666);
+    ctx.fillText('本机计算 · 零隐私上传', 84, 1702);
+
+    // 可读地址：扫不了码的人也能手输
+    if (posterUrl) {
+        const shortUrl = posterUrl.replace(/^https?:\/\//, '');
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        let urlFont = 18;
+        const maxUrlW = 540;
+        ctx.font = `500 ${urlFont}px ${fontSans}`;
+        while (ctx.measureText(shortUrl).width > maxUrlW && urlFont > 11) {
+            urlFont -= 1;
+            ctx.font = `500 ${urlFont}px ${fontSans}`;
+        }
+        ctx.fillText(shortUrl, 84, 1766);
+    }
+
+    // 二维码卡片（白底 + 细边，留出静默区）
+    const qrBoxX = 668, qrBoxY = 1504, qrBoxSize = 320;
+    drawRoundedRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 18);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 98, 65, 0.16)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    let qrDrawn = false;
+    if (posterUrl && typeof buildQrMatrix === 'function') {
+        const qr = buildQrMatrix(posterUrl, 'M');
+        if (qr && qr.size) {
+            const moduleSize = Math.max(1, Math.floor((qrBoxSize - 56) / qr.size));
+            const drawSize = moduleSize * qr.size;
+            const originX = qrBoxX + Math.round((qrBoxSize - drawSize) / 2);
+            const originY = qrBoxY + Math.round((qrBoxSize - drawSize) / 2);
+            ctx.fillStyle = '#0b1f19';
+            for (let qrR = 0; qrR < qr.size; qrR++) {
+                for (let qrC = 0; qrC < qr.size; qrC++) {
+                    if (!qr.modules[qrR][qrC]) continue;
+                    ctx.fillRect(originX + qrC * moduleSize, originY + qrR * moduleSize, moduleSize, moduleSize);
+                }
+            }
+            qrDrawn = true;
+        }
+    }
+    if (!qrDrawn) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+        ctx.font = `600 20px ${fontSans}`;
+        ctx.textAlign = 'center';
+        ctx.fillText('二维码生成失败', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize / 2);
+        ctx.textAlign = 'left';
+    }
 }
 
 function openSharePosterModal() {
