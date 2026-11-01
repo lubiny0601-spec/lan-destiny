@@ -3345,17 +3345,17 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
 
     // Scenario Badges & Trio Labels
     const summaryBadges = {
-        self: '⚡ 30 秒精力说明书',
-        career: '⚡ 30 秒职场说明书',
-        relationship: '⚡ 30 秒关系说明书',
-        confusion: '⚡ 30 秒破局说明书'
+        self: '30 秒精力说明书',
+        career: '30 秒职场说明书',
+        relationship: '30 秒关系说明书',
+        confusion: '30 秒破局说明书'
     };
 
     const summaryTrioLabels = {
-        self: { adv: '✦ 天生核心长板', burnout: '⚠ 现实精力黑洞', action: '🎯 建议减法实验' },
-        career: { adv: '✦ 职场核心战力', burnout: '⚠ 职场内耗卡点', action: '🎯 职场战术突破' },
-        relationship: { adv: '✦ 关系优势底色', burnout: '⚠ 关系防御软肋', action: '🎯 关系调频微动作' },
-        confusion: { adv: '✦ 核心确定性支柱', burnout: '⚠ 当前迷茫死循环', action: '🎯 破局第一行动' }
+        self: { adv: '✦ 天生核心长板', burnout: '⚠ 现实精力黑洞', action: '建议减法实验' },
+        career: { adv: '✦ 职场核心战力', burnout: '⚠ 职场内耗卡点', action: '职场战术突破' },
+        relationship: { adv: '✦ 关系优势底色', burnout: '⚠ 关系防御软肋', action: '关系调频微动作' },
+        confusion: { adv: '✦ 核心确定性支柱', burnout: '⚠ 当前迷茫死循环', action: '破局第一行动' }
     };
 
     const scenario30sObservations = {
@@ -3428,19 +3428,19 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     if (activeScenario === 'career') {
         actionExperiments14Days = [
             {
-                priorityPill: 'P1 战术破局',
+                priorityPill: '第一步',
                 action: `针对【${sq2.tag}】启动拦截：未来 14 天内${sq2.cutTarget}，将 80% 核心精力锁定在【${strongElemPlain.name} · ${topTgInfo.label}】优势交付上。`,
                 why: `作为「${traitInfo.title}」且行动模式为「${strengthInfo.plainTitle}」，${sq1.note}。`,
                 verifyMetric: `观察两周内核心交付质量是否获得关键决策人直接认可，因「${sq2.tag}」产生的内耗频次是否减半。`
             },
             {
-                priorityPill: 'P2 协作解耦',
+                priorityPill: '第二步',
                 action: `${sq3.actionVerb}；同时和上下游把交接标准写清楚。`,
                 why: `${decadeStageShort}。规则交接清楚了，【${topTgInfo.label}】这一维才不用花力气去猜。`,
                 verifyMetric: `连续执行 7 天后，评估自己在跨部门协同中的推动阻力是否显著降低。`
             },
             {
-                priorityPill: 'P3 势能沉淀',
+                priorityPill: '第三步',
                 action: `每周固定设立 2 小时【${weakElemPlain.name}】策略复盘窗口，提炼 1 套可复用的工作方法论。`,
                 why: `通过补给【${weakElemPlain.name}】，能有效平衡「${topTgInfo.label}」的高频消耗，沉淀长期资产。`,
                 verifyMetric: `复盘产出 1 份标准化文档或流程模版，供团队或个人后续复用。`
@@ -3449,19 +3449,19 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     } else if (activeScenario === 'relationship') {
         actionExperiments14Days = [
             {
-                priorityPill: 'P1 边界声明',
+                priorityPill: '第一步',
                 action: `针对【${sq2.tag}】执行边界防护：未来 14 天内${sq2.cutTarget}，守护情感安全感底线。`,
                 why: `你的核心互动模式为「${traitInfo.title}」，${sq1.note}。`,
                 verifyMetric: `在遇到不适情境时，能否在 24 小时内温和但明确地向对方表达你的真实感受。`
             },
             {
-                priorityPill: 'P2 深度连接',
+                priorityPill: '第二步',
                 action: `${sq3.actionVerb}，践行定制调频提醒：${RELATION_REFLECTION_MAP[stem] || '主动创造无干扰交流时光'}。`,
                 why: `健康的深层关系建立在真实表达之上，而非单方面的过度隐忍或猜测。`,
                 verifyMetric: `观察交流后彼此的理解深度与信任感是否明显提升。`
             },
             {
-                priorityPill: 'P3 自我滋养',
+                priorityPill: '第三步',
                 action: `每周固定安排 2 小时完全属于自己的【${weakElemPlain.name}】独处窗口，做一件纯粹滋养自我的事。`,
                 why: `补充【${weakElemPlain.name}】能量，能有效化解因过度关注外界情绪而产生的疲惫。`,
                 verifyMetric: `评估自己在独处后面对人际互动时的定力与包容度是否更为从容。`
@@ -3470,19 +3470,19 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     } else if (activeScenario === 'confusion') {
         actionExperiments14Days = [
             {
-                priorityPill: 'P1 紧急止损',
+                priorityPill: '第一步',
                 action: `针对【${sq2.tag}】启动止损：未来 14 天内${sq2.cutTarget}，暂停无意义的横向比对与焦虑反刍。`,
                 why: `迷茫期最忌多线空转，「${traitInfo.title}」需要通过聚焦单点来重新积聚力量。`,
                 verifyMetric: `观察因信息过载或摇摆不定引发的焦虑感是否在 3 天内明显缓解。`
             },
             {
-                priorityPill: 'P2 最小验证',
+                priorityPill: '第二步',
                 action: `${sq3.actionVerb}，围绕【${strongElemPlain.name} · ${topTgInfo.label}】在 48 小时内打通 1 个极简闭环。`,
                 why: `行动是治愈焦虑的良药，用小闭环的真实反馈打破脑海中的死循环。`,
                 verifyMetric: `48 小时内获得至少 1 个来自真实场景的正向反馈或数据验证。`
             },
             {
-                priorityPill: 'P3 资产锚定',
+                priorityPill: '第三步',
                 action: `写下 3 项属于你的【${strongElemPlain.name}】确定性长板，贴在显眼位置作为每日定心锚点。`,
                 why: `${decadeStageShort}。先有不可动摇的支点，才谈得上探索。`,
                 verifyMetric: `在面临犹豫时，以这 3 项确定性长板作为所有决策的第一筛选标准。`
@@ -3492,20 +3492,20 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         // Default: self
         actionExperiments14Days = [
             {
-                priorityPill: 'P1 精力止损',
+                priorityPill: '第一步',
                 action: `针对【${sq2.tag}】启动减法拦截：未来 14 天内${sq2.cutTarget}，将 80% 黄金注意力锁死在【${strongElemPlain.name} · ${topTgInfo.label}】长板上。`,
                 why: `你的核心驱动为「${traitInfo.title}」配搭「${strengthInfo.plainTitle}」，${sq1.note}。`,
                 verifyMetric: `观察两周内因「${sq2.tag}」干扰【${strongElemPlain.name}】产出的返工或透支频次是否下降 50% 以上。`
             },
             {
-                priorityPill: 'P2 节奏微调',
+                priorityPill: '第二步',
                 action: `${sq3.actionVerb}，并在【${secondTgInfo.label}】场景中提前划清协作交付边界。`,
                 why: `${decadeStageShort}。用清晰的微节奏替代无意识硬撑，最能保护心流。`
                 ,
                 verifyMetric: `连续执行 7 天后，评估自己在「${traitInfo.title.split(' · ')[0]}」主导事项上的掌控感是否显著回升。`
             },
             {
-                priorityPill: 'P3 能量补给',
+                priorityPill: '第三步',
                 action: `每周固定预留 2 小时专属【${weakElemPlain.name}】恢复窗口，践行定制提醒：${RELATION_REFLECTION_MAP[stem] || '主动给身心留出缓冲余地'}。`,
                 why: `你当前分布中【${weakElemPlain.name}】占比相对偏低，定向补给能有效化解「${traitInfo.keywords ? traitInfo.keywords[2] : '隐性内耗'}」的副作用。`,
                 verifyMetric: `观察补充【${weakElemPlain.name}】窗口次日，你在【${topTgInfo.label}】决策与沟通中的定力是否更加从容。`
@@ -3532,10 +3532,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
                 <div class="col-content">${traitInfo.risk}${topTgInfo.burnoutTrap}。</div>
             </div>
         </div>
-        <div class="highlight-box" style="background: #F4F8F6; border-left-color: var(--consumer-primary); margin-top: 16px;">
-            <p><strong>🧭 先天结构 × 当下情境交叉校准（${traitInfo.title.split(' · ')[0]} × ${sq1.tag}）：</strong> 作为【${strengthInfo.plainTitle}】，你${sq1.note}，而近期【${sq2.tag}】使【${strongElemPlain.name}】长板被琐事稀释，建议通过「${sq3.tag}」优先守护【${weakElemPlain.name}】恢复空间。</p>
-        </div>
-        <p>👉 <strong>力量调和与阶段节奏：</strong> ${strengthInfo.desc}${decadeStageShort}。</p>
+
     `;
 
     if (activeScenario === 'self') {
@@ -3545,24 +3542,24 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
             </div>
             <div class="scenario-matrix">
                 <div class="matrix-card card-primary">
-                    <h5>🔋 专属精力充能情境</h5>
+                    <h5>专属充能情境</h5>
                     <ul>${rechargeDrain.recharge.map(i => `<li>${i}</li>`).join('')}</ul>
                 </div>
                 <div class="matrix-card card-accent">
-                    <h5>🪫 精力流失情境（精力黑洞）</h5>
+                    <h5>精力流失情境</h5>
                     <ul>${rechargeDrain.drain.map(i => `<li>${i}</li>`).join('')}</ul>
                 </div>
             </div>
             <div class="reflection-card">
-                <h5>💡 现实场景验证与行为惯性</h5>
+                <h5>现实场景验证</h5>
                 <p>${traitInfo.realLifeScenario || ''}</p>
-                <p style="margin-top: 10px; font-weight: 600; color: var(--consumer-primary-dark);">❓ 深度自我验证提问：${traitInfo.selfVerifyQuestion || ''}</p>
+                <p style="margin-top: 10px; font-weight: 600; color: var(--consumer-primary-dark);">问自己一句：${traitInfo.selfVerifyQuestion || ''}</p>
             </div>
         `;
     } else {
         personalityHTML += `
-            <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-top: 8px;">💡 <strong>现实场景验证：</strong> ${traitInfo.realLifeScenario || ''}</p>
-            <p style="font-size: 0.88rem; color: var(--consumer-primary-dark);">❓ <strong>自我验证提问：</strong> ${traitInfo.selfVerifyQuestion || ''}</p>
+            <p style="font-size: 0.88rem; color: var(--consumer-text-sub); margin-top: 8px;"><strong>现实场景验证：</strong> ${traitInfo.realLifeScenario || ''}</p>
+            <p style="font-size: 0.88rem; color: var(--consumer-primary-dark);"><strong>问自己一句：</strong> ${traitInfo.selfVerifyQuestion || ''}</p>
         `;
     }
 
@@ -3695,23 +3692,23 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
                 ${sq2.cutTarget}。别人的未完成，不是你的待办。
             </div>
         </div>
-        <p>👉 <strong>最佳工作推进节奏（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.workStyle}在跨角色配合中可善用【${secondTgInfo.label}】作为辅助抓手。</p>
+        <p><strong>最佳工作推进节奏（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.workStyle}在跨角色配合中可善用【${secondTgInfo.label}】作为辅助抓手。</p>
     `;
 
     if (activeScenario === 'career') {
         careerHTML += `
             <div class="scenario-matrix" style="margin-top: 24px;">
                 <div class="matrix-card card-primary">
-                    <h5>⚔ 独立攻坚 vs 团队协同倾向</h5>
+                    <h5>独立攻坚 vs 团队协同</h5>
                     <p>${CAREER_SYNERGY_MAP[parsedResult.strength] || ''}</p>
                 </div>
                 <div class="matrix-card card-accent">
-                    <h5>🌪 面对变局与逆境的反应模式</h5>
+                    <h5>面对变局时的反应</h5>
                     <p>${CAREER_CHAOS_MAP[dm.element] || ''}</p>
                 </div>
             </div>
             <div class="reflection-card">
-                <h5>🎯 职场定位两周微实验建议</h5>
+                <h5>两周微实验</h5>
                 <p>两周内只推进一件能挂在你名下的交付：做完、起个名字、交出去，再谈下一步。</p>
             </div>
         `;
@@ -3728,7 +3725,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     } else if (activeScenario === 'confusion') {
         careerHTML += `
             <div class="reflection-card">
-                <h5>🧭 下一步的最小职涯验证（先别换赛道）</h5>
+                <h5>下一步的最小职涯验证（先别换赛道）</h5>
                 <p>在没验证之前，换岗位往往只是把同一套消耗带到新环境：你当前的内耗来源是「${sq2.drainFocus}」，它和岗位名字关系不大，和协作方式关系更大。</p>
                 <p><strong>两周实验：</strong>在当前岗位上主动改一条协作规则（谁定标准、谁验收），记录交付质量与耗电量的变化，再决定要不要动方向。</p>
             </div>
@@ -3736,7 +3733,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     } else {
         careerHTML += `
             <div class="reflection-card">
-                <h5>🔋 工作里的耗电点（自检用）</h5>
+                <h5>工作里的耗电点（自检用）</h5>
                 <p>结构上你最省力的打法是【${strongElemPlain.name}】；最耗电的往往不是难题，而是${sq2.drainFocus}。</p>
                 <p><strong>自检：</strong>回想最近一周，哪一类任务让你「做完比没做更累」——那是这一维在报警，而不是你不够努力。</p>
             </div>
@@ -3748,8 +3745,8 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     const relationBoundary = RELATION_BOUNDARY_MAP[parsedResult.strength] || RELATION_BOUNDARY_MAP['均势'];
     let relationshipHTML = `
         <p>在深度人际与亲密关系中，你的互动底色呈现出 <strong>${traitInfo.title.split(' · ')[0]}</strong> 与 <strong>${topTgInfo.label}</strong> 的交织特征：</p>
-        <p>👉 <strong>沟通与情感表达（${traitInfo.keywords ? traitInfo.keywords[0] : '主动表达'}）：</strong> ${relationYinYangText}${topTgInfo.relationHabit}。</p>
-        <p>👉 <strong>安全感与边界机制（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.relationStyle}核心底线在于：${relationBoundary.bottomLine}</p>
+        <p><strong>沟通与情感表达（${traitInfo.keywords ? traitInfo.keywords[0] : '主动表达'}）：</strong> ${relationYinYangText}${topTgInfo.relationHabit}。</p>
+        <p><strong>安全感与边界机制（${strengthInfo.plainTitle}）：</strong> ${strengthInfo.relationStyle}核心底线在于：${relationBoundary.bottomLine}</p>
         <div class="highlight-box">
             <p><strong>专属关系调频提醒：</strong> ${RELATION_REFLECTION_MAP[stem] || '在沟通中先确认彼此感受，再讨论具体解决方案。'}</p>
         </div>
@@ -3759,17 +3756,17 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
         relationshipHTML += `
             <div class="scenario-matrix" style="margin-top: 24px;">
                 <div class="matrix-card card-primary">
-                    <h5>🛡 冲突状态下的典型防御姿态</h5>
+                    <h5>冲突时的典型防御姿态</h5>
                     <p>${RELATION_DEFENSE_MAP[dm.yinYang] || ''}</p>
                 </div>
                 <div class="matrix-card card-accent">
-                    <h5>🤝 关系边界核查表</h5>
+                    <h5>关系边界核查表</h5>
                     <p><strong>应坚守底线：</strong> ${relationBoundary.bottomLine}</p>
                     <p style="margin-top: 6px;"><strong>易被侵蚀软肋：</strong> ${relationBoundary.vulnerability}</p>
                 </div>
             </div>
             <div class="reflection-card">
-                <h5>❓ 关系深度自我觉察提问</h5>
+                <h5>自我觉察提问</h5>
                 <p>${RELATION_REFLECTION_MAP[stem] || '试着在下一次沟通中，先倾听对方的感受，再表达你的需求。'}</p>
             </div>
         `;
@@ -3778,7 +3775,7 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
     else if (activeScenario === 'career') {
         relationshipHTML += `
             <div class="reflection-card">
-                <h5>💼 工作关系里的沟通成本（把这一章用于协作场景）</h5>
+                <h5>工作关系里的沟通成本（这一章只看协作）</h5>
                 <p>把上面那套沟通习惯搬进工作关系，代价会变高：工作场合没人有义务读懂你的善意，只看交付结果。</p>
                 <p><strong>最容易吃亏的一次：</strong>把对方的情绪当成你的交付责任。两周可验证：完整说出一次「这件事我帮不了」，并给出替代方案。</p>
             </div>
@@ -3829,13 +3826,13 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
 
     actionHTML += `
         <div class="priority-action-list">
-            ${actionExperiments14Days.map(item => `
+            ${actionExperiments14Days.map((item, i) => `
                 <div class="priority-action-card">
-                    <span class="priority-pill ${item.priorityPill.includes('P1') ? 'priority-p1' : item.priorityPill.includes('P2') ? 'priority-p2' : 'priority-p3'}">${item.priorityPill}</span>
+                    <span class="priority-pill ${i === 0 ? 'priority-p1' : (i === 1 ? 'priority-p2' : 'priority-p3')}">${item.priorityPill}</span>
                     <div class="action-card-body">
                         <h4>${item.action}</h4>
-                        <p style="margin-bottom: 4px;">💡 <strong>适合原因：</strong> ${item.why}</p>
-                        <p style="font-size: 0.85rem; color: var(--consumer-primary-dark);">🎯 <strong>判断方式：</strong> ${item.verifyMetric}</p>
+                        <p style="margin-top: 8px; margin-bottom: 4px;"><strong>适合原因：</strong> ${item.why}</p>
+                        <p style="margin-top: 6px; font-size: 0.85rem; color: var(--consumer-primary-dark);"><strong>判断方式：</strong> ${item.verifyMetric}</p>
                     </div>
                 </div>
             `).join('')}
@@ -4328,7 +4325,7 @@ function applyReadabilityShell() {
     const toTop = document.createElement('button');
     toTop.type = 'button';
     toTop.className = 'rc-to-top';
-    toTop.textContent = '☰ 回到章节目录';
+    toTop.textContent = '回到章节目录';
     toTop.addEventListener('click', () => {
         const navH = nav.getBoundingClientRect().height;
         const top = nav.getBoundingClientRect().top + window.scrollY - rcStickyOffset() - 12;
