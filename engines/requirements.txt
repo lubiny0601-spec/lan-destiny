@@ -1,0 +1,5 @@
+# 排盘引擎依赖
+#
+# 精确干支推算（立春定年 / 节气定月 / 闰月 / 真太阳时基准）由 lunar_python 提供。
+# 安装：python -m pip install -r engines/requirements.txt
+lunar_python>=1.4.8

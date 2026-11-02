@@ -14,7 +14,7 @@ import urllib.parse
 app = FastAPI(title="观澜命理 · Lan.Destiny Server")
 
 # Mount frontend
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent / "static")), name="static")
 
 # Python interpreter used to run the命理 scripts: explicit env override wins,
 # otherwise reuse the interpreter that is already running this server.
@@ -22,9 +22,14 @@ PYTHON_PATH = os.environ.get("BAZI_PYTHON") or sys.executable
 if not os.path.exists(PYTHON_PATH):
     PYTHON_PATH = sys.executable
 
-# 命理脚本目录：环境变量 > ~/.claude/skills/bazi-mingli（不再写死任何用户名）
+# 命理脚本目录：仓库内置 engines/ > BAZI_SKILL_DIR > ~/.claude/skills/bazi-mingli
+# 内置 engines/ 让项目自包含：拷到任何装了 Python + lunar_python 的机器都能跑专业版。
 SKILL_DIR = os.environ.get("BAZI_SKILL_DIR") or str(Path.home() / ".claude" / "skills" / "bazi-mingli")
-SCRIPTS_DIR = os.path.join(SKILL_DIR, "scripts")
+_BUNDLED_ENGINES = Path(__file__).resolve().parent / "engines"
+if (_BUNDLED_ENGINES / "paipan.py").is_file():
+    SCRIPTS_DIR = str(_BUNDLED_ENGINES)
+else:
+    SCRIPTS_DIR = os.path.join(SKILL_DIR, "scripts")
 
 class CalcRequest(BaseModel):
     module: str
@@ -196,6 +201,8 @@ def health():
         "ok": True,
         "consumer_mode": "always-available",
         "skill_dir": SKILL_DIR,
+        "scripts_dir": SCRIPTS_DIR,
+        "engines_source": "bundled" if (_BUNDLED_ENGINES / "paipan.py").is_file() else "external-skill",
         "scripts_found": os.path.isdir(SCRIPTS_DIR),
         "pro_mode": os.path.isdir(SCRIPTS_DIR),
         "python": PYTHON_PATH,

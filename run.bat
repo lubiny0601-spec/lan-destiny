@@ -20,7 +20,7 @@ if not defined PYTHON_EXE (
 
 echo Using interpreter: %PYTHON_EXE%
 echo Consumer mode (personal structure report) works fully offline in the browser.
-echo Pro workstation needs a local bazi-mingli script folder; override with BAZI_SKILL_DIR.
+echo Pro workstation uses the bundled engines folder of this repo; override with BAZI_SKILL_DIR if needed.
 echo Opening http://127.0.0.1:8000 in 2 seconds ...
 echo.
 

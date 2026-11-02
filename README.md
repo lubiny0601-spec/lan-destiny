@@ -102,11 +102,22 @@ http://127.0.0.1:8000/
 ├── static/
 │   ├── index.html       # 应用主入口与双模式界面结构
 │   ├── style.css        # 全局设计规范、CSS Tokens 与响应式布局
-│   └── main.js          # 纯前端排盘引擎、场景算法、交互逻辑与海报渲染
+│   ├── main.js          # 纯前端排盘引擎、场景算法、交互逻辑与海报渲染
+│   ├── qr.js            # 自写的离线二维码编码器（分享海报用）
+│   └── share-card.png   # 分享预览卡
+├── engines/             # 专业版排盘引擎（第三方，见 engines/NOTICE.md）
+│   ├── paipan.py        # 八字（含合婚双盘对照）
+│   ├── ziwei.py         # 紫微斗数安星
+│   ├── meihua.py        # 梅花易数起卦
+│   ├── liuyao.py        # 六爻纳甲装卦
+│   ├── qimen.py         # 时家奇门排局
+│   ├── requirements.txt # 仅需 lunar_python
+│   └── NOTICE.md        # 来源与授权说明
 ├── docs/                # 文档与内容架构设计
+├── run.bat              # 一键启动本地服务（127.0.0.1:8000）
+├── server.py            # 本地 FastAPI 服务：/api/calculate 调 engines/ 排盘
 ├── DESIGN.md            # 设计系统规范与色彩/间距标准
 ├── PRODUCT.md           # 产品定位、目标受众与设计原则
-├── server.py            # 本地静态开发服务器
 └── README.md            # 项目说明文档
 ```
 
@@ -114,4 +125,6 @@ http://127.0.0.1:8000/
 
 ## 📄 开源与协议
 
-本项目遵循 MIT License 开源协议。
+本项目（`static/`、`server.py`、`run.bat`、文档）遵循 MIT License 开源协议。
+
+**例外：`engines/` 目录是第三方排盘引擎，授权为 PolyForm Noncommercial License 1.0.0（非商业）。** 个人使用、免费分享没有问题；若要收费、接商单或嵌入商业产品，需要先取得该引擎的商业授权或替换引擎。详见 `engines/NOTICE.md`。
