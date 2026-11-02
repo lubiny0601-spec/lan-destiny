@@ -4980,3 +4980,83 @@ html {
 @media (max-width: 900px) {
     .module-group-grid .tab-btn:last-child { grid-column: auto; }
 }
+/* ============================================================
+   专业版 · 窄屏改为上下堆叠（原来左右分栏，右栏被挤成一条）
+   ============================================================ */
+@media (max-width: 900px) {
+    .app-container {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+    }
+    .sidebar {
+        width: 100%;
+        max-width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: none;
+        padding: 20px 16px 16px;
+    }
+    .form-container {
+        flex: none;
+        justify-content: flex-start;
+        gap: 14px;
+    }
+    .report-area {
+        overflow-y: visible;
+        padding: 20px 16px 84px;
+        min-height: 280px;
+    }
+    .welcome-screen {
+        padding: 28px 8px;
+    }
+    .welcome-screen h2 {
+        font-size: 24px;
+        line-height: 1.4;
+    }
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding-bottom: 12px;
+    }
+    .bento-grid .card-full,
+    .bento-grid .card-half {
+        grid-column: 1 / -1;
+    }
+    .bento-card {
+        padding: 18px;
+        min-height: 0;
+    }
+    .help-btn {
+        bottom: 14px;
+        right: 14px;
+        height: 48px;
+        min-width: 48px;
+        padding: 0 18px;
+        font-size: 14px;
+    }
+}
+/* 专业版窄屏：报告头卡（标题 + 导出按钮）改上下排，避免标题被挤成两行 */
+@media (max-width: 900px) {
+    .header-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px 18px;
+    }
+    .header-card #report-title-area h1,
+    .header-card #report-title-area h2 {
+        font-size: 21px;
+        line-height: 1.35;
+        margin: 0;
+    }
+    .header-card #report-title-area h1 span {
+        display: block;
+        margin-top: 2px;
+        font-size: 13px;
+    }
+    .header-card .export-btn {
+        width: 100%;
+        padding: 9px 16px;
+    }
+}
