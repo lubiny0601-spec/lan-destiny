@@ -150,11 +150,20 @@ function renderFields(module) {
 
 tabs.forEach(tab => {
     tab.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
         tabs.forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        renderFields(e.target.dataset.module);
+        btn.classList.add('active');
+        renderFields(btn.dataset.module);
     });
 });
+
+const openVocabBtn = document.getElementById('btn-open-vocab');
+if (openVocabBtn) {
+    openVocabBtn.addEventListener('click', () => {
+        const dictionaryBtn = document.getElementById('btn-help');
+        if (dictionaryBtn) dictionaryBtn.click();
+    });
+}
 
 // Initial render
 renderFields('bazi');

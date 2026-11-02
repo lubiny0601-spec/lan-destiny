@@ -825,14 +825,27 @@
                 <p class="subtitle">观澜命理 · 命运技术分析</p>
                 <button id="btn-back-consumer" class="back-consumer-btn" aria-controls="consumer-mode-view" aria-expanded="false">← 返回普通模式</button>
             </header>
-            <nav class="module-tabs">
-                <button class="tab-btn active" id="tab-bazi" data-module="bazi">八字命盘</button>
-                <button class="tab-btn" id="tab-ziwei" data-module="ziwei">紫微斗数</button>
-                <button class="tab-btn" id="tab-hehun" data-module="hehun">合婚合参</button>
-                <button class="tab-btn" id="tab-meihua" data-module="meihua">梅花易数</button>
-                <button class="tab-btn" id="tab-liuyao" data-module="liuyao">六爻纳甲</button>
-                <button class="tab-btn" id="tab-qimen" data-module="qimen">奇门遁甲</button>
+            <nav class="module-tabs" aria-label="推演项目">
+                <div class="module-group">
+                    <p class="module-group-head">看你的命盘<span>需要你的出生信息</span></p>
+                    <div class="module-group-grid">
+                        <button class="tab-btn active" id="tab-bazi" data-module="bazi"><span class="tb-name">八字命盘</span><span class="tb-sub">你的底层结构</span></button>
+                        <button class="tab-btn" id="tab-ziwei" data-module="ziwei"><span class="tb-name">紫微斗数</span><span class="tb-sub">同一份命的另一种画法</span></button>
+                        <button class="tab-btn" id="tab-hehun" data-module="hehun"><span class="tb-name">合婚合参</span><span class="tb-sub">看你们俩合不合拍</span></button>
+                    </div>
+                </div>
+                <div class="module-group">
+                    <p class="module-group-head">问一件具体的事<span>需要你起卦或给一个时间点</span></p>
+                    <div class="module-group-grid">
+                        <button class="tab-btn" id="tab-meihua" data-module="meihua"><span class="tb-name">梅花易数</span><span class="tb-sub">看一件事，快问快答</span></button>
+                        <button class="tab-btn" id="tab-liuyao" data-module="liuyao"><span class="tb-name">六爻纳甲</span><span class="tb-sub">看这件事的另一层细节</span></button>
+                        <button class="tab-btn" id="tab-qimen" data-module="qimen"><span class="tb-name">奇门遁甲</span><span class="tb-sub">挑时机和方位</span></button>
+                    </div>
+                </div>
             </nav>
+            <p class="module-status">这六项都要本机后端才出结果：先运行 <code>run.bat</code>，再用 <code>127.0.0.1:8000</code> 打开。公网上点了只会报错。
+                <button type="button" class="module-status-help" id="btn-open-vocab">看白话词典</button>
+            </p>
             <form id="calc-form" class="form-container">
                 <!-- Dynamic form fields are inserted here by main.js -->
                 <div id="dynamic-fields"></div>
@@ -845,7 +858,7 @@
             <div id="welcome-screen" class="welcome-screen">
                 <div class="taiji-icon">☯</div>
                 <h2>观水有术，必观其澜</h2>
-                <p>在左侧输入生辰信息，洞察时空轨迹</p>
+                <p>在左侧选一项，填好信息开始推演</p>
             </div>
             <div id="loading-screen" class="loading-screen hidden">
                 <div class="spinner"></div>
