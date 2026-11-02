@@ -616,7 +616,7 @@ function parseHehun(stdout) {
     const fuqi = grab(/夫妻宫\(日支\)：(\S)(\S) (\S+)/);
     const shengxiao = grab(/生肖\(年支\)：(\S) \/ (\S)（([^）]*)）/);
     const que = grab(/五行缺：甲方缺 (\S)；乙方缺 (\S)/);
-    const countsRaw = grab(/五行个数：甲方 ([^；]+)；乙方 (.+)$/);
+    const countsRaw = grab(/五行个数：甲方 ([^；]+)；乙方 (.+)/);
 
     const dayMaster = stdout.match(/【日主】(\S+?)，生于/);
     const yearZhi = stdout.match(/地支\s+(\S)\(/); // 仅作兜底
@@ -840,7 +840,7 @@ function parseQimen(stdout) {
     const grab = (re) => { const m = stdout.match(re); if (!m) return null; return m.length === 2 ? m[1] : m.slice(1); };
     const ju = grab(/局：(\S+?)　上元（符头 (\S+?)，属(\S+?)）/);
     const zhi = grab(/值符：(\S+) 落(\S+?)宫　值使：(\S+) 落(\S+?)宫/);
-    const kong = grab(/旬空：日空 (\S+)　时空 (\S+)　驿马：(\S+)（(\S+?)宫）　(.*)$/);
+    const kong = grab(/旬空：日空 (\S+)　时空 (\S+)　驿马：(\S+)（(\S+?)宫）(.*)/);
     const siZhu = grab(/四柱：(.+)/);
     const paiJu = grab(/排局：(\S+?)　盘式：(.+)/);
     const geju = grab(/格局：(.+)/);
@@ -892,7 +892,7 @@ function generateQimenAnalysis(stdout, ctx) {
     const facts = [];
     if (d.siZhu) facts.push(`盘的四柱：${d.siZhu}${d.ju ? `；${d.ju[0]} 上元` : ''}${d.paiJu ? `，${d.paiJu[0]} / ${d.paiJu[1]}` : ''}。`);
     if (d.zhi) facts.push(`值符 ${d.zhi[0]} 落${d.zhi[1]}宫；值使 ${d.zhi[2]} 落${d.zhi[3]}宫。`);
-    if (d.kong) facts.push(`旬空：日空 ${d.kong[0]}、时空 ${d.kong[1]}；驿马 ${d.kong[2]}（${d.kong[3]}宫）${d.kong[4] ? '；' + d.kong[4] : ''}。`);
+    if (d.kong) facts.push(`旬空：日空 ${d.kong[0]}、时空 ${d.kong[1]}；驿马 ${d.kong[2]}（${d.kong[3]}宫）${d.kong[4] && d.kong[4].trim() ? '；' + d.kong[4].trim() : ''}。`);
     if (d.men.length) {
         facts.push('八门落宫：' + d.men.map(m => `${m.name}门→${m.palace ? (PRO_TABLES.dir[m.palace] || m.palace) + '方' : m.note}`).join('，') + '。');
     }
