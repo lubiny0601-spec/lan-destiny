@@ -124,6 +124,7 @@ const fieldsConfig = {
 };
 
 let activeModule = 'bazi';
+let lastCalcInput = null; // 专业版：最近一次提交的表单数据，给白话解读用
 const dynamicFields = document.getElementById('dynamic-fields');
 const tabs = document.querySelectorAll('.tab-btn');
 
@@ -206,6 +207,8 @@ calcForm.addEventListener('submit', async (e) => {
             }
         }
     });
+
+    lastCalcInput = data;
 
     try {
         const response = await fetch('/api/calculate', {
@@ -322,7 +325,7 @@ function renderReport(stdout) {
     elements.innerHTML = `<h3>能量结构 & 格局</h3>${parsed.elements ? `<pre>${parsed.elements}</pre>` : '<p class="empty-state">无能量特质数据</p>'}`;
     chart.innerHTML = `<h3>时空命盘排布</h3>${parsed.chart ? `<pre>${parsed.chart}</pre>` : '<p class="empty-state">命盘生成失败</p>'}`;
     cycles.innerHTML = `<h3>大运流年轨变</h3>${parsed.cycles ? `<pre>${parsed.cycles}</pre>` : '<p class="empty-state">无流年大运轨变信息</p>'}`;
-    interpretation.innerHTML = getWhiteCollarInterpretation(activeModule, stdout);
+    interpretation.innerHTML = getWhiteCollarInterpretation(activeModule, stdout, lastCalcInput);
 }
 
 // Export Report functionality
@@ -403,20 +406,544 @@ closeDrawerBtn.addEventListener('click', () => {
     helpDrawer.classList.add('hidden');
 });
 
+// ==================================================================
+// 专业版 · 真读盘的白话解读（B 方案）
+// 原则：先把引擎给的**盘面事实**引出来，再翻译，再说怎么用；
+//      不自己发明吉凶，引擎没给的结论不硬编。
+// ==================================================================
+
+const PRO_TABLES = {
+    palace: {
+        命宫: '你自己', 兄弟: '同辈/合伙', 夫妻: '伴侣/长期搭档', 子女: '作品/晚辈',
+        财帛: '赚钱方式', 疾厄: '身体与压力', 迁移: '对外/异地', 交友: '人脉/团队',
+        官禄: '事业/岗位', 田宅: '家/资产', 福德: '内心享受', 父母: '长辈/上级'
+    },
+    star: {
+        紫微: '主导型：习惯做决定，也要面子', 天机: '动脑型：善谋划，容易想多',
+        太阳: '外放型：热心、要被看见', 武曲: '务实型：算账、看结果',
+        天同: '随和型：图舒服，抗压偏软', 廉贞: '较真型：有原则，情绪张力大',
+        天府: '守成型：稳、会攒', 太阴: '细腻型：内敛、重感受',
+        贪狼: '多欲型：多才、爱交际', 巨门: '善辩型：会说，也容易口舌',
+        天相: '配合型：重体面，副手很强', 天梁: '护人型：老成，爱管闲事',
+        七杀: '攻坚型：敢冲，不耐琐碎', 破军: '破立型：敢重来，不耐稳定'
+    },
+    hua: { 禄: '顺手与增益', 权: '掌控与话语权', 科: '口碑与名声', 忌: '最费力的执念' },
+    trigram: {
+        乾: '天·刚健', 兑: '泽·悦', 离: '火·明丽', 震: '雷·发动',
+        巽: '风·渗透', 坎: '水·涉险', 艮: '山·止住', 坤: '地·承载'
+    },
+    trigramByImage: { 天: '乾', 泽: '兑', 火: '离', 雷: '震', 风: '巽', 水: '坎', 山: '艮', 地: '坤' },
+    men: {
+        开: ['机会·开启', 1], 休: ['休息·以静制动', 1], 生: ['生长·有利可图', 1],
+        伤: ['竞争·损耗', -1], 杜: ['闭塞·沟通受阻', -1], 景: ['表面好看·偏虚', -1],
+        死: ['停滞·走不通', -1], 惊: ['口舌·恐慌', -1]
+    },
+    dir: { 1: '正北', 2: '西南', 3: '正东', 4: '东南', 5: '中宫', 6: '西北', 7: '正西', 8: '东北', 9: '正南' },
+    ganWx: { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' },
+    zhiWx: { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' },
+    shiShen: {
+        正印: '被照顾/吸收', 偏印: '偏门学习/直觉', 正财: '稳定收益', 偏财: '机会财',
+        正官: '规则与责任', 七杀: '压力与硬仗', 比肩: '同辈助力', 劫财: '同辈消耗',
+        食神: '输出与享受', 伤官: '锋芒与突破'
+    }
+};
+
+const PRO_SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+const PRO_KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+
+function proWxOf(char) {
+    return PRO_TABLES.ganWx[char] || PRO_TABLES.zhiWx[char] || '';
+}
+
+function proWxRelation(a, b) {
+    if (!a || !b) return '';
+    if (a === b) return '同气';
+    if (PRO_SHENG[a] === b) return `${a}生${b}（把力气给了对方）`;
+    if (PRO_SHENG[b] === a) return `${b}生${a}（对方在滋养你）`;
+    if (PRO_KE[a] === b) return `${a}克${b}（你在压对方）`;
+    if (PRO_KE[b] === a) return `${b}克${a}（对方在压你）`;
+    return '';
+}
+
+function proSection(title, paras) {
+    const body = (Array.isArray(paras) ? paras : [paras])
+        .filter(Boolean)
+        .map(p => `<p>${p}</p>`)
+        .join('');
+    return `<div class="analysis-section" style="margin-bottom: 14px;"><p><strong>${title}</strong></p>${body}</div>`;
+}
+
+function proHead(title, subtitle) {
+    return `<h3>${title}</h3>${subtitle ? `<p style="color: var(--sb-text-white-soft); font-size: 13px; margin-bottom: 12px;">${subtitle}</p>` : ''}`;
+}
+
+function proFoot(lines) {
+    return `<div class="analysis-section"><p style="font-size: 12.5px; color: var(--sb-text-white-soft);">${lines.join(' ')}</p></div>`;
+}
+
+function proStarsPlain(stars) {
+    const list = (stars || []).filter(s => PRO_TABLES.star[s]);
+    if (!list.length) return '';
+    return list.map(s => `${s}（${PRO_TABLES.star[s]}）`).join('、');
+}
+
+// ---------------- 紫微斗数 ----------------
+function parseZiwei(stdout) {
+    const head = stdout.match(/命宫：(\S+)　身宫：(\S+)（在([^）]+)）　五行局：(\S+)/);
+    if (!head) return null;
+    const stars = stdout.match(/紫微：(\S+)　天府：(\S+)　命主：(\S+)　身主：(\S+)/);
+    const block = (stdout.split('【十二宫】')[1] || '').split('【宫干飞化】')[0];
+    const palaces = [];
+    for (const raw of block.split('\n')) {
+        const line = raw.trim();
+        if (!line) continue;
+        const parts = line.split('　').filter(Boolean);
+        if (parts.length < 3) continue;
+        const name = parts[0];
+        if (!PRO_TABLES.palace[name]) continue;
+        const segs = parts.slice(2).join('　').split('　').filter(Boolean);
+        const item = { name, gz: parts[1], stars: [], hua: [], ji: [], sha: [], marks: [] };
+        for (const seg of segs) {
+            if (seg.startsWith('四化:')) { item.hua.push(...seg.slice(3).split('、')); continue; }
+            if (seg.startsWith('六吉:')) { item.ji = seg.slice(3).split('、'); continue; }
+            if (seg.startsWith('六煞:')) { item.sha = seg.slice(3).split('、'); continue; }
+            if (seg === '★身宫') { item.marks.push('身宫'); continue; }
+            if (seg === '禄存') { item.marks.push('禄存'); continue; }
+            if (/^(自|向)/.test(seg)) { item.marks.push(seg); continue; }
+            if (seg === '（空宫）' || seg === '(空宫)') { item.empty = true; continue; }
+            item.stars.push(...seg.split('、'));
+        }
+        palaces.push(item);
+    }
+    const limits = [];
+    const limRe = /第(\d+)限　(\d+)-(\d+)岁　(\S+?)（/g;
+    let lm;
+    while ((lm = limRe.exec(stdout)) !== null) {
+        limits.push({ idx: Number(lm[1]), from: Number(lm[2]), to: Number(lm[3]), palace: lm[4] });
+    }
+    return {
+        gz: head[1], shenGz: head[2], shenPalace: head[3], ju: head[4],
+        ziweiPos: stars ? stars[1] : '', tianfuPos: stars ? stars[2] : '',
+        mingzhu: stars ? stars[3] : '', shenzhu: stars ? stars[4] : '',
+        palaces, limits
+    };
+}
+
+function generateZiweiAnalysis(stdout, ctx) {
+    const d = parseZiwei(stdout);
+    if (!d || !d.palaces.length) return ziweiFallback();
+    const byName = {};
+    d.palaces.forEach(p => { byName[p.name] = p; });
+
+    // 生年四化：找到带「X化禄/权/科/忌」的宫
+    const huaInPalace = { 禄: null, 权: null, 科: null, 忌: null };
+    d.palaces.forEach(p => {
+        p.hua.forEach(h => {
+            const m = h.match(/^(\S+?)化([禄权科忌])$/);
+            if (m) huaInPalace[m[2]] = huaInPalace[m[2]] || { palace: p.name, star: m[1] };
+        });
+    });
+
+    const ming = byName['命宫'];
+    const shen = byName[d.shenPalace];
+    const guan = byName['官禄'];
+    const cai = byName['财帛'];
+    const fuqi = byName['夫妻'];
+
+    const facts = [];
+    facts.push(`${d.palaces.length} 个宫都排出来了，命宫在 ${d.gz}（五行局 ${d.ju}），身宫落在【${d.shenPalace}】。`);
+    if (ming && ming.stars.length) {
+        facts.push(`命宫主星：${proStarsPlain(ming.stars)}。`);
+    } else {
+        facts.push('命宫是空宫——这种盘通常借对宫的星来看本人，性格弹性大，环境影响明显。');
+    }
+    const huaLines = ['禄', '权', '科', '忌']
+        .filter(k => huaInPalace[k])
+        .map(k => `${k}→${huaInPalace[k].star}在【${huaInPalace[k].palace}】`);
+    if (huaLines.length) facts.push(`生年四化落点：${huaLines.join('；')}。`);
+
+    const read = [];
+    if (ming && ming.stars.length) {
+        const first = ming.stars.find(s => PRO_TABLES.star[s]);
+        if (first) read.push(`你的主基调是「${first}」——${PRO_TABLES.star[first]}。`);
+    }
+    if (shen) read.push(`身宫在【${d.shenPalace}】＝${PRO_TABLES.palace[d.shenPalace]}：这是你真正的用力方向，比命宫更能说明你会在意什么。`);
+    if (huaInPalace['忌']) {
+        const t = huaInPalace['忌'];
+        read.push(`化忌落在【${t.palace}】＝${PRO_TABLES.palace[t.palace]}：${PRO_TABLES.hua['忌']}就在这里——这一块你会反复投入、也最容易觉得委屈，不是你不行，是这块天生费神。`);
+    }
+    if (huaInPalace['禄']) {
+        const t = huaInPalace['禄'];
+        read.push(`化禄在【${t.palace}】（${PRO_TABLES.palace[t.palace]}）：这块相对顺手，是可以主动加杠杆的地方。`);
+    }
+    if (guan && guan.stars.length) {
+        read.push(`官禄宫是 ${proStarsPlain(guan.stars)}${guan.sha.length ? `，带 ${guan.sha.join('、')}（竞争与损耗）` : ''}——工作上的底色看这里。`);
+    }
+    if (cai && cai.stars.length) {
+        read.push(`财帛宫是 ${proStarsPlain(cai.stars)}——你熟悉的赚钱方式从这一宫看。`);
+    }
+    if (fuqi && fuqi.stars.length) {
+        const selfJi = fuqi.marks.includes('自忌');
+        read.push(`夫妻宫是 ${proStarsPlain(fuqi.stars)}${selfJi ? '，且带自忌：关系里你容易把标准加在自己身上，反复磨合' : ''}。`);
+    }
+
+    // 当前大限
+    const use = [];
+    if (d.limits.length && ctx && ctx.year) {
+        const now = new Date().getFullYear();
+        const age = now - Number(ctx.year) + 1;
+        const cur = d.limits.find(l => age >= l.from && age <= l.to);
+        if (cur) {
+            use.push(`你现在虚岁 ${age}，走第 ${cur.idx} 限（${cur.from}–${cur.to} 岁），落【${cur.palace}】＝${PRO_TABLES.palace[cur.palace] || ''}：这十年的主题集中在这一宫。`);
+        }
+    }
+    use.push(`先认「${PRO_TABLES.hua['忌']}」那一宫，再谈要不要改——紫微看到的是「你在哪些领域天生费神」，不是「你注定怎样」。`);
+
+    return proHead('白话解读 · 紫微斗数', '先看盘面事实，再看这意味着什么')
+        + proSection('盘面事实（引擎排出来的）', facts)
+        + proSection('这意味着什么', read)
+        + proSection('可以怎么用', use)
+        + proFoot(['口径：紫微是命理（看一生结构），不是占卜；星曜旺衰与流年吉凶的断法这里不做，只做结构观察。']);
+}
+
+// ---------------- 合婚合参 ----------------
+function parseHehun(stdout) {
+    const pairBlock = stdout.split('【合婚双盘对照】')[1];
+    if (!pairBlock) return null;
+    const grab = (re) => { const m = pairBlock.match(re); if (!m) return null; return m.length === 2 ? m[1] : m.slice(1); };
+
+    const dayGan = grab(/日干：(\S) \/ (\S)/);
+    const fuqi = grab(/夫妻宫\(日支\)：(\S)(\S) (\S+)/);
+    const shengxiao = grab(/生肖\(年支\)：(\S) \/ (\S)（([^）]*)）/);
+    const que = grab(/五行缺：甲方缺 (\S)；乙方缺 (\S)/);
+    const countsRaw = grab(/五行个数：甲方 ([^；]+)；乙方 (.+)$/);
+
+    const dayMaster = stdout.match(/【日主】(\S+?)，生于/);
+    const yearZhi = stdout.match(/地支\s+(\S)\(/); // 仅作兜底
+
+    const parseCounts = (str) => {
+        const out = {};
+        if (!str) return out;
+        (str.match(/([木火土金水])(\d)/g) || []).forEach(t => { out[t[0]] = Number(t[1]); });
+        return out;
+    };
+
+    return {
+        aDayGan: dayGan ? dayGan[0] : '',
+        bDayGan: dayGan ? dayGan[1] : '',
+        aFuqi: fuqi ? fuqi[0] : '', bFuqi: fuqi ? fuqi[1] : '',
+        fuqiRel: fuqi ? fuqi[2] : '',
+        aZhi: shengxiao ? shengxiao[0] : '', bZhi: shengxiao ? shengxiao[1] : '',
+        zhiRel: shengxiao ? shengxiao[2] : '',
+        aQue: que ? que[0] : '', bQue: que ? que[1] : '',
+        aCounts: parseCounts(countsRaw ? countsRaw[0] : ''),
+        bCounts: parseCounts(countsRaw ? countsRaw[1] : ''),
+        aDayMaster: dayMaster ? dayMaster[1] : '',
+        _yearZhi: yearZhi ? yearZhi[1] : ''
+    };
+}
+
+function generateHehunAnalysis(stdout, ctx) {
+    const d = parseHehun(stdout);
+    if (!d || !d.aDayGan || !d.bDayGan) return hehunFallback();
+
+    const aWx = proWxOf(d.aDayGan);
+    const bWx = proWxOf(d.bDayGan);
+    const dayRel = proWxRelation(aWx, bWx);
+
+    const facts = [];
+    facts.push(`甲方日干 ${d.aDayGan}(${aWx || '?'})，乙方日干 ${d.bDayGan}(${bWx || '?'})：${dayRel || '两干不同气'}。`);
+    facts.push(`夫妻宫（日支）：甲 ${d.aFuqi} / 乙 ${d.bFuqi} → ${d.fuqiRel || '无合冲害'}。`);
+    facts.push(`生肖（年支）：甲 ${d.aZhi} / 乙 ${d.bZhi} → ${d.zhiRel || '无合冲害刑'}。`);
+    if (d.aQue || d.bQue) {
+        facts.push(`五行缺口：甲方缺 ${d.aQue || '无'}，乙方缺 ${d.bQue || '无'}。`);
+    }
+
+    const read = [];
+    if (dayRel) read.push(`日干之间：${dayRel}。这一层最容易出现在相处里——谁在主动体贴、谁更被照顾，通常从这里就能看出来。`);
+    if (/相害/.test(d.fuqiRel)) {
+        read.push(`夫妻宫相害：不是大冲突，而是日常里的小别扭——两个人对「默契」的默认值不一样，容易反复解释同一件事。`);
+    } else if (/六合|三合/.test(d.fuqiRel)) {
+        read.push(`夫妻宫成合：日常默契是你们的天然优势，不容易在琐事上内耗。`);
+    } else {
+        read.push(`夫妻宫没有明显合冲：摩擦主要来自具体的生活安排，而不是结构性冲突。`);
+    }
+    if (/无合冲害刑/.test(d.zhiRel)) {
+        read.push(`生肖一层没有牵引也没有冲突：年支不构成关系的主线，别用「属相合不合」给这段关系下结论。`);
+    } else if (/冲/.test(d.zhiRel)) {
+        read.push(`年支相冲：节奏差异比观念差异更明显——一个人想快，一个人想稳。`);
+    }
+    // 五行互补
+    const aQueWx = d.aQue, bQueWx = d.bQue;
+    if (aQueWx && d.bCounts[aQueWx] !== undefined && d.aCounts[aQueWx] !== undefined) {
+        const gap = d.bCounts[aQueWx] - d.aCounts[aQueWx];
+        if (gap > 0) {
+            read.push(`互补是有的：你缺的「${aQueWx}」在对方那边个数更多（${d.aCounts[aQueWx]} → ${d.bCounts[aQueWx]}），这类互补通常表现为「对方身上有你没有的稳」。`);
+        } else {
+            read.push(`你缺的「${aQueWx}」对方也不多（${d.aCounts[aQueWx]} → ${d.bCounts[aQueWx]}），所以指望对方补这块会失望，得自己想办法。`);
+        }
+    }
+
+    const use = [];
+    use.push(`把「${d.fuqiRel || '夫妻宫关系'}」当成提示而不是判决：它标的是最容易反复的那个点，事先说清预期比事后讲道理有用。`);
+    if (aQueWx) use.push(`你缺「${aQueWx}」：与其要求对方长期供应，不如自己安排一件稳定补这块的日常（固定作息、固定搭子、固定输入）。`);
+
+    return proHead('白话解读 · 合婚合参', '双盘对照：先看两边的盘面事实，再看关系读出什么')
+        + proSection('盘面事实（引擎双盘对照）', facts)
+        + proSection('这意味着什么', read)
+        + proSection('可以怎么用', use)
+        + proFoot(['口径：合婚只做关系事实对照（合/冲/害、五行互补），引擎本身不打分、不下「合不合」判词；这里同样不替你决定要不要在一起。']);
+}
+
+// ---------------- 梅花易数 ----------------
+function parseMeihua(stdout) {
+    const grab = (re) => { const m = stdout.match(re); if (!m) return null; return m.length === 2 ? m[1] : m.slice(1); };
+    const query = grab(/所占：(.+)/);
+    const cast = grab(/起卦：上卦 (\S+)\((\d+)\)　下卦 (\S+)\((\d+)\)　动爻 第(\d+)爻/);
+    const ben = grab(/【本卦】(\S+)（上(\S)下(\S)）/);
+    const hu = grab(/【互卦】(\S+)（上(\S)下(\S)）/);
+    const bian = grab(/【变卦】(\S+)（上(\S)下(\S)）/);
+    const tiyong = grab(/动爻在(上|下)卦 → 用卦 (\S+)\((\S+)\)、体卦 (\S+)\((\S+)\)/);
+    const duan = grab(/【断语提示】(.+)/);
+    if (!ben || !tiyong) return null;
+    return { query, cast, ben, hu, bian, tiyong, duan };
+}
+
+function generateMeihuaAnalysis(stdout, ctx) {
+    const d = parseMeihua(stdout);
+    if (!d) return meihuaFallback();
+
+    const relLine = (d.duan || '').match(/(体生用|用生体|体克用|用克体|体用比和)/);
+    const rel = relLine ? relLine[1] : '';
+    const [tiName, tiWx] = [d.tiyong[3], d.tiyong[4]];
+    const [yongName, yongWx] = [d.tiyong[1], d.tiyong[2]];
+
+    const facts = [];
+    facts.push(`你问的是「${d.query || '（未填写）'}」；起卦方式：${d.cast ? `上卦 ${d.cast[0]}(${d.cast[1]})、下卦 ${d.cast[2]}(${d.cast[3]})，动爻第 ${d.cast[4]} 爻` : '按时间起卦'}。`);
+    facts.push(`本卦 ${d.ben[0]}（上${d.ben[1]}下${d.ben[2]}）；互卦 ${d.hu ? d.hu[0] : '—'}；变卦 ${d.bian ? d.bian[0] : '—'}。`);
+    facts.push(`体卦 ${tiName}(${tiWx})＝你自己；用卦 ${yongName}(${yongWx})＝这件事；动爻在${d.tiyong[0]}卦。`);
+
+    const read = [];
+    const triPlain = (img) => {
+        const name = PRO_TABLES.trigramByImage[img];
+        const gloss = name ? PRO_TABLES.trigram[name] : '';
+        return gloss ? `${img}（${name}·${gloss}）` : img;
+    };
+    read.push(`本卦 ${d.ben[0]} 的结构是「上 ${triPlain(d.ben[1])}／下 ${triPlain(d.ben[2])}」：上面代表外部局面，下面代表你脚下的基础。`);
+    if (rel) {
+        const map = {
+            体生用: '你的力气在往这件事上流——投入大于回收，典型「先付出、后看结果」',
+            用生体: '这件事本身在给你输送好处——顺势接住比硬拼划算',
+            体克用: '你能压住这件事，但压住不等于轻松，需要持续用力',
+            用克体: '这件事在压你——阻力来自事情本身，不是你不努力',
+            体用比和: '你和这件事同气——上手快，但也容易一起放大同一个毛病'
+        };
+        read.push(`体用关系是「${rel}」：${map[rel]}。`);
+    }
+    if (d.bian && d.bian[0] !== d.ben[0]) {
+        read.push(`变卦 ${d.bian[0]} 是终局形态：事情最后会落到这个结构上，和起点的 ${d.ben[0]} 不是同一个状态。`);
+    }
+    if (d.duan) read.push(`引擎断语（原文）：${d.duan}`);
+
+    const use = [];
+    if (rel === '体生用') use.push('既然是付出型，就先给它一个止损线：投入多少、做到什么程度算够，事前写下来。');
+    else if (rel === '用生体') use.push('顺风局别犹豫：把「要不要做」换成「先做哪一步」。');
+    else if (rel === '体克用') use.push('你能拿住，但要防「越做越重」：把可控范围缩小，别一次揽完全部。');
+    else if (rel === '用克体') use.push('阻力在事情上，不在你身上：先降难度或换路径，硬顶是最贵的选项。');
+    else use.push('同气容易顺，也容易一起错：找一个外部视角帮你验一次假设。');
+
+    return proHead('白话解读 · 梅花易数', '一事一占：先看卦，再看体用关系')
+        + proSection('盘面事实（起卦结果）', facts)
+        + proSection('这意味着什么', read)
+        + proSection('可以怎么用', use)
+        + proFoot(['口径：梅花是一事一占的占测，趋势化参考，不打分、不断「吉凶成败」；同一件事反复起卦没有意义。']);
+}
+
+// ---------------- 六爻纳甲 ----------------
+function parseLiuyao(stdout) {
+    const grab = (re) => { const m = stdout.match(re); if (!m) return null; return m.length === 2 ? m[1] : m.slice(1); };
+    const gua = grab(/【本卦】(\S+)　(\S+)宫（(\S+)）/);
+    const riyue = grab(/【日月】月建 (\S)　日辰 (\S\S)　旬空 (\S+)/);
+    const dong = grab(/动爻：(.+)/);
+    const query = grab(/所占：(.+)/);
+    const lines = [];
+    for (const raw of stdout.split('\n')) {
+        const line = raw.trim();
+        if (!line || line.indexOf('▅') === -1) continue;
+        const shen = (line.match(/^(螣蛇|勾陈|朱雀|青龙|玄武|白虎)/) || [])[1] || '';
+        const rest = line.replace(/^(螣蛇|勾陈|朱雀|青龙|玄武|白虎)/, '').trim();
+        const segs = rest.split(/[\s　]+/).filter(Boolean);
+        const qin = segs[0] || '';
+        const gz = segs[1] || '';
+        const yang = line.indexOf('▅▅▅▅▅') !== -1;
+        const mark = /〔世〕/.test(line) ? '世' : (/〔应〕/.test(line) ? '应' : '');
+        lines.push({ shen, qin, gz, yang, mark });
+    }
+    if (!gua || lines.length < 6) return null;
+    return { gua, riyue, dong, query, lines };
+}
+
+const LIUYAO_QIN = {
+    父母: '文书·靠山·长辈', 兄弟: '同辈·竞争·花销', 官鬼: '压力·责任·管制',
+    妻财: '钱·资源·实际利益', 子孙: '产出·轻松·解压'
+};
+
+function generateLiuyaoAnalysis(stdout, ctx) {
+    const d = parseLiuyao(stdout);
+    if (!d) return liuyaoFallback();
+
+    const shi = d.lines.find(l => l.mark === '世');
+    const ying = d.lines.find(l => l.mark === '应');
+    const dongLines = /无动爻|无（静卦）|静卦/.test(d.dong || '') ? [] : (d.lines.filter(l => /动/.test(l.mark)));
+    const movingCount = dongLines.length;
+
+    const facts = [];
+    facts.push(`本卦 ${d.gua[0]}，属${d.gua[1]}宫（${d.gua[2]}）。`);
+    if (d.riyue) facts.push(`月建 ${d.riyue[0]}，日辰 ${d.riyue[1]}，旬空 ${d.riyue[2]}。`);
+    if (shi) facts.push(`世爻（你这边）：${shi.qin} ${shi.gz}，${shi.yang ? '阳爻（偏外放）' : '阴爻（偏收敛）'}。`);
+    if (ying) facts.push(`应爻（对方/结果）：${ying.qin} ${ying.gz}，${ying.yang ? '阳爻' : '阴爻'}。`);
+    facts.push(`动爻：${d.dong || '无'}。`);
+
+    const read = [];
+    if (shi) {
+        read.push(`世爻持「${shi.qin}」＝${LIUYAO_QIN[shi.qin] || '这一类事'}：你在这件事里的处境偏向这一层。`);
+    }
+    if (ying) {
+        read.push(`应爻持「${ying.qin}」＝${LIUYAO_QIN[ying.qin] || '这一类事'}：对方/目标那边的立场在这一层。`);
+    }
+    if (!movingCount) {
+        read.push('静卦：卦里没有动爻，意思是这件事短期内不会自己变——现在什么样，就先按什么样处理。');
+    } else {
+        read.push(`有 ${movingCount} 个动爻：事情正在酝酿变化，变量就出在这些爻上。`);
+    }
+    if (d.riyue && d.riyue[2]) {
+        read.push(`旬空是「${d.riyue[2]}」：这段时间里，落在这两个地支上的事容易「看着有、实际还没到位」。`);
+    }
+
+    const use = [];
+    if (shi && shi.qin === '官鬼') use.push('你这边背着压力/责任：先分清哪些是你该担的，别把别人的指标也一起扛。');
+    else if (shi && shi.qin === '兄弟') use.push('同辈/合伙因素是变量：把分工和分账写清楚，比讲交情管用。');
+    else if (shi && shi.qin === '子孙') use.push('你这边是「产出/轻松」的一层：适合做能立刻见效的小交付，不适合扛指标。');
+    else if (shi && shi.qin === '妻财') use.push('你这边握着资源：把投入产出摊开算，别凭感觉推进。');
+    else if (shi && shi.qin === '父母') use.push('你这边靠的是文书和靠山：把材料、流程、批文准备齐，事就顺一半。');
+    if (!movingCount) use.push('静卦不做投机动作：把注意力放在「把现在这件事收尾」，等局面自己给信号。');
+
+    return proHead('白话解读 · 六爻纳甲', '一事一占：先看世应，再看动静')
+        + proSection('盘面事实（装卦结果）', facts)
+        + proSection('这意味着什么', read)
+        + proSection('可以怎么用', use)
+        + proFoot(['口径：六爻是一事一占的占测，趋势化参考，不打分、不断吉凶；用神取用与应期的细断这里不做。']);
+}
+
+// ---------------- 奇门遁甲 ----------------
+function parseQimen(stdout) {
+    const grab = (re) => { const m = stdout.match(re); if (!m) return null; return m.length === 2 ? m[1] : m.slice(1); };
+    const ju = grab(/局：(\S+?)　上元（符头 (\S+?)，属(\S+?)）/);
+    const zhi = grab(/值符：(\S+) 落(\S+?)宫　值使：(\S+) 落(\S+?)宫/);
+    const kong = grab(/旬空：日空 (\S+)　时空 (\S+)　驿马：(\S+)（(\S+?)宫）　(.*)$/);
+    const siZhu = grab(/四柱：(.+)/);
+    const paiJu = grab(/排局：(\S+?)　盘式：(.+)/);
+    const geju = grab(/格局：(.+)/);
+
+    // 九宫：按 4 行一组的表格读取（八门 → 宫位）
+    const cells = [];
+    const buf = [];
+    for (const raw of stdout.split('\n')) {
+        const line = raw.trim();
+        if (!line.startsWith('|')) continue;
+        const segs = line.split('|').map(s => s.trim());
+        if (segs[0] === '') segs.shift();
+        if (segs[segs.length - 1] === '') segs.pop();
+        if (segs.length !== 3) continue;
+        buf.push(segs);
+        if (buf.length === 4) {
+            for (let j = 0; j < 3; j++) {
+                const cell = { shen: buf[0][j], star: buf[1][j], men: buf[2][j], pos: buf[3][j] };
+                // 中五宫那一格错一行，单独处理
+                if (/^中5/.test(buf[0][j])) {
+                    cell.shen = '中宫';
+                    cell.star = '';
+                    cell.men = '';
+                    cell.pos = buf[0][j];
+                }
+                cells.push(cell);
+            }
+            buf.length = 0;
+        }
+    }
+
+    const men = [];
+    cells.forEach(c => {
+        const m = c.men && c.men.match(/([^\s]+?)门 地:(\S+)/);
+        if (!m) return;
+        const p = c.pos && c.pos.match(/^(\S?)(\d)/);
+        const palaceNum = p ? Number(p[2]) : null;
+        men.push({ name: m[1], diGan: m[2], palace: palaceNum, note: c.pos });
+    });
+
+    if (!zhi && !men.length) return null;
+    return { ju, zhi, kong, siZhu, paiJu, geju, men };
+}
+
+function generateQimenAnalysis(stdout, ctx) {
+    const d = parseQimen(stdout);
+    if (!d) return qimenFallback();
+
+    const facts = [];
+    if (d.siZhu) facts.push(`盘的四柱：${d.siZhu}${d.ju ? `；${d.ju[0]} 上元` : ''}${d.paiJu ? `，${d.paiJu[0]} / ${d.paiJu[1]}` : ''}。`);
+    if (d.zhi) facts.push(`值符 ${d.zhi[0]} 落${d.zhi[1]}宫；值使 ${d.zhi[2]} 落${d.zhi[3]}宫。`);
+    if (d.kong) facts.push(`旬空：日空 ${d.kong[0]}、时空 ${d.kong[1]}；驿马 ${d.kong[2]}（${d.kong[3]}宫）${d.kong[4] ? '；' + d.kong[4] : ''}。`);
+    if (d.men.length) {
+        facts.push('八门落宫：' + d.men.map(m => `${m.name}门→${m.palace ? (PRO_TABLES.dir[m.palace] || m.palace) + '方' : m.note}`).join('，') + '。');
+    }
+
+    const read = [];
+    if (d.zhi) {
+        const dirFu = (d.zhi[1].match(/(\d)/) || [])[1];
+        const dirShi = (d.zhi[3].match(/(\d)/) || [])[1];
+        read.push(`值符是这一盘的「主事」，落在${PRO_TABLES.dir[dirFu] || d.zhi[1]}；值使是「执行」，落在${PRO_TABLES.dir[dirShi] || d.zhi[3]}。要动的事情，先看这两个方位。`);
+    }
+    const good = d.men.filter(m => /^[开休生]$/.test(m.name));
+    const bad = d.men.filter(m => /^[死惊伤杜景]$/.test(m.name));
+    if (good.length) {
+        read.push(`吉门这边：${good.map(m => `${m.name}门在${PRO_TABLES.dir[m.palace] || '？（' + m.note + '）'}`).join('、')}——要推进、要见面、要谈的事，优先往这些方位安排。`);
+    }
+    if (bad.length) {
+        read.push(`阻滞这边：${bad.map(m => `${m.name}门在${PRO_TABLES.dir[m.palace] || '？（' + m.note + '）'}`).join('、')}——关键动作尽量别压在这些方位上。`);
+    }
+    if (d.geju && /五不遇时/.test(d.geju)) {
+        read.push('格局里有「五不遇时」（时干克日干）：这一局整体不适合安排关键推进，尤其是签约、谈判、开新局这类正向动作。');
+    }
+    if (d.geju && /三奇得使/.test(d.geju)) {
+        read.push('同时有「三奇得使」：这是盘里少见的助力格，说明局部仍有可用的口子——挑对宫位和时段，比整体等良辰更实际。');
+    }
+
+    const use = [];
+    if (good.length) use.push(`要动就动在 ${good.map(m => PRO_TABLES.dir[m.palace]).filter(Boolean).join(' / ')} 这几个方位上；同样的动作放在阻滞格里，损耗会明显变大。`);
+    if (d.geju && /五不遇时/.test(d.geju)) use.push('如果这事能延，就延到下一局；如果不能延，把「签约/承诺」拆出来单独找时间做，先做不承诺的部分。');
+    use.push('奇门给的是「时机 + 方位」的组合，不是成败判决：方位对了，事情也只是顺一点，不会替你完成。');
+
+    return proHead('白话解读 · 奇门遁甲', '看这一局的时机与方位：先看值符值使与八门落宫')
+        + proSection('盘面事实（排局结果）', facts)
+        + proSection('这意味着什么', read)
+        + proSection('可以怎么用', use)
+        + proFoot(['口径：奇门是占测（看某时刻的时空格局），趋势化参考，不承诺吉凶成败；本页只读排局层，不做断局推演。']);
+}
+
 // Dynamic Plain-Language (White-Collar) Metaphysical Interpreters
-function getWhiteCollarInterpretation(module, stdout) {
+function getWhiteCollarInterpretation(module, stdout, ctx) {
     if (module === 'bazi') {
-        return generateBaziAnalysis(stdout);
+        return generateBaziAnalysis(stdout, ctx);
     } else if (module === 'ziwei') {
-        return generateZiweiAnalysis(stdout);
+        return generateZiweiAnalysis(stdout, ctx);
     } else if (module === 'hehun') {
-        return generateHehunAnalysis(stdout);
+        return generateHehunAnalysis(stdout, ctx);
     } else if (module === 'meihua') {
-        return generateMeihuaAnalysis(stdout);
+        return generateMeihuaAnalysis(stdout, ctx);
     } else if (module === 'liuyao') {
-        return generateLiuyaoAnalysis(stdout);
+        return generateLiuyaoAnalysis(stdout, ctx);
     } else if (module === 'qimen') {
-        return generateQimenAnalysis(stdout);
+        return generateQimenAnalysis(stdout, ctx);
     }
     return `<h3>观澜玄微解读</h3><pre>生克在心，时空流转。仅供生涯规划与日常参考。</pre>`;
 }
@@ -499,7 +1026,7 @@ function getCareerAdvice(dm, balance, weak) {
     }
 }
 
-function generateZiweiAnalysis(stdout) {
+function ziweiFallback() {
     return `
         <h3>🔮 观澜玄微解读 (紫微斗数白话分析)</h3>
         <div class="analysis-section" style="margin-bottom: 12px;">
@@ -519,7 +1046,7 @@ function generateZiweiAnalysis(stdout) {
     `;
 }
 
-function generateHehunAnalysis(stdout) {
+function hehunFallback() {
     return `
         <h3>🔮 观澜玄微解读 (合婚白话分析)</h3>
         <div class="analysis-section" style="margin-bottom: 12px;">
@@ -538,7 +1065,7 @@ function generateHehunAnalysis(stdout) {
     `;
 }
 
-function generateMeihuaAnalysis(stdout) {
+function meihuaFallback() {
     return `
         <h3>🔮 观澜玄微解读 (易数卦象分析)</h3>
         <div class="analysis-section" style="margin-bottom: 12px;">
@@ -554,7 +1081,7 @@ function generateMeihuaAnalysis(stdout) {
     `;
 }
 
-function generateLiuyaoAnalysis(stdout) {
+function liuyaoFallback() {
     return `
         <h3>🔮 观澜玄微解读 (六爻神卦分析)</h3>
         <div class="analysis-section" style="margin-bottom: 12px;">
@@ -569,7 +1096,7 @@ function generateLiuyaoAnalysis(stdout) {
     `;
 }
 
-function generateQimenAnalysis(stdout) {
+function qimenFallback() {
     return `
         <h3>🔮 观澜玄微解读 (奇门时空分析)</h3>
         <div class="analysis-section" style="margin-bottom: 12px;">
