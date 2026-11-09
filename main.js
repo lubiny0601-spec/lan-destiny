@@ -2600,7 +2600,7 @@ if (btnSubmitConsumerForm) {
                 btnSubmitConsumerForm.classList.remove('is-loading', 'is-success');
                 btnSubmitConsumerForm.textContent = '生成我的结构说明书';
                 
-                renderConsumerReport(consumerFormShellState.baziResult, consumerFormShellState);
+                renderConsumerReport(consumerFormShellState.baziResult, consumerFormShellState, { confirmGate: true });
             }, 460);
 
         } catch (err) {
@@ -4576,8 +4576,249 @@ function buildPersonalizedReportModel(parsedResult, formState, baziResult) {
 
 let lastRenderedReportModel = null;
 
+// ==================================================================
+// 生成后的「确认首屏」：先说三句，看对不对（A 档）
+// 设计：断言写行为+场景，不写形容词；不对就换一条（最多换两次）；
+//       走完给「你认领的自己」，再进原报告。跳过随时可用。
+// ==================================================================
+
+const CONFIRM_BANK = {
+    表达力: {
+        primary: '开会没人定调的时候，你通常是先开口的那个',
+        alts: ['一件事你先讲一遍，别人才知道该怎么配合你', '让你全程闭嘴旁听，你会比加班更难受']
+    },
+    决断力: {
+        primary: '选项超过三个，你会拖到最后一刻才拍板',
+        alts: ['出了岔子，你能当场把责任和补救方案一起定下来', '别人在等你给结论的时候，你心里其实还在比']
+    },
+    承载力: {
+        primary: '你会先答应下来，再在深夜补别人没做完的部分',
+        alts: ['别人情绪炸的时候，你是先稳住场面的那个', '你很少喊累，但会突然有一天什么都不想做']
+    },
+    洞察力: {
+        primary: '别人还在讲现象，你已经先看出这件事会怎么走',
+        alts: ['你对「不对劲」的直觉，通常比数据来得早', '有人反复解释同一件事，你会先怀疑他没说出的那部分']
+    },
+    生长力: {
+        primary: '同一件事做久了，你会自己去找新的做法',
+        alts: ['你更愿意开一个新局，而不是把一个旧局磨到完美', '长时间没有新东西进来，你会明显烦躁']
+    }
+};
+
+const CONFIRM_COST = {
+    表达力: '你把话说满了，后面就得自己一个人把活干完',
+    决断力: '你拍得快，所以经常替别人收拾没想清楚的后果',
+    承载力: '你扛得住，所以别人默认你能一直扛',
+    洞察力: '你看得太早，等你说出口的时候往往没人信',
+    生长力: '你总想换个新做法，导致手里的事很难彻底收尾'
+};
+
+const CONFIRM_SCENARIO = {
+    self: ['你清楚自己擅长什么，但说不清下一步具体做什么', '你更怕「一直这样下去」，而不是怕辛苦'],
+    career: ['你换工作真正的原因是「这件事没意思了」，不是钱', '你会为了一个认可，接下明显超出职责的活'],
+    relationship: ['在意的人冷淡一点，你会先反思自己哪里做错了', '你更愿意自己消化情绪，而不是当场把话讲开'],
+    confusion: ['你不是没有选择，是几个选择看起来都对', '你会反复问别人意见，最后仍按原来的想法做']
+};
+
+function buildConfirmAssertions(model) {
+    const bars = (model && model.energyBarsData ? model.energyBarsData.slice() : []).sort((a, b) => b.pct - a.pct);
+    const top1 = (bars[0] && bars[0].label) || '表达力';
+    const weak = (bars[bars.length - 1] && bars[bars.length - 1].label) || '承载力';
+    const scenario = (model && model.scenario) || 'self';
+    const sc = CONFIRM_SCENARIO[scenario] || CONFIRM_SCENARIO.self;
+    const other = CONFIRM_SCENARIO[scenario === 'self' ? 'career' : 'self'];
+    const bank = (dim) => CONFIRM_BANK[dim] || CONFIRM_BANK['表达力'];
+
+    return [
+        { slot: '你的默认输出方式', dim: top1, candidates: [bank(top1).primary].concat(bank(top1).alts) },
+        { slot: '你的代价', dim: top1, candidates: [CONFIRM_COST[top1] || bank(top1).alts[0], CONFIRM_COST[weak] || bank(weak).alts[1], bank(weak).alts[0]] },
+        { slot: '场景里的一条', dim: scenario, candidates: [sc[0], sc[1], other[0]] }
+    ];
+}
+
+const confirmGateState = { items: [], idx: 0, cursor: 0, yes: [], no: [], onDone: null, active: false };
+
+function renderConfirmDots() {
+    const dots = document.getElementById('cg-dots');
+    if (!dots) return;
+    dots.innerHTML = confirmGateState.items.map((it, i) => {
+        const cls = it.result === 'yes' ? 'is-yes' : (it.result === 'no' ? 'is-no' : (i === confirmGateState.idx ? 'is-current' : ''));
+        return `<span class="cg-dot ${cls}"></span>`;
+    }).join('');
+}
+
+function renderConfirmStep() {
+    const st = confirmGateState;
+    const item = st.items[st.idx];
+    if (!item) return;
+    const quote = document.getElementById('cg-quote');
+    const step = document.getElementById('cg-step');
+    const actions = document.querySelector('#confirm-gate .cg-actions');
+    const portrait = document.getElementById('cg-portrait');
+    if (step) step.textContent = `第 ${st.idx + 1} / ${st.items.length} 条`;
+    if (quote) quote.textContent = item.candidates[st.cursor] || item.candidates[0];
+    if (actions) actions.classList.remove('hidden');
+    if (portrait) portrait.classList.add('hidden');
+    const kicker = document.querySelector('#confirm-gate .cg-kicker');
+    const source = document.querySelector('#confirm-gate .cg-source');
+    if (kicker) kicker.classList.remove('hidden');
+    if (source) source.classList.remove('hidden');
+    renderConfirmDots();
+}
+
+function renderConfirmPortrait() {
+    const st = confirmGateState;
+    const list = document.getElementById('cg-p-list');
+    const note = document.getElementById('cg-p-note');
+    const actions = document.querySelector('#confirm-gate .cg-actions');
+    const portrait = document.getElementById('cg-portrait');
+    const quote = document.getElementById('cg-quote');
+    const step = document.getElementById('cg-step');
+    if (actions) actions.classList.add('hidden');
+    if (portrait) portrait.classList.remove('hidden');
+    if (step) step.textContent = `已确认 ${st.yes.length} / ${st.items.length} 条`;
+    if (quote) quote.textContent = '';
+    const kicker = document.querySelector('#confirm-gate .cg-kicker');
+    const source = document.querySelector('#confirm-gate .cg-source');
+    if (kicker) kicker.classList.add('hidden');
+    if (source) source.classList.add('hidden');
+    if (list) {
+        list.innerHTML = st.items.map(it => {
+            const text = it.candidates[it.cursor] || it.candidates[0];
+            const ok = it.result === 'yes';
+            return `<li class="${ok ? 'is-yes' : 'is-no'}"><span class="cg-mark">${ok ? '✓' : '✗'}</span><span class="cg-line">${text}</span></li>`;
+        }).join('');
+    }
+    if (note) {
+        note.textContent = st.yes.length
+            ? `你认下来的这 ${st.yes.length} 条，就是下面解读的重点；没认的那几条，可以直接跳过。`
+            : '三条都不太像——这不一定是你的问题，也可能是这套模板还没吃到你的特点。那就直接看完整解读。';
+    }
+    renderConfirmDots();
+}
+
+function finishConfirmGate() {
+    const st = confirmGateState;
+    if (!st.active) return;
+    st.active = false;
+    const gate = document.getElementById('confirm-gate');
+    if (gate) gate.classList.add('hidden');
+    document.body.classList.remove('cg-open');
+    if (typeof consumerFormShellState === 'object' && consumerFormShellState) {
+        consumerFormShellState.confirmResult = {
+            yes: st.yes.slice(),
+            no: st.no.slice(),
+            total: st.items.length
+        };
+    }
+    const done = st.onDone;
+    st.onDone = null;
+    if (typeof done === 'function') done(st);
+}
+
+function openConfirmGate(model, onDone) {
+    const items = buildConfirmAssertions(model);
+    const gate = document.getElementById('confirm-gate');
+    if (!gate || !items.length) { if (typeof onDone === 'function') onDone(null); return; }
+
+    confirmGateState.items = items.map(it => ({ slot: it.slot, dim: it.dim, candidates: it.candidates.slice(), cursor: 0, result: null }));
+    confirmGateState.idx = 0;
+    confirmGateState.cursor = 0;
+    confirmGateState.yes = [];
+    confirmGateState.no = [];
+    confirmGateState.onDone = onDone;
+    confirmGateState.active = true;
+
+    gate.classList.remove('hidden');
+    document.body.classList.add('cg-open');
+    const landing = document.querySelector('.consumer-main');
+    const landingFooter = document.querySelector('.consumer-footer');
+    if (landing) landing.classList.add('hidden');
+    if (landingFooter) landingFooter.classList.add('hidden');
+    renderConfirmStep();
+    const yesBtn = document.getElementById('cg-yes');
+    if (yesBtn) yesBtn.focus({ preventScroll: true });
+    if (typeof syncRcNavOffset === 'function') setTimeout(syncRcNavOffset, 60);
+}
+
+// 报告里落一张「你认领的自己」小卡（跳过确认就不渲染）
+function renderConfirmRibbon() {
+    const view = document.getElementById('consumer-report-view');
+    if (!view) return;
+    const container = view.querySelector('.report-container');
+    if (!container) return;
+    const old = container.querySelector('.confirm-ribbon');
+    if (old) old.remove();
+    const res = (typeof consumerFormShellState === 'object' && consumerFormShellState && consumerFormShellState.confirmResult) || null;
+    if (!res || !res.yes || !res.yes.length) return;
+    const div = document.createElement('div');
+    div.className = 'confirm-ribbon';
+    div.innerHTML = `<p class="cr-kicker">你认领的自己（${res.yes.length}/${res.total} 条）</p>`
+        + `<ul class="cr-list">${res.yes.map(t => `<li>${t}</li>`).join('')}</ul>`
+        + '<p class="cr-note">下面这份解读，重点就讲这几条；没认的那几条可以直接跳过。</p>';
+    const nav = container.querySelector('.rc-nav');
+    if (nav) container.insertBefore(div, nav.nextSibling);
+    else container.insertBefore(div, container.firstChild);
+}
+
+(function bindConfirmGate() {
+    const gate = document.getElementById('confirm-gate');
+    if (!gate) return;
+
+    const advance = () => {
+        const st = confirmGateState;
+        st.idx += 1;
+        st.cursor = 0;
+        if (st.idx >= st.items.length) renderConfirmPortrait();
+        else renderConfirmStep();
+    };
+
+    const yesBtn = document.getElementById('cg-yes');
+    const noBtn = document.getElementById('cg-no');
+    const skipBtn = document.getElementById('cg-skip');
+    const reportBtn = document.getElementById('cg-see-report');
+
+    if (yesBtn) yesBtn.addEventListener('click', () => {
+        const st = confirmGateState;
+        const item = st.items[st.idx];
+        if (!item || !st.active) return;
+        item.result = 'yes';
+        st.yes.push(item.candidates[st.cursor] || item.candidates[0]);
+        advance();
+    });
+
+    if (noBtn) noBtn.addEventListener('click', () => {
+        const st = confirmGateState;
+        const item = st.items[st.idx];
+        if (!item || !st.active) return;
+        // 还能换一条：同一条断言最多换两次，换完仍否认就记下来
+        if (st.cursor < item.candidates.length - 1) {
+            st.cursor += 1;
+            renderConfirmStep();
+            return;
+        }
+        item.result = 'no';
+        st.no.push(item.candidates[st.cursor] || item.candidates[0]);
+        advance();
+    });
+
+    if (skipBtn) skipBtn.addEventListener('click', () => {
+        confirmGateState.yes = [];
+        confirmGateState.no = [];
+        confirmGateState.items.forEach(it => { it.result = it.result || null; });
+        finishConfirmGate();
+    });
+
+    if (reportBtn) reportBtn.addEventListener('click', finishConfirmGate);
+
+    document.addEventListener('keydown', (e) => {
+        if (!confirmGateState.active) return;
+        if (e.key === 'Escape') { finishConfirmGate(); }
+    });
+})();
+
 // 3. Layer 3 DOM Rendering Function
-function renderConsumerReport(baziResult, formState) {
+function renderConsumerReport(baziResult, formState, opts) {
     const reportView = document.getElementById('consumer-report-view');
     const mainView = document.querySelector('.consumer-main');
     const footer = document.querySelector('.consumer-footer');
@@ -4812,14 +5053,23 @@ function renderConsumerReport(baziResult, formState) {
     }
 
     applyReadabilityShell();
-    // Toggle Views
-    if (mainView) mainView.classList.add('hidden');
-    if (footer) footer.classList.add('hidden');
-    reportView.classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    // 兜底：iOS 输入框聚焦放大后可能残留横向偏移，进出报告时强制归零
-    document.documentElement.scrollLeft = 0;
-    document.body.scrollLeft = 0;
+    const revealReportView = () => {
+        if (mainView) mainView.classList.add('hidden');
+        if (footer) footer.classList.add('hidden');
+        if (reportView) reportView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // 兜底：iOS 输入框聚焦放大后可能残留横向偏移，进出报告时强制归零
+        document.documentElement.scrollLeft = 0;
+        document.body.scrollLeft = 0;
+        renderConfirmRibbon();
+        if (typeof syncRcNavOffset === 'function') setTimeout(syncRcNavOffset, 80);
+    };
+    // 真实生成后先走「确认首屏」：先说三句，再给报告（demo / 海报路径不受影响）
+    if (opts && opts.confirmGate) {
+        openConfirmGate(reportModel, revealReportView);
+    } else {
+        revealReportView();
+    }
 }
 
 // ------------------------------------------------------------------

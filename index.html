@@ -928,6 +928,30 @@
         </div>
     </div>
 
+    <!-- 生成后的确认首屏：先说三句，看对不对，再给报告 -->
+    <div id="confirm-gate" class="confirm-gate hidden" role="dialog" aria-modal="true" aria-labelledby="cg-title">
+        <div class="cg-panel">
+            <div class="cg-head">
+                <span class="cg-step" id="cg-step">第 1 / 3 条</span>
+                <button type="button" class="cg-skip" id="cg-skip">跳过，直接看报告</button>
+            </div>
+            <p class="cg-kicker" id="cg-title">先说三句，看对不对</p>
+            <blockquote class="cg-quote" id="cg-quote"></blockquote>
+            <p class="cg-source">这几条从你的五维光谱与情境推出来，不是通用话术——不对就点「不太像」，我换一条。</p>
+            <div class="cg-actions">
+                <button type="button" class="cg-btn cg-yes" id="cg-yes">就是我</button>
+                <button type="button" class="cg-btn cg-no" id="cg-no">不太像</button>
+            </div>
+            <div class="cg-portrait hidden" id="cg-portrait">
+                <p class="cg-p-kicker">你认领的自己</p>
+                <ul class="cg-p-list" id="cg-p-list"></ul>
+                <p class="cg-p-note" id="cg-p-note"></p>
+                <button type="button" class="cg-btn cg-report" id="cg-see-report">看完整解读 →</button>
+            </div>
+            <div class="cg-dots" id="cg-dots" aria-hidden="true"></div>
+        </div>
+    </div>
+
     <script src="qr.js"></script>
     <script src="main.js"></script>
 </body>
