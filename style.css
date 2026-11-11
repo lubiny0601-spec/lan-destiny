@@ -5272,3 +5272,57 @@ body.cg-open { overflow: hidden; }
 @media print {
     .confirm-ribbon { break-inside: avoid; }
 }
+/* 专业版：手机扫码进入（局域网）面板 */
+.lan-access {
+    margin: 12px 0 4px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+}
+.lan-access.hidden { display: none; }
+.lan-access .la-title {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--sb-text-white-soft);
+}
+.lan-access .la-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.lan-access #lan-qr {
+    width: 96px;
+    height: 96px;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: #ffffff;
+}
+.lan-access .la-copy { min-width: 0; }
+.lan-access .la-url {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sb-green-accent);
+    word-break: break-all;
+}
+.lan-access .la-note {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.52);
+}
+@media (max-width: 900px) {
+    .lan-access { display: none; }
+}
+/* 专业版：服务已连接的确认标 + 二维码放大一点更好扫 */
+.module-status .ms-ok {
+    color: #7fd1a8;
+    font-weight: 700;
+}
+.lan-access #lan-qr {
+    width: 112px;
+    height: 112px;
+}
