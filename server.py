@@ -1,10 +1,11 @@
 import os
+import socket
 import subprocess
 import sys
 import datetime
 import html as html_lib
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
@@ -21,6 +22,80 @@ app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent /
 PYTHON_PATH = os.environ.get("BAZI_PYTHON") or sys.executable
 if not os.path.exists(PYTHON_PATH):
     PYTHON_PATH = sys.executable
+
+def _looks_like_lan(ip):
+    """排除回环、链路本地、以及代理/虚拟机常见的假地址。"""
+    if not ip or ip.startswith("127.") or ip.startswith("169.254."):
+        return False
+    # 198.18.0.0/15 是 Clash/Mihomo 等 TUN 代理惯用的地址段，手机连不上
+    if ip.startswith("198.18.") or ip.startswith("198.19."):
+        return False
+    if ip.startswith("255.") or ip.startswith("0."):
+        return False
+    return True
+
+def _detect_lan_ips():
+    """列出本机可被手机访问的局域网 IPv4（192.168 / 10 / 172.16-31 优先）。"""
+    cands = []
+
+    def add(ip):
+        ip = (ip or "").strip()
+        if _looks_like_lan(ip) and ip not in cands:
+            cands.append(ip)
+
+    # 1) ipconfig：Windows 上最可靠（getaddrinfo 在装了代理 TUN 时可能拿不到 WLAN 地址）
+    try:
+        out = subprocess.run(["ipconfig"], capture_output=True, timeout=6)
+        text = None
+        for enc in ("utf-8", "gbk", "cp936"):
+            try:
+                text = out.stdout.decode(enc)
+                break
+            except Exception:
+                continue
+        if text:
+            import re as _re
+            for line in text.splitlines():
+                # 只看 IPv4 地址行；默认网关、子网掩码都不是本机地址
+                if "IPv4" not in line:
+                    continue
+                m = _re.search(r"(\d{1,3}(?:\.\d{1,3}){3})", line)
+                if m:
+                    add(m.group(1))
+    except Exception:
+        pass
+
+    # 2) 主机名解析
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            add(info[4][0])
+    except Exception:
+        pass
+
+    # 3) UDP 探测（可能被代理污染，仅作兜底）
+    if not cands:
+        try:
+            probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            probe.connect(("8.8.8.8", 80))
+            add(probe.getsockname()[0])
+            probe.close()
+        except Exception:
+            pass
+
+    ips = cands
+
+    def _rank(ip):
+        if ip.startswith("192.168."): return 0
+        if ip.startswith("10."): return 1
+        if ip.startswith("172."):
+            try:
+                second = int(ip.split(".")[1])
+                return 2 if 16 <= second <= 31 else 4
+            except Exception:
+                return 4
+        return 3
+
+    return sorted(ips, key=_rank)
 
 # 命理脚本目录：仓库内置 engines/ > BAZI_SKILL_DIR > ~/.claude/skills/bazi-mingli
 # 内置 engines/ 让项目自包含：拷到任何装了 Python + lunar_python 的机器都能跑专业版。
@@ -195,7 +270,7 @@ def calculate(req: CalcRequest):
         raise HTTPException(status_code=500, detail=f"Server error executing command: {str(e)}")
 
 @app.get("/api/health")
-def health():
+def health(request: Request):
     """让前端能判断专业模式是否可用（消费者模式不需要它）。"""
     return {
         "ok": True,
@@ -206,6 +281,7 @@ def health():
         "scripts_found": os.path.isdir(SCRIPTS_DIR),
         "pro_mode": os.path.isdir(SCRIPTS_DIR),
         "python": PYTHON_PATH,
+        "lan_urls": ['http://%s:%d' % (ip, request.url.port or 8000) for ip in _detect_lan_ips()],
     }
 
 

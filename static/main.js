@@ -4817,6 +4817,60 @@ function renderConfirmRibbon() {
     });
 })();
 
+// 专业版：在 PC 上显示「手机扫码进入」的局域网二维码（复用 qr.js）
+function renderLanQrPanel() {
+    const panel = document.getElementById('lan-access');
+    if (!panel) return;
+    const host = location.hostname;
+    const isLocalView = host === '127.0.0.1' || host === 'localhost' || host === '';
+    if (!isLocalView) panel.classList.add('hidden');
+    fetch('/api/health', { cache: 'no-store' })
+        .then(res => (res && res.ok ? res.json() : null))
+        .then(info => {
+            // 服务是否连上：PC 和手机都给一句确认
+            const statusEl = document.querySelector('.module-status');
+            if (statusEl && info && info.pro_mode && !statusEl.querySelector('.ms-ok')) {
+                const ok = document.createElement('span');
+                ok.className = 'ms-ok';
+                ok.textContent = '（本机服务已连接）';
+                statusEl.appendChild(ok);
+            }
+            const urls = (info && Array.isArray(info.lan_urls)) ? info.lan_urls : [];
+            // 二维码只在电脑上看有意义（手机上打开的就是局域网地址本身）
+            if (!urls.length || !isLocalView) { panel.classList.add('hidden'); return; }
+            const url = urls[0];
+            const canvas = document.getElementById('lan-qr');
+            const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+            const qr = (typeof buildQrMatrix === 'function') ? buildQrMatrix(url, 'M') : null;
+            if (!canvas || !ctx || !qr) { panel.classList.add('hidden'); return; }
+            const quiet = 4;
+            const module = Math.max(1, Math.floor(canvas.width / (qr.size + quiet * 2)));
+            const drawSize = module * qr.size;
+            const origin = Math.round((canvas.width - drawSize) / 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#123527';
+            for (let r = 0; r < qr.size; r++) {
+                for (let c = 0; c < qr.size; c++) {
+                    if (!qr.modules[r][c]) continue;
+                    ctx.fillRect(origin + c * module, origin + r * module, module, module);
+                }
+            }
+            const urlEl = document.getElementById('lan-url');
+            if (urlEl) urlEl.textContent = url;
+            panel.classList.remove('hidden');
+        })
+        .catch(() => { panel.classList.add('hidden'); });
+}
+
+(function bindLanPanel() {
+    ['btn-enter-pro', 'btn-enter-pro-footer'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', () => { setTimeout(renderLanQrPanel, 80); });
+    });
+})();
+
 // 3. Layer 3 DOM Rendering Function
 function renderConsumerReport(baziResult, formState, opts) {
     const reportView = document.getElementById('consumer-report-view');

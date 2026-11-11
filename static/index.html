@@ -846,6 +846,16 @@
             <p class="module-status">这六项都要本机后端才出结果：先运行 <code>run.bat</code>，再用 <code>127.0.0.1:8000</code> 打开。公网上点了只会报错。
                 <button type="button" class="module-status-help" id="btn-open-vocab">看白话词典</button>
             </p>
+            <div id="lan-access" class="lan-access hidden">
+                <p class="la-title">手机也能进专业版</p>
+                <div class="la-body">
+                    <canvas id="lan-qr" width="320" height="320" aria-hidden="true"></canvas>
+                    <div class="la-copy">
+                        <p class="la-url" id="lan-url">—</p>
+                        <p class="la-note">手机连同一个 WiFi，扫这个码就能打开；本机服务要一直开着。</p>
+                    </div>
+                </div>
+            </div>
             <form id="calc-form" class="form-container">
                 <!-- Dynamic form fields are inserted here by main.js -->
                 <div id="dynamic-fields"></div>
